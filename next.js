@@ -60,6 +60,22 @@ function items(){
   if ((ctx.penetratingTorso || ctx.penetratingHeadNeckAbd) && !ctx.gotAbx)
     add(10, 'next', 'pill', L('Give an antibiotic early','תנו אנטיביוטיקה מוקדם'), L('Penetrating wound, evacuation over 1 hour. Belly or head wound: add metronidazole 500 mg.','פצע חודר, פינוי מעל שעה. פצע בטן או ראש: הוסיפו מטרונידזול 500 מ״ג.'), L('GIVE','תנו'), "Field.give('cef')");
 
+  if (ctx.pediatric) {
+    var wk = Number(e.weightKg) || 0, age = Number(e.ageYears), est = false;
+    if (!wk) { est = true; wk = age < 0.5 ? 3.5 : age < 1 ? 7 : age < 4 ? 11 : age < 8 ? 17 : 27; }
+    var r1 = function(v){ return Math.round(v * 10) / 10; };
+    add(3.2, 'urgent', 'syringe', L('CHILD ' + wk + ' kg' + (est ? ' (estimated from age)' : ''), 'ילד ' + wk + ' ק״ג' + (est ? ' (הערכה לפי גיל)' : '')),
+      L('TXA ' + Math.round(wk * 15) + ' mg · fluid or blood ' + Math.round(wk * 20) + ' mL (shock only) · ketamine ' + r1(wk * 0.3) + ' mg IV · ceftriaxone ' + Math.min(2000, Math.round(wk * 100)) + ' mg. Use the length tape if you have one.',
+        'TXA ' + Math.round(wk * 15) + ' מ״ג · נוזל או דם ' + Math.round(wk * 20) + ' מ״ל (בהלם בלבד) · קטמין ' + r1(wk * 0.3) + ' מ״ג לווריד · צפטריאקסון ' + Math.min(2000, Math.round(wk * 100)) + ' מ״ג. השתמשו בסרגל ההחייאה אם יש.'),
+      L('OPEN CARE','פתחו טיפול'), "Field.march('c')");
+  }
+
+  if (ctx.hasTBI)
+    add(5.2, 'urgent', 'brain', L('Head injury: protect the brain','פגיעת ראש: הגנה על המוח'), L('Keep systolic over 100 and SpO2 over 90. Head up 30° unless in shock. Record eye, verbal and motor scores separately. No routine hyperventilation.','שמרו על סיסטולי מעל 100 וסטורציה מעל 90. ראש מורם 30° אלא אם בהלם. רשמו עיניים, דיבור ומוטורי בנפרד. בלי היפרוונטילציה שגרתית.'), L('VITALS','מדדים'), "Field.tapStart('pulse')");
+
+  if (inj.some(function(i){ return /eye/.test(i.region || ''); }))
+    add(5.3, 'urgent', 'eye', L('Eye injury: shield it','פגיעת עין: הגנה'), L('Rigid shield or cup, no pressure, no drops, no pressure bandage. Head up. Chemical burn: rinse 20 minutes first.','מגן קשיח או כוס, בלי לחץ, בלי טיפות, בלי חבישת לחץ. ראש מורם. כוויה כימית: שטיפה 20 דקות קודם.'), L('OPEN CARE','פתחו טיפול'), "Field.march('e')");
+
   if (ctx.crushSuspect)
     add(5.5, 'urgent', 'droplet', L('Crush injury: start saline','פגיעת מעיכה: התחילו סליין'), L('Trapped over 45 min. Saline 1 L per hour, before the rescue if possible. Do not give Hartmann.','לכוד מעל 45 דק׳. סליין ליטר לשעה, אם אפשר לפני החילוץ. לא להשתמש בהרטמן.'), L('OPEN CARE','פתחו טיפול'), "Field.march('c')");
 
