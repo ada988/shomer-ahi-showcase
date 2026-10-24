@@ -56,6 +56,7 @@ function html(){
     h += '<button class="f-tbtn t-' + t[0] + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Field.triage(\'' + t[0] + '\')">' + W.TriageUI.shapeSvg(T.shape, 32) + '<b>' + L(t[1], t[2]) + '</b>' + (on ? '<i>' + ico('check', 22) + L('SET','נקבע') + '</i>' : '') + '</button>';
   });
   h += '</div>';
+  h += (Field.xcareHtml ? Field.xcareHtml() : '');
   // 2 · clocks
   var tq0 = tqs[0], txa = lastMed(/^TXA/i), lv = c.vitals.length ? c.vitals[c.vitals.length - 1] : null, veh = vehicleOf();
   var tile = function(label, big, sub, cls){ return '<div class="f-clock ' + (cls || '') + '"><small>' + label + '</small><b>' + big + '</b><span>' + sub + '</span></div>'; };
@@ -70,14 +71,6 @@ function html(){
   if (tqs.length){
     h += '<div class="f-tqlist">' + tqs.map(function(q, i){ var nm = W.bodyLabelOut ? W.bodyLabelOut(q.site) : ((W.BODY_LABELS || {})[q.site] || q.site); return '<div class="f-tqrow"><span><b>' + esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(nm) : nm) + '</b><small>' + L('on at ','הונח ב-') + hhmm(q.time) + '</small></span><strong>' + minsAgo(q.time) + ' ' + L('MIN','ד׳') + '</strong></div>'; }).join('') + '</div>';
   }
-  // 4 · MARCH
-  var st = (W.getMarchPStatus ? W.getMarchPStatus() : []), items = Array.isArray(st) ? st : (st.items || []);
-  h += '<div class="f-h">' + L('CHECKLIST (MARCH)','רשימת בדיקה (MARCH)') + '</div><div class="f-march">';
-  MARCH.forEach(function(m, i){
-    var it = items[i] || {}, done = !!it.done;
-    h += '<button class="f-m' + (done ? ' done' : '') + '" onclick="Field.march(\'' + m[1] + '\')"><em>' + m[0] + '</em><b>' + L(m[2], m[3]) + '</b><i>' + (done ? ico('check', 22) + L('DONE','בוצע') : L('TO DO','לביצוע')) + '</i></button>';
-  });
-  h += '</div>';
   // 5 · vitals
   var v = lv || {};
   var num = function(x){ return x == null ? '—' : x; };

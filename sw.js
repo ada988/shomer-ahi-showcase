@@ -1,9 +1,9 @@
 /* Offline shell. Install is tolerant (one missing file never blocks the worker), and files are served
    stale-while-revalidate so a deployed update shows up on the next load instead of staying cached forever. */
-const CACHE = 'shomer-showcase-v6';
+const CACHE = 'shomer-showcase-v7';
 const ASSETS = ['./', 'index.html', 'app.css', 'ui.css', 'form.css', 'disclaimer.css', 'stress.css', 'field.css', 'chrome.css', 'shared/medical-forms.css',
   'shared/core.js', 'shared/icons.js', 'shared/medical-forms.js', 'host.ported.js', 'ui-icons.js', 'i18n-dict.js', 'i18n.js', 'scenario.js',
-  'disclaimer.js', 'bracelet.js', 'enhance.js', 'field.js', 'next.js', 'quick.js', 'evac.js', 'shell.js', 'polish.js', 'tour.js',
+  'disclaimer.js', 'bracelet.js', 'enhance.js', 'field.js', 'next.js', 'quick.js', 'xcare.js', 'swipe.js', 'xcare.css', 'evac.js', 'shell.js', 'polish.js', 'tour.js',
   'vendor/qrcode.min.js', 'vendor/jsQR.min.js', 'shared/logo-shield.svg', 'manifest.webmanifest'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => null)))).then(() => self.skipWaiting()));

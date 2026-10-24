@@ -1,0 +1,40 @@
+/* X-CARE protocol panel. Each letter has its own solid colour; the letter itself is always shown too. */
+.xc-x{--xc:#c9171e}.xc-c{--xc:#b8420a}.xc-a{--xc:#1558b8}.xc-r{--xc:#0b7a5a}.xc-e{--xc:#6d3fc0}.xc-p{--xc:#566420}
+.xc-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.xc-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:68px;padding:6px 8px;border-radius:14px;border:3px solid var(--line);background:var(--c2);color:#fff}
+.xc-tabs b{font-size:18px;font-weight:900;line-height:1.1;text-align:center}
+.xc-tabs small{font-size:16px;font-weight:800;color:var(--t2);letter-spacing:.08em}
+.xc-tabs button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+.xc-tabs button.on small{color:#333}
+.xc-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.xc-g{border-radius:16px;border:4px solid var(--xc);background:var(--c2);overflow:hidden}
+.xc-gh{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:12px;width:100%;min-height:76px;padding:0 14px 0 0;border:0;background:transparent;color:#fff;text-align:start}
+.xc-let{display:grid;place-items:center;align-self:stretch;background:var(--xc);color:#fff;font-size:34px;font-weight:900;line-height:1}
+.xc-p .xc-let{font-size:22px}
+.xc-gt{display:flex;flex-direction:column;gap:2px;padding:8px 0;min-width:0}
+.xc-gt b{font-size:20px;font-weight:900;line-height:1.15}
+.xc-gt small{font-size:16px;color:var(--t2);line-height:1.25}
+.xc-pr{display:flex;align-items:center;gap:6px;font-size:22px;font-weight:900;white-space:nowrap}
+.xc-g.all .xc-pr{color:#5ee08e}
+.xc-g.open .xc-gh{background:var(--xc)}
+.xc-g.open .xc-gt small,.xc-g.open .xc-pr{color:#fff}
+.xc-items{display:flex;flex-direction:column;gap:0}
+.xc-i{display:grid;grid-template-columns:1fr;border-top:2px solid var(--line)}
+.xc-row{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;width:100%;min-height:68px;padding:12px 14px;border:0;background:transparent;color:#fff;text-align:start}
+.xc-box{display:grid;place-items:center;width:44px;height:44px;border-radius:10px;border:4px solid var(--xc);background:#000}
+.xc-i.done .xc-box{background:#1fa35a;border-color:#fff}
+.xc-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.xc-t b{font-size:19px;font-weight:900;line-height:1.2}
+.xc-t small{font-size:16px;color:var(--t2);line-height:1.3}
+.xc-t em{font-style:normal;font-size:16px;font-weight:800;color:#5ee08e}
+.xc-i.done .xc-t b{color:#bfeccf}
+.xc-act{margin:0 14px 12px;min-height:60px;border-radius:12px;border:3px solid #fff;background:var(--xc);color:#fff;font-size:19px;font-weight:900;letter-spacing:.02em}
+.xc-act:active,.xc-row:active,.xc-gh:active{filter:brightness(1.25)}
+
+#tst,.undo-toast,.eta-toast{touch-action:pan-y;cursor:grab}
+.undo-toast span{flex:1}
+
+/* Bottom action bar: three equal-ish stacked buttons, labels never clipped */
+.fs-bar{display:grid!important;grid-template-columns:1fr 1fr 1.4fr;gap:8px!important}
+.fs-bar .xbtn{min-width:0!important;flex-direction:column;gap:0;padding:4px 6px!important;white-space:nowrap}
+.fs-bar .xbtn span{font-size:17px!important;line-height:1.1;overflow:hidden;text-overflow:clip}
