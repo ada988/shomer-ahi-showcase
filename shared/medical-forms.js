@@ -341,7 +341,7 @@ function _hv(x){return x!==null&&x!==undefined&&x!==''&&!(typeof x==='number'&&i
 function _bpOut(v){if(!v)return null;if(_hv(v.bpSys))return v.bpSys+'/'+(_hv(v.bpDia)?v.bpDia:'—');return(_hv(v.bp)&&v.bp!=='-'&&v.bp!=='—/—')?String(v.bp):null;}
 function airwayLabelOut(s){return({clear:'פתוח',compromised:'בסיכון',obstructed:'חסום'})[s]||s||'';}
 function hypoLabelOut(m){return({HPMK:'HPMK — ערכת מניעת היפותרמיה',blanket:'שמיכה'})[m]||m||'';}
-function triageOutName(c){return({red:'אדום — מיידי',yellow:'צהוב — דחוי',green:'ירוק — קל',gray:'אפור — ציפייה',black:'שחור — ללא סימני חיים'})[c]||'לא נקבע';}
+function triageOutName(c){return({red:'אדום — דחוף',yellow:'צהוב — דחוי',green:'ירוק — לא דחוף',gray:'אפור — ממתין',black:'שחור — ללא סימני חיים'})[c]||'לא נקבע';}
 // NATO evacuation categories: Urgent ≤1h, Priority ≤4h, Routine ≤24h.
 function evacOutName(p){return({immediate:'דחוף (עד שעה)',urgent:'בעדיפות (עד 4 שעות)',routine:'שגרתי (עד 24 שעות)',expectant:'ציפייה'})[p]||'';}
 function vitalsOutText(v){
@@ -562,7 +562,7 @@ function exportCasualtyHandoff(){
 }
 function shareCasualtyWhatsApp(){
   const text=encodeURIComponent(generateMISTReport());
-  window.open('https://wa.me/?text='+text,'_blank');
+  window.open('https://wa.me/?text='+text,'_blank','noopener,noreferrer');
 }
 
 // ── RADIO READOUT OVERLAY (full-screen high-contrast display) ──
@@ -600,7 +600,8 @@ function printCasualty(){
   const html=_buildDetailedForm101HTML();
   w.document.write(html);
   w.document.close();
-  setTimeout(()=>w.print(),500);
+  try{w.opener=null;}catch(e){}
+  setTimeout(()=>{try{w.print();}catch(e){}},500);
 }
 function _buildDetailedForm101HTML(){
   const esc=(typeof escapeHtml==='function')?escapeHtml:(s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
@@ -783,7 +784,7 @@ function _buildDetailedForm101HTML(){
     H+=`<table class="data small"><thead><tr><th>זמן</th><th>דופק</th><th>ל״ד</th><th>SpO₂</th><th>RR</th><th>EtCO₂</th><th>טמפ׳</th><th>רדיאלי</th><th>AVPU</th><th>כאב</th></tr></thead><tbody>`;
     vArr.forEach(v=>{
       const bpD=(v.bpSys||v.bpDia)?((v.bpSys||'—')+'/'+(v.bpDia||'—')):(v.bp||'—');
-      H+=`<tr><td>${fmtT(v.time)}</td><td>${_hv(v.pulse)?v.pulse:'—'}</td><td>${bpD}</td><td>${_hv(v.spo2)?v.spo2+'%':'—'}</td><td>${_hv(v.rr)?v.rr:'—'}</td><td>${_hv(v.etco2)?v.etco2:'—'}</td><td>${_hv(v.temp)?v.temp+'°':'—'}</td><td>${v.radialPulse?(v.radialPulse==='absent'?'נעדר':v.radialPulse==='weak'?'חלש':'תקין'):'—'}</td><td>${v.avpu||'—'}</td><td>${v.painScore!=null?v.painScore+'/10':'—'}</td></tr>`;
+      H+=`<tr><td>${fmtT(v.time)}</td><td>${_hv(v.pulse)?v.pulse:'—'}</td><td>${bpD}</td><td>${_hv(v.spo2)?v.spo2+'%':'—'}</td><td>${_hv(v.rr)?v.rr:'—'}</td><td>${_hv(v.etco2)?v.etco2:'—'}</td><td>${_hv(v.temp)?v.temp+'°':'—'}</td><td>${v.radialPulse?(v.radialPulse==='absent'?'נעדר':v.radialPulse==='weak'?'חלש':'תקין'):'—'}</td><td>${esc(v.avpu||'—')}</td><td>${v.painScore!=null?v.painScore+'/10':'—'}</td></tr>`;
     });
     H+=`</tbody></table>`;
   } else H+=`<p class="empty">לא נלקחו מדדים</p>`;
@@ -1107,6 +1108,7 @@ function placeTreatmentOnBody(regionId,type){
   const side=_casualtyView;
   const existing=_casualtyTreatments.findIndex(t=>t.region===regionId&&t.side===side&&t.type===type);
   const iso=new Date().toISOString();
+  pushMedHistory();   // snapshot BEFORE the change (later pushes in this tick are ignored), so UNDO really removes the treatment
   if(existing>=0){
     const removed=_casualtyTreatments.splice(existing,1)[0];
     _removeFromXStep(type,regionId,removed);
@@ -2512,7 +2514,7 @@ function renderTqLongPressMenu(){
   h+=`<div style="font-size:14px;font-weight:800;color:var(--re);margin-bottom:10px">🩸 ח"ע — ${escapeHtml(site)}</div>`;
   h+=`<button onclick="tqContinue(${_tqMenuIdx});_tqCloseMenu()" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--re);background:rgba(231,76,60,.12);color:var(--re);font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px;min-height:44px">🔴 המשך ח"ע</button>`;
   h+=`<button onclick="tqConvert(${_tqMenuIdx});_tqCloseMenu()" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--gr);background:rgba(46,204,113,.12);color:var(--gr);font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:6px;min-height:44px">✓ המר לתחבושת</button>`;
-  h+=`<button onclick="if(confirm('להסיר ח״ע ${escapeHtml(site).replace(/'/g,'\\\'')}?')){_casualtyXABCDE.x.tourniquets.splice(${_tqMenuIdx},1);addTimestampedAction('x','הסרת ח״ע — ${escapeHtml(site).replace(/'/g,'\\\'')}','');MedHost.triggerAutoSave();_tqCloseMenu();}" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--t3);background:rgba(255,255,255,.04);color:var(--t3);font-family:var(--f);font-size:12px;cursor:pointer;min-height:40px">🗑 הסר לחלוטין</button>`;
+  h+=`<button onclick="if(confirm('להסיר ח״ע ${escapeHtml(String(site).replace(/['"\\<>&]/g,''))}?')){_casualtyXABCDE.x.tourniquets.splice(${_tqMenuIdx},1);addTimestampedAction('x','הסרת ח״ע — ${escapeHtml(String(site).replace(/['"\\<>&]/g,''))}','');MedHost.triggerAutoSave();_tqCloseMenu();}" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--t3);background:rgba(255,255,255,.04);color:var(--t3);font-family:var(--f);font-size:12px;cursor:pointer;min-height:40px">🗑 הסר לחלוטין</button>`;
   h+=`<button onclick="_tqCloseMenu()" style="width:100%;padding:10px;margin-top:8px;border-radius:8px;border:none;background:none;color:var(--t4);font-family:var(--f);font-size:11px;cursor:pointer;min-height:36px">ביטול</button>`;
   h+=`</div></div>`;
   return h;
@@ -3192,7 +3194,7 @@ function renderCTab(){
     const bloodProducts=['דם מלא','פלזמה/FFP','כדוריות','טרומבוציטים'];
     const vBlood=Object.entries(totals).filter(([k])=>bloodProducts.includes(k)).reduce((s,[,v])=>s+v,0);
     const vCrystal=Object.entries(totals).filter(([k])=>!bloodProducts.includes(k)).reduce((s,[,v])=>s+v,0);
-    h+=`<div style="font-size:10px;font-weight:700;color:var(--or);margin:4px 0">סה"כ: ${Object.entries(totals).map(([k,v])=>v+'ml '+k).join(' | ')}</div>`;
+    h+=`<div style="font-size:10px;font-weight:700;color:var(--or);margin:4px 0">סה"כ: ${Object.entries(totals).map(([k,v])=>escapeHtml(v+'ml '+k)).join(' | ')}</div>`;
     if(vBlood>0&&vCrystal>0){
       const ratio=(vCrystal/vBlood).toFixed(1);
       const ratioOk=parseFloat(ratio)<=0.5&&vCrystal<1000;
@@ -3271,7 +3273,8 @@ function renderPainProtocolFlow(){
   const lv=(_casualtyVitals||[]).length?_casualtyVitals[_casualtyVitals.length-1]:{};
   const avpuNow=(_casualtyXABCDE?.d?.avpu||'').toUpperCase();
   const opioidBlock=(!!avpuNow&&avpuNow!=='A')||_hasTBI()||(_hv(lv.spo2)&&lv.spo2<90)||(_hv(lv.rr)&&lv.rr<12);
-  const noOpioid=inShock||opioidBlock;
+  // IDF: ketamine 25 mg IV first line; morphine 5 mg IV (2 mg in shock); no Actiq (or other oral-transmucosal opioid) in shock; no opioid at all with altered consciousness, head injury, hypoxia or slow breathing.
+  const noOpioid=opioidBlock, noActiq=inShock||opioidBlock;
   let h='';
   h+=`<div style="background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.3);border-radius:10px;padding:10px 12px;margin-bottom:8px">`;
   h+=`<div style="font-size:12px;font-weight:800;color:var(--bl);margin-bottom:6px">💊 פרוטוקול טיפול בכאב (IDF)</div>`;
@@ -3287,7 +3290,7 @@ function renderPainProtocolFlow(){
     // Severe pain pathway. Branches on IV access; opioid buttons only when they are safe to offer.
     h+=`<div style="font-size:11px;color:var(--t2);margin-bottom:6px;line-height:1.5">כאב ${p}/10 — חזק. ${hasIV?'✓ יש גישה ורידית':'⚠ אין גישה ורידית'}${inShock?' · <b style="color:var(--re-hi)">הלם!</b>':''}</div>`;
     if(inShock){
-      h+=`<div style="background:rgba(231,76,60,.15);border:1.5px solid var(--re);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--re-hi);margin-bottom:6px;line-height:1.5">🚨 הלם — קטמין בלבד; ללא אופיואידים (מורפין / פנטניל / Actiq)</div>`;
+      h+=`<div style="background:rgba(231,76,60,.15);border:1.5px solid var(--re);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--re-hi);margin-bottom:6px;line-height:1.5">🚨 הלם — קטמין קו ראשון; מורפין 2mg בלבד; ללא Actiq / פנטניל</div>`;
     } else if(opioidBlock){
       h+=`<div style="background:rgba(231,76,60,.15);border:1.5px solid var(--re);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--re-hi);margin-bottom:6px;line-height:1.5">🚫 קטמין בלבד — אופיואידים אסורים (הכרה/נשימה)</div>`;
     }
@@ -3295,13 +3298,13 @@ function renderPainProtocolFlow(){
       h+=`<button class="xabcde-btn" style="width:100%;min-height:44px;font-size:12px;border-color:var(--bl);color:var(--bl);margin-bottom:4px" onclick="addMedication('קטמין','25mg','IV')">🧪 קטמין 25mg IV — קו ראשון</button>`;
       if(!noOpioid){
         h+=`<div style="font-size:10px;color:var(--t3);margin:4px 0">אם כעבור 5 דק׳ הכאב עדיין ≥5:</div>`;
-        h+=`<button class="xabcde-btn" style="width:100%;min-height:44px;font-size:12px;border-color:var(--bl);color:var(--bl)" onclick="addMedication('מורפין','5mg','IV')">💉 מורפין 5mg IV</button>`;
+        h+=inShock?`<button class="xabcde-btn" style="width:100%;min-height:44px;font-size:12px;border-color:var(--bl);color:var(--bl)" onclick="addMedication('מורפין','2mg','IV')">💉 מורפין 2mg IV (הלם)</button>`:`<button class="xabcde-btn" style="width:100%;min-height:44px;font-size:12px;border-color:var(--bl);color:var(--bl)" onclick="addMedication('מורפין','5mg','IV')">💉 מורפין 5mg IV</button>`;
       } else {
         h+=`<div style="font-size:10px;color:var(--t3);margin:4px 0">הכאב נמשך: קטמין חוזר לפי חלון המנה (IV כל 20 דק׳)</div>`;
       }
     } else {
       // No IV access path.
-      if(!noOpioid){
+      if(!noActiq){
         h+=`<button class="xabcde-btn" style="width:100%;min-height:44px;font-size:12px;border-color:var(--bl);color:var(--bl);margin-bottom:4px" onclick="addMedication('Actiq OTFC','800mcg','Buccal')">🍭 Actiq OTFC 800mcg בוקאלי</button>`;
         h+=`<div style="font-size:10px;color:var(--t3);margin:4px 0">אם כעבור 15 דק׳ הכאב עדיין ≥5: עד 2 Actiq בסה״כ, ואם עדיין — קטמין או מורפין IM:</div>`;
         h+=`<button class="xabcde-btn" style="width:100%;min-height:44px;font-size:12px;border-color:var(--bl);color:var(--bl);margin-bottom:4px" onclick="addMedication('קטמין','50mg','IM')">🧪 קטמין 50mg IM</button>`;
@@ -3696,7 +3699,7 @@ function renderCasualtyForm(){
       const e=getTqElapsed(tq.time);
       const isAlert=e.alert;
       h+=`<div onmousedown="_tqPressStart(${i})" onmouseup="_tqPressEnd()" onmouseleave="_tqPressEnd()" ontouchstart="_tqPressStart(${i})" ontouchend="_tqPressEnd()" oncontextmenu="event.preventDefault();_tqMenuIdx=${i};MedHost.renderIncidentPage()" style="display:flex;align-items:center;gap:8px;${_casualtyXABCDE.x.tourniquets.length>1?'margin-bottom:4px':''};user-select:none;cursor:pointer" title="לחיצה ארוכה — אפשרויות">`;
-      h+=`<span style="font-size:11px;font-weight:700;color:var(--re)">🔴 ח"ע ${BODY_LABELS[tq.site]||tq.site}</span>`;
+      h+=`<span style="font-size:11px;font-weight:700;color:var(--re)">🔴 ח"ע ${escapeHtml(BODY_LABELS[tq.site]||tq.site)}</span>`;
       h+=`<span style="font-family:monospace;font-size:14px;font-weight:900;color:${isAlert?'#fff':'var(--re)'};${isAlert?'background:#e74c3c;padding:2px 8px;border-radius:6px;animation:pulse 1s infinite':''}"> ${e.str}</span>`;
       if(isAlert)h+=`<button onclick="event.stopPropagation();reevalTourniquet(${i})" style="padding:3px 8px;border-radius:6px;border:1px solid #fff;background:rgba(255,255,255,.2);color:#fff;font-size:8px;font-weight:700;cursor:pointer;font-family:var(--f)">הערכה מחדש</button>`;
       h+=`<span style="font-size:9px;color:var(--t4);margin-inline-start:auto;opacity:.6">⋯ ארוך</span>`;
@@ -3843,7 +3846,7 @@ function renderCasualtyForm(){
     const displayLetter=step.key==='b'?'R':step.key.toUpperCase();
     h+=`<span style="font-size:14px;font-weight:900;color:${hasData||isOpen?step.color:'var(--t4)'};min-width:20px">${displayLetter}</span>`;
     h+=`<span style="font-size:11px;font-weight:600;color:${isOpen?step.color:'var(--t3)'};flex:1">${step.label}</span>`;
-    if(hasData&&!isOpen)h+=`<span style="font-size:9px;color:var(--t3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${summary}</span>`;
+    if(hasData&&!isOpen)h+=`<span style="font-size:9px;color:var(--t3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(summary)}</span>`;
     h+=`<span style="font-size:10px;color:var(--t4)">${isOpen?'▲':'▼'}</span>`;
     if(hasData)h+=`<span style="width:7px;height:7px;border-radius:50%;background:${step.color};flex-shrink:0"></span>`;
     h+=`</div>`;
@@ -4725,7 +4728,7 @@ function renderMCICasualtyCard(c,realIdx,displayNum,expanded){
   // wizard bound to this casualty instead of toggling expand.
   const primaryClick=needsTriage?`openSabcForCasualty('${safeDocId}')`:`toggleMCICardExpand('${safeDocId}')`;
   const cardExtra=needsTriage?'border-top:3px dashed var(--pu) !important;background:rgba(155,89,182,.08)':'';
-  let h=`<div class="mci-card triage-${tc}${isOverdue?' mci-card-alert':''}" role="button" tabindex="0" aria-label="${escapeHtml(ariaLabel)}" aria-expanded="${expanded?'true':'false'}" style="${cardExtra}" onclick="${primaryClick}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${primaryClick};}">`;
+  let h=`<div class="mci-card triage-${String(tc).replace(/[^a-z]/gi,'')}${isOverdue?' mci-card-alert':''}" role="button" tabindex="0" aria-label="${escapeHtml(ariaLabel)}" aria-expanded="${expanded?'true':'false'}" style="${cardExtra}" onclick="${primaryClick}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${primaryClick};}">`;
   // Letter token — for no-triage shows "❓" purple; otherwise colored label.
   const letterBg=needsTriage?'var(--pu)':(TRIAGE_COLORS[tc]||'#888');
   const letterFontSize=needsTriage?'10px':'14px';
@@ -5177,7 +5180,7 @@ function renderRapidTriageWizard(){
     // casualty who turns out to be stable-ambulatory can be assigned
     // without backing out to sort.
     h+='<div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:6px;text-align:center">שלב 2: הערכה</div>';
-    [{c:'red',l:'🔴 מיידי',desc:'נשימה >30 / דופק חלש / לא ממלא פקודות'},{c:'yellow',l:'🟡 דחוי',desc:'מצב יציב / ממלא פקודות / נשימה תקינה'},{c:'green',l:'🟢 קל',desc:'ממלא פקודות, יכול ללכת / ממשיך בכוחות עצמו'},{c:'gray',l:'🔘 ציפייה',desc:'פגיעה לא הישרדותית / משאבים מוגבלים'},{c:'black',l:'⬛ נפטר',desc:'לא נושם גם אחרי פתיחת נתיב אוויר'}].forEach(t=>{
+    [{c:'red',l:'🔴 מיידי',desc:'נשימה >30 / דופק חלש / לא ממלא פקודות'},{c:'yellow',l:'🟡 דחוי',desc:'ממלא פקודות / נשימה תקינה / ללא סימני הלם'},{c:'green',l:'🟢 קל',desc:'ממלא פקודות, יכול ללכת / ממשיך בכוחות עצמו'},{c:'gray',l:'🔘 ציפייה',desc:'פגיעה לא הישרדותית / משאבים מוגבלים'},{c:'black',l:'⬛ נפטר',desc:'לא נושם גם אחרי פתיחת נתיב אוויר'}].forEach(t=>{
       h+=`<button class="trg-btn" onclick="_saltStep='sort';quickTriageCasualty('${t.c}')" style="width:100%;padding:14px;border-radius:12px;border:2.5px solid ${TRIAGE_COLORS[t.c]};background:${TRIAGE_COLORS[t.c]}12;color:${TRIAGE_COLORS[t.c]};cursor:pointer;font-family:var(--f);text-align:center;margin-bottom:6px;min-height:60px;touch-action:manipulation"><div style="font-size:16px;font-weight:900">${t.l}</div><div style="font-size:10px;margin-top:3px;opacity:.8">${t.desc}</div></button>`;
     });
     h+=`<button onclick="_saltStep='sort';MedHost.renderIncidentPage()" style="background:none;border:none;color:var(--t4);font-size:11px;cursor:pointer;font-family:var(--f);display:block;width:100%;text-align:center;margin-top:4px;min-height:36px">← חזור למיון</button>`;

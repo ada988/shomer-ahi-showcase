@@ -71,3 +71,10 @@ W.PWA = {
   if (!/[?&]quick=1/.test(location.search)) return;
   var n = 0, t = setInterval(function(){ if (window.Quick && window._incidentCasualties && window._incidentCasualties.length){ clearInterval(t); setTimeout(function(){ window.Quick.open(); }, 400); } else if (++n > 40) clearInterval(t); }, 150);
 })();
+// A new service worker takes over after a deploy: reload once so old and new files never mix
+(function(){
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  var had = !!navigator.serviceWorker.controller, done = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){ if (!had || done) return; done = true; location.reload(); });
+  navigator.serviceWorker.getRegistration().then(function(r){ if (r) r.update(); }).catch(function(){});
+})();

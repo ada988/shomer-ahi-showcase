@@ -13,3 +13,17 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 .pwa-steps li{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center;font-size:19px;font-weight:700;line-height:1.3}
 .pwa-steps b{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#fff;color:#0b0c0e;font-size:22px;font-weight:900}
 .pwa-ok{width:100%;min-height:68px;font-size:21px}
+
+/* ═══ BOTTOM BAR (BACK / UNDO / HANDOFF): one authoritative rule set, last in the cascade ═══ */
+#incident-content .fs-bar,.fs-bar{position:sticky!important;bottom:0!important;z-index:40!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr)!important;gap:8px!important;align-items:stretch!important;margin:0 -14px!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom))!important;background:var(--bg)!important;border-top:2px solid var(--line)!important}
+.fs-bar .xbtn,.fs-bar button{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;min-width:0!important;min-height:64px!important;height:auto!important;padding:4px 4px!important;margin:0!important;border-radius:14px!important;font-size:16px!important;line-height:1.1!important;white-space:nowrap!important;overflow:hidden}
+.fs-bar .xbtn span,.fs-bar button span{display:block!important;font-size:16px!important;font-weight:900!important;line-height:1.1!important;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.fs-bar .xbtn svg,.fs-bar button svg{width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;flex:none}
+.fs-bar .xbtn-primary{border:3px solid #fff!important}
+.fs-foot{height:24px!important;margin:0!important}
+@media (max-width:340px){.fs-bar{gap:6px!important;padding-inline:6px!important}.fs-bar .xbtn span{font-size:15px!important}}
+#incident-content[data-view=form]{padding-bottom:0!important}
+.xc-tabs small{letter-spacing:.04em!important;white-space:nowrap}
+.ev-road-h,.ev-card-h{flex-wrap:wrap!important;row-gap:8px}
+.ev-road-h b,.ev-card-h b{flex:1 1 auto;min-width:0;white-space:normal}
+.ev-road-h em{flex:none;white-space:nowrap}

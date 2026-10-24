@@ -104,6 +104,12 @@ function draw(t, s){
     + '<div class="tour-nav"><button class="skip" onclick="Tour.stop()">' + L('Skip tour','דלג') + '</button>'
     + (i > 0 ? '<button class="xbtn" onclick="Tour.go(' + (i - 1) + ')">' + L('Back','הקודם') + '</button>' : '')
     + '<button class="xbtn xbtn-primary" onclick="' + (last ? 'Tour.finish()' : 'Tour.go(' + (i + 1) + ')') + '">' + (last ? L('Try it yourself','נסו בעצמכם') : L('Next','הבא')) + '</button></div>';
+  // A tall target must not run underneath the card: trim the highlight to the part that stays visible.
+  if (t && spot.style.display !== 'none'){
+    var a = app().getBoundingClientRect(), cr = card.getBoundingClientRect(), cTop = cr.top - a.top, cBot = cr.bottom - a.top, sTop = parseFloat(spot.style.top), sH = parseFloat(spot.style.height);
+    if (card.style.top === 'auto'){ if (sTop < cTop && sTop + sH > cTop - 8) spot.style.height = Math.max(60, cTop - 8 - sTop) + 'px'; }
+    else if (sTop < cBot + 8 && sTop + sH > cBot + 8){ var nt = cBot + 8; spot.style.top = nt + 'px'; spot.style.height = Math.max(60, sTop + sH - nt) + 'px'; }
+  }
   var nb = card.querySelector('.xbtn-primary'); if (nb) nb.focus({ preventScroll:true });
 }
 function start(){

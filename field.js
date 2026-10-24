@@ -14,6 +14,7 @@ function app(){ return document.getElementById('app'); }
 
 var TRI = [['red','URGENT','דחוף'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['yellow','DELAYED','דחוי'], ['black','DECEASED (DOCTOR)','חלל (רופא)']];
 var EVAC = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant', black:'' };
+if (W.ShowcaseI18n && W.ShowcaseI18n.extend){ var _td = {}; TRI.forEach(function(t){ _td['טריאז׳ — ' + t[2]] = 'Triage — ' + t[1]; }); _td['הלם — קטמין קו ראשון; מורפין 2mg בלבד; ללא Actiq / פנטניל'] = 'Shock: ketamine first line; morphine 2 mg only; no Actiq or fentanyl'; _td['מורפין 2mg IV (הלם)'] = 'Morphine 2 mg IV (shock)'; _td['הערכה חוזרת: ללא החמרה, הולכת'] = 'Reassessment: no deterioration, walking'; _td['אדום — דחוף'] = 'Red — URGENT'; _td['צהוב — דחוי'] = 'Yellow — DELAYED'; _td['ירוק — לא דחוף'] = 'Green — NOT URGENT'; _td['אפור — ממתין'] = 'Gray — WAITING'; _td['שחור — ללא סימני חיים'] = 'Black — NO SIGNS OF LIFE'; W.ShowcaseI18n.extend(_td); }
 var SITES = [['r_upper_arm','RIGHT ARM','יד ימין'], ['l_upper_arm','LEFT ARM','יד שמאל'], ['r_thigh','RIGHT LEG (THIGH)','רגל ימין (ירך)'], ['l_thigh','LEFT LEG (THIGH)','רגל שמאל (ירך)'], ['r_shin','RIGHT LOWER LEG','שוק ימין'], ['l_shin','LEFT LOWER LEG','שוק שמאל']];
 var GIVE = [
   { key:'txa',  drug:'TXA',          dose:'1g',    route:'IV', en:'TXA',        he:'TXA',     sub:'1 g IV',    subHe:'1 גרם IV' },
@@ -117,14 +118,21 @@ var Field = {
   patientHtml: patientHtml,
   patIn: function(k, val){
     var X = W._casualtyXABCDE; if (!X) return; X.e = X.e || {}; var n = parseFloat(val);
+    if (!Field._patPend){ snapshot(); Field._patPend = true; }   // UNDO must return to the value from BEFORE the first keystroke
     if (k === 'age') X.e.ageYears = (!isNaN(n) && n >= 0 && n <= 120) ? Math.floor(n) : null;
     else X.e.weightKg = (!isNaN(n) && n >= 1 && n <= 250) ? n : null;
     W.MedHost.triggerAutoSave();
   },
   patDone: function(k, val){
+    var had = Field._patPend; Field._patPend = false;
+    // The undo step for this edit was taken before the first keystroke; stop the engine adding a second one that already contains the new value.
+    var hold = function(){ W._medPushLock = true; Promise.resolve().then(function(){ W._medPushLock = false; }); };
     var n = parseFloat(val); if (isNaN(n)) return;
-    if (k === 'age'){ if (n < 0 || n > 120){ undoToast(L('Age must be 0 to 120','הגיל חייב להיות 0 עד 120'), null); return; } snapshot(); W._setPatientAge(Math.floor(n)); }
-    else { if (n < 1 || n > 250){ undoToast(L('Weight must be 1 to 250 kg','המשקל חייב להיות 1 עד 250 ק״ג'), null); return; } snapshot(); W._setPatientWeight(n); }
+    var pd = Field._pd = (Field._pd && Field._pd.c === W._casualtyXABCDE) ? Field._pd : { c: W._casualtyXABCDE };
+    if (pd[k] === n) return;   // the same value committed again (blur after change): no empty UNDO step
+    pd[k] = n;
+    if (k === 'age'){ if (n < 0 || n > 120){ undoToast(L('Age must be 0 to 120','הגיל חייב להיות 0 עד 120'), null); return; } if (had) hold(); else snapshot(); W._setPatientAge(Math.floor(n)); }
+    else { if (n < 1 || n > 250){ undoToast(L('Weight must be 1 to 250 kg','המשקל חייב להיות 1 עד 250 ק״ג'), null); return; } if (had) hold(); else snapshot(); W._setPatientWeight(n); }
   },
   setSex: function(s){
     var X = W._casualtyXABCDE; if (!X) return; snapshot(); X.e = X.e || {};
@@ -243,7 +251,7 @@ var Field = {
       + '<div class="kp-step">' + (K.i + 1) + ' / ' + K.f.length + '</div>'
       + '<div class="kp-label">' + L(f.en, f.he) + '</div>'
       + '<div class="kp-val"><b>' + (cur === '' ? '—' : cur) + '</b><span>' + f.unit + '</span></div>'
-      + '<div class="kp-hint' + (K.err ? ' bad' : '') + '" role="status">' + (K.err || L('Allowed: ' + f.min + ' to ' + f.max, 'טווח מותר: ' + f.min + ' עד ' + f.max)) + '</div>'
+      + '<div class="kp-hint' + (K.err ? ' bad' : '') + '" role="status">' + (K.err || L('Allowed: ' + f.min + ' to ' + f.max + (f.k === 'pulse' || f.k === 'rr' ? ', or 0 for none' : ''), 'טווח מותר: ' + f.min + ' עד ' + f.max + (f.k === 'pulse' || f.k === 'rr' ? ', או 0 אם אין' : ''))) + '</div>'
       + '<div class="kp-keys">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.kpKey(\'' + k + '\')">' + (k === 'OK' ? (last ? L('SAVE','שמור') : L('NEXT','הבא')) : (k === '⌫' ? ico('undo-2', 30) : k)) + '</button>'; }).join('') + '</div>'
       + (lastVal(f.k) != null ? '<button class="xbtn kp-same" onclick="Field.kpSame()">' + L('SAME AS LAST: ','כמו הקודם: ') + lastVal(f.k) + '</button>' : '') + '<div class="kp-row"><button class="xbtn" onclick="Field.kpSkip()">' + L('SKIP','דלג') + '</button><button class="xbtn xbtn-primary" onclick="Field.kpSave()">' + L('SAVE NOW','שמור עכשיו') + '</button></div></div>';
   },
@@ -251,6 +259,7 @@ var Field = {
   _kpCheck: function(i){
     var K = Field._k, f = K.f[i], v = K.v[f.k]; if (v === '') return '';
     var n = parseInt(v, 10);
+    if (n === 0 && (f.k === 'pulse' || f.k === 'rr')) return '';   // 0 = no pulse / not breathing: a real finding that must be recordable
     if (n < f.min || n > f.max) return L('Not possible. Allowed: ' + f.min + ' to ' + f.max, 'לא אפשרי. טווח מותר: ' + f.min + ' עד ' + f.max);
     if (f.k === 'bpDia' && K.v.bpSys !== '' && n >= parseInt(K.v.bpSys, 10)) return L('Bottom number must be lower than the top number', 'המספר התחתון חייב להיות נמוך מהעליון');
     if (f.k === 'bpSys' && K.v.bpDia !== '' && n <= parseInt(K.v.bpDia, 10)) return L('Top number must be higher than the bottom number', 'המספר העליון חייב להיות גבוה מהתחתון');
@@ -260,7 +269,7 @@ var Field = {
     var K = Field._k; if (!K) return; var f = K.f[K.i]; K.err = '';
     if (k === '⌫'){ K.v[f.k] = K.v[f.k].slice(0, -1); }
     else if (k === 'OK'){ K.err = Field._kpCheck(K.i); if (K.err){ if (navigator.vibrate) navigator.vibrate([30, 40, 30]); return Field._kpDraw(); } if (K.i === K.f.length - 1) return Field.kpSave(); K.i++; }
-    else { var nv = (K.v[f.k] + k).slice(0, 3); if (parseInt(nv, 10) <= f.max) K.v[f.k] = nv; }
+    else { var nv = ((K.v[f.k] === '0' ? '' : K.v[f.k]) + k).slice(0, 3); if (parseInt(nv, 10) <= f.max) K.v[f.k] = nv; }
     if (navigator.vibrate) navigator.vibrate(8);
     Field._kpDraw();
   },

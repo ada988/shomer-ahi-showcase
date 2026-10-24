@@ -23,14 +23,22 @@ var STEPS = {
   limb:   { q:['Injury that threatens life or limb? Penetrating head, neck, chest, belly or groin; penetrating eye; a tourniquet on a limb.','פציעה שמסכנת חיים או איבר? חדירה בראש, בצוואר, בחזה, בבטן או במפשעה; פגיעה חודרת בעין; חוסם עורקים על גפה.'], yes:['red', ['URGENT: injury threatens life or limb.','דחוף: פציעה מסכנת חיים או איבר.']], no:['green', ['NOT URGENT for now. Walking casualties are not automatically safe: check them like everyone else.','לא דחוף כרגע. גם הולכים לא בטוחים אוטומטית: בדקו אותם כמו כולם.']], yesL:['YES','כן'], noL:['NO','לא'] }
 };
 var S = null;   // {step, history:[], result:null}
+// The record's timeline text is stored in Hebrew (the engine's source language) and translated on display.
+(function(){
+  var d = {}, ks = Object.keys(STEPS);
+  ks.forEach(function(k){ [STEPS[k].yes, STEPS[k].no].forEach(function(n){ if (n && typeof n !== 'string') d['מיון מהיר — ' + n[1][1]] = 'Quick triage — ' + n[1][0]; }); });
+  d['מיון מהיר — דחוף: דימום מסכן חיים (נעצר). דימום שנעצר בחוסם עורקים נשאר דחוף.'] = 'Quick triage — URGENT: life-threatening bleeding (stopped). A bleed controlled with a tourniquet stays urgent.';
+  d['מיון מהיר — נקבע על ידי המטפל'] = 'Quick triage — Set by the medic';
+  if (W.ShowcaseI18n && W.ShowcaseI18n.extend) W.ShowcaseI18n.extend(d);
+})();
 
 function counts(){ var c = { red:0, yellow:0, green:0, gray:0, black:0 }; (W._incidentCasualties || []).forEach(function(x){ if (c[x.triageColor] != null) c[x.triageColor]++; }); return c; }
 function countBar(){
   var c = counts();
-  return '<div class="qt-count">' + ['red','green','gray'].map(function(k){ var t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 20) + '<b>' + c[k] + '</b></span>'; }).join('') + '</div>';
+  return '<div class="qt-count">' + ['red','green','gray'].map(function(k){ var t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 24) + '<b>' + c[k] + '</b><em>' + W.TriageUI.word(k) + '</em></span>'; }).join('') + '</div>';
 }
 function head(){
-  return '<div class="qt-top"><button class="xbtn" onclick="Quick.close()">' + ico('x', 26) + L('CLOSE','סגור') + '</button><div class="qt-title"><b>' + L('QUICK TRIAGE','מיון מהיר') + '</b><small>' + L('Many casualties — seconds each','נפגעים רבים — שניות לכל אחד') + '</small></div></div>' + countBar();
+  return '<div class="qt-top"><button class="xbtn" onclick="Quick.close()">' + ico('x', 26) + L('CLOSE','סגור') + '</button><div class="qt-title"><b>' + L('QUICK TRIAGE','מיון מהיר') + '</b><small>' + L('Many casualties — seconds each','נפגעים רבים — שניות לכל אחד') + '</small></div><button class="beta-pill" onclick="Disclaimer.open()" aria-label="' + L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים') + '"><b>' + L('BETA','בטא') + '</b><span>' + L('DEMO ONLY','דמו בלבד') + '</span></button></div>' + countBar();
 }
 function body(){
   if (S.result){
@@ -38,12 +46,12 @@ function body(){
     return '<div class="qt-res t-' + r.color + '">' + W.TriageUI.shapeSvg(t.shape, 64) + '<b>' + W.TriageUI.word(r.color) + '</b><span>' + esc(L(r.reason[0], r.reason[1])) + '</span></div>'
       + '<button class="xbtn xbtn-primary qt-next" onclick="Quick.save(false)">' + ico('check', 28) + L('SAVE AND NEXT CASUALTY','שמור ונפגע הבא') + '</button>'
       + '<div class="btn-row"><button class="xbtn" onclick="Quick.save(true)">' + ico('file-text', 26) + L('SAVE + OPEN FULL FORM 101','שמור + פתח טופס 101 מלא') + '</button><button class="xbtn" onclick="Quick.change()">' + L('CHANGE GROUP','שנה קבוצה') + '</button></div>'
-      + '<button class="xbtn qt-back" onclick="Quick.back()">' + ico('arrow-left', 26) + L('BACK','חזרה') + '</button>';
+      + '<button class="xbtn qt-back" onclick="Quick.back()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 26) + L('BACK','חזרה') + '</button>';
   }
   var st = STEPS[S.step];
   return '<div class="qt-step"><small>' + L('QUESTION ','שאלה ') + (S.history.length + 1) + '</small><h2>' + L(st.q[0], st.q[1]) + '</h2></div>'
     + '<div class="qt-yn"><button class="yes" onclick="Quick.answer(true)">' + L(st.yesL[0], st.yesL[1]) + '</button><button class="no" onclick="Quick.answer(false)">' + L(st.noL[0], st.noL[1]) + '</button></div>'
-    + (S.history.length ? '<button class="xbtn qt-back" onclick="Quick.back()">' + ico('arrow-left', 26) + L('BACK','חזרה') + '</button>' : '')
+    + (S.history.length ? '<button class="xbtn qt-back" onclick="Quick.back()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 26) + L('BACK','חזרה') + '</button>' : '')
     + '<p class="qt-note">' + L('Every casualty gets a colour in under a minute. During triage stop only life-threatening bleeding and open the airway. Number every casualty. Walking casualties are triaged too.','כל נפגע מקבל צבע בפחות מדקה. בזמן המיון עוצרים רק דימום מסכן חיים ופותחים נתיב אוויר. ממספרים כל נפגע. גם ההולכים עוברים מיון.') + '</p>'
     + '<div class="qt-rep"><b>' + L('REPORT','דיווח') + '</b><span>' + L('Total ','סה״כ ') + (function(){ var c = counts(); return (c.red + c.yellow + c.green + c.gray + c.black) + ' — ' + (c.red + c.yellow) + L(' urgent, ',' דחופים, ') + (c.green) + L(' not urgent, ',' לא דחופים, ') + (c.gray + c.black) + L(' waiting',' ממתינים'); })() + '</span></div>';
 }
@@ -59,6 +67,7 @@ var Quick = {
     var el = document.createElement('div'); el.id = 'qt'; el.className = 'qt no-polish'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', L('Quick triage','מיון מהיר'));
     el.innerHTML = '<div class="qt-inner"></div>'; app().appendChild(el); draw();
   },
+  relang: function(){ var el = document.getElementById('qt'); if (!el || !S) return; el.setAttribute('aria-label', L('Quick triage','מיון מהיר')); draw(); },
   close: function(){ var e = document.getElementById('qt'); if (e) e.remove(); S = null; if (W.renderIncidentPage) W.renderIncidentPage(); },
   answer: function(yes){
     var st = STEPS[S.step], nxt = yes ? st.yes : st.no;
@@ -82,16 +91,16 @@ var Quick = {
   save: function(openFull){
     if (!S || !S.result) return;
     var now = new Date(), iso = now.toISOString(), color = S.result.color, reason = S.result.reason;
-    var n = (W._incidentCasualties || []).filter(function(c){ return c.formLevel === 'quick'; }).length + 1;
+    var n = (W._incidentCasualties || []).reduce(function(m, c){ var q = /(?:Casualty|נפגע) Q(\d+)$/.exec(c.name || ''); return q ? Math.max(m, +q[1]) : m; }, 0) + 1;   // next free number: stays unique even after a quick record became a full form
     var id = 'cas_' + Date.now().toString(36) + '_q', ex = function(){ return { x:{tourniquets:[],pressureDressings:[],hemostatic:[],woundPacking:[]}, a:{status:'',interventions:[]}, b:{respiratoryRate:null,tubeThora:null,oxygen:null}, c:{pulseCharacter:'',capRefill:null,ivAccess:[],fluids:[]}, d:{avpu:'',gcs:null,pupils:{left:{size:null,reactive:null},right:{size:null,reactive:null}},motorFunction:{}}, e:{hypothermiaPrevention:'',medications:[],notes:''} }; };
-    var rec = { _docId:id, id:id, name:L('Casualty Q' + n, 'נפגע Q' + n), idNumber:'', triageColor:color, formLevel:'quick', moi:'', injuredRegions:[], injuries:[], treatments:[], xabcde:ex(), evacPriority:EVAC[color] || '', painScore:null,
+    var rec = { _docId:id, id:id, name:'נפגע Q' + n, idNumber:'', triageColor:color, formLevel:'quick', moi:'', injuredRegions:[], injuries:[], treatments:[], xabcde:ex(), evacPriority:EVAC[color] || '', painScore:null,
       vitalsHistory:[], timeline:[{ time:iso, category:'triage', action:'מיון מהיר — ' + reason[1], details:'' }], secondarySurvey:{ headToToe:{}, o2Flow:null, tqReeval:[], structured:{} }, examsHistory:[],
       reportedBy:'demo', reportedByName:'חובש דמו', timestamp:{ toDate:function(){ return now; } } };
     rec.bracelet = { serial: W.Bracelet.serialFor(rec) };
     W._upsertOfflineCasualty(rec);
     if (openFull){ Quick.close(); W._incidentTab = 'casualties'; setTimeout(function(){ W.editCasualtyById(id); }, 60); return; }
     S = { step:'bleed', history:[], result:null, flags:{} }; draw();
-    if (W.Field && W.Field.toast) W.Field.toast(L(rec.name + ' saved as ' + W.TriageUI.word(color), rec.name + ' נשמר כ-' + W.TriageUI.word(color)), null);
+    if (W.Field && W.Field.toast) { var nm = W.ShowcaseI18n ? W.ShowcaseI18n.tr(rec.name) : rec.name; W.Field.toast(L(nm + ' saved as ' + W.TriageUI.word(color), nm + ' נשמר כ-' + W.TriageUI.word(color)), null); }
   }
 };
 W.Quick = Quick;

@@ -224,7 +224,7 @@ svg.ui-i{min-width:24px;min-height:24px}
 
 .mci-banner{grid-template-columns:repeat(auto-fit,minmax(104px,1fr))!important}
 .ev-presets{grid-template-columns:repeat(auto-fit,minmax(56px,1fr))!important}
-@media (max-width:360px){.f-march{grid-template-columns:1fr}.f-tri{grid-template-columns:1fr}.f-clocks,.f-vit,.f-give{grid-template-columns:1fr}}
+@media (max-width:360px){.f-march{grid-template-columns:1fr}.f-clocks,.f-vit,.f-give{grid-template-columns:1fr}}
 
 .eta-toast{position:absolute;left:12px;right:12px;top:140px;z-index:100060;min-height:64px;padding:12px 16px;border-radius:16px;border:4px solid #fff;background:#6b4a00;color:#fff;font-size:20px;font-weight:900;text-align:start}
 .f-warn{border:3px solid #ffb020;border-radius:14px;padding:12px 14px;background:rgba(255,176,32,.12);color:#fff}
@@ -232,3 +232,17 @@ svg.ui-i{min-width:24px;min-height:24px}
 #f-sheet .xbtn-primary{width:100%;margin-top:10px;min-height:64px}
 .kp-hint{min-height:24px;margin:4px 2px 6px;font-size:16px;font-weight:800;color:var(--t2);line-height:1.25}
 .kp-hint.bad{color:#fff;background:#b3121a;border-radius:10px;padding:4px 10px}
+
+/* QA: WAITING (gray) tile on Home so tile counts add up to the list; odd last tile spans the row */
+.ov-tile.t-gray{background:var(--t-gray)!important;color:#111}.ov-tile.t-gray span,.ov-tile.t-gray b{color:#111!important}
+.ov-tiles .ov-tile:last-child:nth-child(odd){grid-column:1/-1}
+
+/* QA: a very long unbroken name wraps inside the identity strip instead of widening the page */
+.f-id{min-width:0}.f-id-t,.f-id-t em{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.pl-main b,.bt-name,.ev-pt b,.tp-pn b,.sheet-row b{overflow-wrap:anywhere}
+.mci-card,.mci-card-row{min-width:0;max-width:100%}.mci-card-row>span:first-child{min-width:0!important;overflow-wrap:anywhere!important}
+.b-next,.b-next *{overflow-wrap:anywhere;min-width:0}.cc-name,.cc-id,.ccard{overflow-wrap:anywhere;min-width:0}
+/* QA: text floor 16px on the radio warning, scanner message and bracelet QR hint */
+.overlay-warn,.bs-msg,.bo-bigqr p{font-size:16px!important;line-height:1.3}
+.bs-samples{grid-template-columns:minmax(0,1fr)}.bs-sample{min-width:0;max-width:100%}
+.bs-manual{min-width:0}.bs-manual input{min-width:0;width:100%}.bs-manual .xbtn{flex:none}

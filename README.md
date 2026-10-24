@@ -46,7 +46,15 @@ Deep links: `?tab=mci|casualties|bracelets`, `?tour=1`. A scanned bracelet opens
 | `shared/` | **Copy** of the engine with medical fixes. It has diverged from `../shared/` |
 | `host.ported.js` | Generated from `beta/app.js` by `tools/port.sh` |
 | `vendor/`, `ui-icons.js` | qrcode-generator (MIT), jsQR (Apache-2.0); Lucide icons (ISC) |
-| `sw.js`, `manifest.webmanifest`, `vercel.json` | Offline cache, install metadata, security headers |
+| `sw.js`, `manifest.webmanifest`, `vercel.json`, `boot.js` | Offline cache, install metadata, security headers, boot and error safety net |
+
+## Security and privacy
+- **No data leaves the device.** No analytics, no remote scripts, fonts are self-hosted (`fonts/`, SIL OFL), nothing is sent anywhere. The only outbound link is the user-tapped WhatsApp share (`wa.me`, opened with `noopener,noreferrer`). Browser voice dictation is disabled because browsers stream the audio to a cloud service.
+- **Content-Security-Policy** is set as a `<meta>` in `index.html` (GitHub Pages cannot send headers) and as real headers in `vercel.json`. `frame-ancestors`, HSTS, COOP/CORP and `X-Frame-Options` only work as headers; on GitHub Pages they cannot be set.
+- **Residual risk:** the engine uses inline `onclick` handlers, so `script-src-attr` and `style-src` must keep `'unsafe-inline'`. Inline `<script>` elements, remote scripts, frames, objects and `<base>` are blocked.
+- **Wristband links and QR codes are untrusted input.** `bracelet.js` caps size (6000 chars), accepts only the base64url alphabet, and runs every decoded field through a strict schema (`csnap`: enums, bounded numbers, bounded and sanitised strings). A card decoded from a link or QR is labelled UNVERIFIED and is never saved to the casualty list. The QR data is not encrypted or signed.
+- **Vendor integrity (SHA-256):** `vendor/qrcode.min.js` 164fc2c1c9eaf0a03aa8dfdb855e82e41a5c6922fbad8bb3238116207e26bef7, `vendor/jsQR.min.js` bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859. Both are served from the same origin.
+- **Service worker** caches only same-origin, complete (200, basic) GET responses without a query string; errors and opaque responses are never cached.
 
 ## Gotchas
 Class names `.ic .cc .btn .seg .dot .skip` collide with the engine CSS; the showcase uses `.ui-i .ccard .xbtn .lang-seg .sdot .skip-link`. The engine keys on Hebrew text, so new UI strings use `L(en, he)`.

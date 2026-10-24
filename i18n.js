@@ -7,7 +7,7 @@
 var HE = /[֐-׿]/;
 var HE_RUN = /[֐-׿][֐-׿0-9A-Za-z .,'"׳״\-–—:;!?()\/%+·•…|=→←↑↓×]*/g;
 var lang = 'en';
-try { lang = localStorage.getItem('sc_lang') || 'en'; } catch(e){}
+try { lang = localStorage.getItem('sc_lang') === 'he' ? 'he' : 'en'; } catch(e){}   // only the two known languages are accepted from storage
 
 var dict = null, rx = null;
 function build(){
@@ -32,8 +32,23 @@ var HE_FIX = { 'hemorrhage':'דימום', 'penetrating':'חודר', 'fracture':'
 function exact(s){
   if (lang === 'he'){ var th = String(s).trim(); if (HE_FIX[th]) return s.replace(th, HE_FIX[th]); return s; } var t = String(s).trim(); return EXACT[t] ? s.replace(t, EXACT[t]) : s; }
 var ATTRS = ['placeholder','title','aria-label','alt'];
+// Hebrew mode: the engine still emits a few raw English keys (injury / treatment type ids, one alert title). Map them for display.
+var HE_WORDS = { 'penetrating':'חודר', 'hemorrhage':'דימום', 'fracture':'שבר', 'burn':'כוויה', 'bandage':'חבישה', 'tourniquet':'חוסם עורקים', 'pressureDressing':'תחבושת לחץ', 'hemostatic':'המוסטטי', 'tubeThora':'נקז חזה', 'splint':'קיבוע שבר', 'pelvicBinder':'מקבע אגן', 'woundPacking':'אריזת פצע', 'chestSeal':'אטם חזה', 'Lethal Triad':'שלישיית המוות', 'greater trochanter':'הטרוכנטר הגדול', 'Temp':'חום' };
+var HE_WORD_RX = /(?<![A-Za-z])(?:penetrating|hemorrhage|fracture|burn|bandage|tourniquet|pressureDressing|hemostatic|tubeThora|splint|pelvicBinder|woundPacking|chestSeal|Lethal Triad|greater trochanter|Temp)(?![A-Za-z])/g;
+function heFix(str){ return str.replace(HE_WORD_RX, function(m){ return HE_WORDS[m]; }); }
+function walkHe(root){
+  if (root.nodeType === 3){ if (/[A-Za-z]/.test(root.nodeValue) && !(root.parentElement && /^(SCRIPT|STYLE|TEXTAREA)$/.test(root.parentElement.tagName))){ var t = heFix(root.nodeValue); if (t !== root.nodeValue) root.nodeValue = t; } return; }
+  if (root.nodeType !== 1 || /^(SCRIPT|STYLE)$/.test(root.tagName)) return;
+  var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT), n = root, nodes = [];
+  do { nodes.push(n); } while ((n = tw.nextNode()));
+  nodes.forEach(function(x){
+    if (x.nodeType === 3){ if (/[A-Za-z]/.test(x.nodeValue) && !(x.parentElement && /^(SCRIPT|STYLE|TEXTAREA)$/.test(x.parentElement.tagName))){ var t = heFix(x.nodeValue); if (t !== x.nodeValue) x.nodeValue = t; } }
+    else if (x.getAttribute){ ['title','aria-label'].forEach(function(a){ var v = x.getAttribute(a); if (v && /[A-Za-z]/.test(v)){ var t = heFix(v); if (t !== v) x.setAttribute(a, t); } }); }
+  });
+}
 function walk(root){
-  if (lang !== 'en' || !root) return;
+  if (!root) return;
+  if (lang !== 'en') return walkHe(root);
   if (root.nodeType === 3){ if (HE.test(root.nodeValue)) root.nodeValue = tr(root.nodeValue); return; }
   if (root.nodeType !== 1) return;
   var tag = root.tagName;
@@ -70,7 +85,6 @@ function walk(root){
 var mo = null;
 function observe(){
   if (mo) mo.disconnect();
-  if (lang !== 'en') return;
   mo = new MutationObserver(function(list){
     mo.disconnect();
     list.forEach(function(m){
@@ -131,13 +145,17 @@ function setLang(l){
   });
   document.querySelectorAll('.lang-seg button').forEach(function(b){ b.classList.toggle('on', b.dataset.lang === l); });
   observe();
-  if (window.Demo && window.Demo.closeOverlays) window.Demo.closeOverlays();
+  if (window.Demo && window.Demo.closeOverlays) window.Demo.closeOverlays(true);   // sheets close; quick triage and the bracelet screens are redrawn in place
   if (window.renderIncidentPage) window.renderIncidentPage();
+  if (window.Quick && window.Quick.relang) window.Quick.relang();
+  if (window.Bracelet && window.Bracelet.relang) window.Bracelet.relang();
   if (window.Tour && window.Tour.active && window.Tour.active()) window.Tour.redraw();
   if (window.Disclaimer && document.querySelector('.dn')) window.Disclaimer.relang();
 }
 
 window.ShowcaseI18n = { tr: tr, apply: walk, setLang: setLang, get lang(){ return lang; },
+  /* Modules add their own Hebrew -> English phrases here (whole phrases win over the word-level entries). */
+  extend: function(o){ window.SHOWCASE_DICT = Object.assign(window.SHOWCASE_DICT || {}, o); rx = null; },
   /* Developer aid: list Hebrew runs on screen that have no translation yet. */
   missing: function(root){
     var out = {}, r = root || document.body;

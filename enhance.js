@@ -146,6 +146,12 @@ function flattenVitals(root){
 
 // ── Triage board ───────────────────────────────────────────────
 function enhanceBoard(c){
+  // Quick-triage records carry a QUICK badge on the command board too (same as the casualty list).
+  [].slice.call(c.querySelectorAll('.mci-card')).forEach(function(card){
+    var m = /toggleMCICardExpand\('([^']+)'\)/.exec(card.getAttribute('onclick') || ''), rec = m && (W._incidentCasualties || []).filter(function(x){ return x._docId === m[1]; })[0];
+    var row = card.querySelector('.mci-card-row');
+    if (rec && rec.formLevel === 'quick' && row && !row.querySelector('.lvl')) row.insertAdjacentHTML('afterend', '<span class="lvl quick">' + ico('zap', 20) + L('QUICK TRIAGE','מיון מהיר') + '</span>');
+  });
   kids(c).forEach(function(k){
     var s = styleOf(k), t = txt(k);
     if (/position:sticky/.test(s)) k.classList.add('b-modes');

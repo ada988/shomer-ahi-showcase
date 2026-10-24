@@ -1,6 +1,6 @@
 /* X-CARE: the unified single-casualty protocol, built into the form.
    PRIMARY SURVEY   X (extract / stop massive bleeding) · C · A · R · E
-   SECONDARY SURVEY C · A · R · E · PFC (prolonged field care)
+   SECONDARY SURVEY C·A·R·E·PFC (prolonged field care)
    Each step is a big row: tap the row to mark it done (time is stored), tap the action button to do it.
    Steps that the record already proves (a tourniquet exists, BP was measured…) tick themselves. */
 (function(){
@@ -83,6 +83,11 @@ var SECONDARY = [
   ]}
 ];
 
+(function(){
+  var d = {};
+  PRIMARY.concat(SECONDARY).forEach(function(g){ g.items.forEach(function(it){ d['X-CARE: ' + it[2]] = 'X-CARE: ' + it[1]; }); });
+  if (W.ShowcaseI18n && W.ShowcaseI18n.extend) W.ShowcaseI18n.extend(d);
+})();
 Field._xs = 'primary'; Field._xo = {};
 function done(it){ var m = (X().xcare || {})[it[0]]; if (m) return m; return it[8] && it[8]() ? true : false; }
 
@@ -119,8 +124,8 @@ Field.xcareGroups = groupsHtml;
 Field.xcareHtml = function(){
   var sec = Field._xs === 'secondary';
   var tabs = '<div class="xc-tabs" role="tablist">'
-    + '<button role="tab" aria-selected="' + !sec + '" class="' + (!sec ? 'on' : '') + '" onclick="Field.xcStage(\'primary\')"><b>' + L('PRIMARY SURVEY','סקר ראשוני') + '</b><small>X · C · A · R · E</small></button>'
-    + '<button role="tab" aria-selected="' + sec + '" class="' + (sec ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C · A · R · E · PFC</small></button></div>';
+    + '<button role="tab" aria-selected="' + !sec + '" class="' + (!sec ? 'on' : '') + '" onclick="Field.xcStage(\'primary\')"><b>' + L('PRIMARY SURVEY','סקר ראשוני') + '</b><small>X·C·A·R·E</small></button>'
+    + '<button role="tab" aria-selected="' + sec + '" class="' + (sec ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C·A·R·E·PFC</small></button></div>';
   return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + groupsHtml(sec);
 };
 Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; Field._xfo = {}; W.MedHost.renderIncidentPage(); };
@@ -135,7 +140,7 @@ Field.xcToggle = function(k){
   if (Xo.xcare[k]) delete Xo.xcare[k];
   else {
     Xo.xcare[k] = new Date().toISOString();
-    if (it && W.addTimestampedAction) W.addTimestampedAction(k.charAt(0) === 'p' && /_x/.test(k) ? 'x' : /_c/.test(k) ? 'c' : /_a/.test(k) ? 'a' : /_r/.test(k) ? 'b' : 'e', 'X-CARE: ' + L(it[1], it[2]), '');
+    if (it && W.addTimestampedAction) W.addTimestampedAction(k.charAt(0) === 'p' && /_x/.test(k) ? 'x' : /_c/.test(k) ? 'c' : /_a/.test(k) ? 'a' : /_r/.test(k) ? 'b' : 'e', 'X-CARE: ' + it[2], '');   // stored in Hebrew, translated on display (see the dictionary below)
   }
   W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage();
 };

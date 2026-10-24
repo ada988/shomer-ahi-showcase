@@ -13,17 +13,18 @@ function L(en, he){ return lang() === 'he' ? he : en; }
 function T(s){ return (W.ShowcaseI18n && s != null) ? W.ShowcaseI18n.tr(s) : s; }
 function esc(s){ return W.escapeHtml ? W.escapeHtml(s) : String(s == null ? '' : s); }
 function ico(n, s, c){ return W.Icon ? W.Icon(n, s, c) : ''; }
-function hhmm(sec){ var d = new Date(sec * 1000); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function hhmm(sec){ if (sec == null || !isFinite(sec)) return '--:--'; var d = new Date(sec * 1000); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 function ago(sec){ var m = Math.max(0, Math.round((Date.now()/1000 - sec) / 60)); if (m < 1) return L('just now','זה עתה'); if (m < 60) return m + L(' min ago',' ד׳ לפני'); return Math.floor(m/60) + L(' h ',' ש׳ ') + (m%60) + L(' min ago',' ד׳ לפני'); }
 
 var TRIAGE = {
-  red:    { c:'#d7191c', en:'URGENT', he:'דחוף', code:'T1', sh:'oct', tx:'#fff' },
+  red:    { c:'#cc1820', en:'URGENT', he:'דחוף', code:'T1', sh:'oct', tx:'#fff' },
   yellow: { c:'#f5b82e', en:'DELAYED', he:'דחוי', code:'T2', sh:'tri', tx:'#111' },
   green:  { c:'#19a463', en:'NOT URGENT', he:'לא דחוף', code:'T3', sh:'circ', tx:'#fff' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', code:'T4', sh:'hex', tx:'#111' },
   black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים', code:'T0', sh:'sqx', tx:'#fff' }
 };
-function triageOf(t){ return TRIAGE[t] || { c:'#6b7078', en:'NOT TRIAGED', he:'טרם סווג', code:'—', sh:'circ', tx:'#fff' }; }
+function own(o, k){ return Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined; }
+function triageOf(t){ return own(TRIAGE, t) || { c:'#6b7078', en:'NOT TRIAGED', he:'טרם סווג', code:'—', sh:'circ', tx:'#fff' }; }
 
 // ── Serial assignment ──────────────────────────────────────────
 function serialFor(c){
@@ -160,14 +161,61 @@ function unpackV1(a){
     md:(a[26] || []).map(function(m){ return [at(M, m[0]), m[1], m[2], ab(m[3])]; }), sx:'', al:'', np:0, lo:'', ti:null, pg:null, gd:null, pu:[null, null], bv:null, nd:null, pb:null, bt:[], ep:'', ps:null, nl:null, o2:null, an:'' };
 }
 function encodeSnap(s){ return b64u(JSON.stringify(pack(s))); }
-function decodeSnap(txt){ var a = JSON.parse(unb64u(txt)); return Array.isArray(a) ? unpack(a) : a; }
+// ── Untrusted-input hardening ───────────────────────────────────
+// A wristband link or QR is attacker-controlled. Everything decoded from it is clamped to a strict schema before it reaches
+// the card renderer: whitelisted enums, bounded numbers, bounded strings (control / bidi characters stripped), bounded lists.
+var MAX_PAYLOAD = 6000, MAX_JSON = 16000, BAD_CH = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/g;
+function cstr(x, max){ if (typeof x === 'number' && isFinite(x)) x = String(x); return typeof x === 'string' ? x.replace(BAD_CH, '').slice(0, max) : ''; }
+function cnum(x, lo, hi){ if (typeof x === 'string' && /^-?\d+(\.\d+)?$/.test(x)) x = +x; return (typeof x === 'number' && isFinite(x) && x >= lo && x <= hi) ? x : null; }
+function cenum(x, list){ return (typeof x === 'string' && list.indexOf(x) >= 0) ? x : ''; }
+function carr(x, max){ return Array.isArray(x) ? x.slice(0, max) : []; }
+function ctime(x){ return cnum(x, 0, 4102444800); }
+function clist(x, max){ return carr(x, max).map(function(r){ r = Array.isArray(r) ? r : []; return [cstr(r[0], 24), ctime(r[1])]; }); }
+function csnap(d){
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
+  var serial = cstr(d.s, 7).toUpperCase(); if (!/^[A-Z0-9]{3}-[A-Z0-9]{3}$/.test(serial)) return null;
+  var v = carr(d.v, 9), aw = Array.isArray(d.aw) ? d.aw : ['', []], gd = Array.isArray(d.gd) ? d.gd : null, pu = carr(d.pu, 2);
+  var pupil = function(p){ return Array.isArray(p) ? [cnum(p[0], 0, 12), (p[1] === 1 || p[1] === 0) ? p[1] : null] : null; };
+  var side = function(o){ return Array.isArray(o) ? [cstr(o[0], 2), ctime(o[1])] : null; };
+  var tt = Array.isArray(d.tt) ? side(d.tt) : (d.tt ? ['', null] : null);
+  return {
+    _u: 1, s: serial, n: cstr(d.n, 60), t: cenum(d.t, TRI_IDS), m: cstr(d.m, 30), p: cenum(d.p, EVAC_IDS),
+    ag: cnum(d.ag, 0, 150), wt: cnum(d.wt, 0, 400), g: cnum(d.g, 3, 15), av: cstr(d.av, 8),
+    aw: [cstr(aw[0], 20), carr(aw[1], 8).map(function(i){ return cstr(i, 40); })],
+    ox: d.ox ? 1 : 0, hy: cstr(d.hy, 40), pc: cstr(d.pc, 20), cr: cnum(d.cr, 0, 30),
+    v: [cnum(v[0], 0, 400), cnum(v[1], 0, 400), cnum(v[2], 0, 400), cnum(v[3], 0, 100), cnum(v[4], 0, 120), cnum(v[5], 15, 50), ctime(v[6]), cnum(v[7], 0, 150), cstr(v[8], 20)],
+    t0: ctime(d.t0) || 0, sx: cstr(d.sx, 8), al: cstr(d.al, 80), np: d.np ? 1 : 0, lo: cstr(d.lo, 40), ti: ctime(d.ti),
+    pg: (d.pg === 1 || d.pg === 0) ? d.pg : null,
+    gd: gd ? [cnum(gd[0], 1, 4), cnum(gd[1], 1, 5), cnum(gd[2], 1, 6)] : null, pu: [pupil(pu[0]), pupil(pu[1])],
+    bv: ctime(d.bv), nd: side(d.nd), pb: ctime(d.pb), tt: tt,
+    bt: carr(d.bt, 20).map(function(b){ b = Array.isArray(b) ? b : []; return [cstr(b[0], 20), cstr(b[1], 24), ctime(b[2])]; }),
+    ep: cstr(d.ep, 120), ps: cnum(d.ps, 0, 10), nl: ctime(d.nl), o2: cnum(d.o2, 0, 60), an: cstr(d.an, 60),
+    inj: carr(d.inj, 30).map(function(i){ i = Array.isArray(i) ? i : []; return [cstr(i[0], 24), cstr(i[1], 20)]; }),
+    tq: clist(d.tq, 20), hm: clist(d.hm, 20), pd: clist(d.pd, 20), wp: clist(d.wp, 20),
+    iv: carr(d.iv, 20).map(function(i){ i = Array.isArray(i) ? i : []; return [cstr(i[0], 24), ctime(i[1])]; }),
+    fl: carr(d.fl, 30).map(function(f){ f = Array.isArray(f) ? f : []; return [cstr(f[0], 40), cnum(f[1], 0, 20000), ctime(f[2])]; }),
+    md: carr(d.md, 40).map(function(m){ m = Array.isArray(m) ? m : []; return [cstr(m[0], 40), cstr(m[1], 20), cstr(m[2], 12), ctime(m[3])]; })
+  };
+}
+function decodeSnap(txt){
+  txt = String(txt || '');
+  if (txt.length > MAX_PAYLOAD || !/^[A-Za-z0-9_\-]+$/.test(txt)) throw new Error('payload size or alphabet');
+  var js = unb64u(txt);
+  if (js.length > MAX_JSON) throw new Error('payload too large');
+  var a = JSON.parse(js);
+  var d = csnap(Array.isArray(a) ? unpack(a) : a);
+  if (!d) throw new Error('payload schema');
+  return d;
+}
 function baseUrl(){ return location.origin + location.pathname; }
 function linkFor(c){ var s = snapshot(c); return baseUrl() + '#b=' + s.s + '.' + encodeSnap(s); }
 function parseScan(text){
-  text = String(text || '').trim();
+  text = String(text || '').slice(0, 20000).trim();
   var m = text.match(/#?b=([A-Z0-9]{3}-[A-Z0-9]{3})(?:\.([A-Za-z0-9_\-]+))?/i);
   if (m){
-    if (m[2]){ try { var d = decodeSnap(m[2]); if (d && typeof d === 'object' && /^[A-Z0-9]{3}-[A-Z0-9]{3}$/i.test(String(d.s || ''))) return d; } catch(e){} }
+    var rest = text.slice(m.index + m[0].length); if (rest && !/^[\s&?#]/.test(rest)) return null;   // junk glued to the serial or payload: not one of our links
+    // A link that carries a payload is only ever shown from that payload. A payload that fails validation is rejected, never swapped for a local record.
+    if (m[2]){ try { var d = decodeSnap(m[2]); return (d && d.s === m[1].toUpperCase()) ? d : null; } catch(e){ return null; } }
     return lookupSerial(m[1]);
   }
   text = text.replace(/\s+/g, '');
@@ -257,19 +305,19 @@ function braceletHtml(c, opts){
 // Order = what a receiving medic needs first: banner -> time-critical box -> airway/breathing/chest/pelvis strip
 // -> consciousness + pupils -> vitals -> drugs with times -> compact context rows -> evacuation.
 function regionName(id){ var ok = W.BODY_LABELS && Object.prototype.hasOwnProperty.call(W.BODY_LABELS, id); return T(ok ? (W.bodyLabelOut ? W.bodyLabelOut(id) : W.BODY_LABELS[id]) : String(id == null ? '' : id).replace(/[^\w .\-]/g, '').slice(0, 24)); }
-function injType(t){ var m = { hemorrhage:['Bleeding','דימום'], penetrating:['Penetrating','חודר'], fracture:['Fracture','שבר'], burn:['Burn','כוויה'] }; return m[t] ? L(m[t][0], m[t][1]) : esc(t); }
+function injType(t){ var m = { hemorrhage:['Bleeding','דימום'], penetrating:['Penetrating','חודר'], fracture:['Fracture','שבר'], burn:['Burn','כוויה'] }; return own(m, t) ? L(m[t][0], m[t][1]) : esc(t); }
 function moiName(id){ var m = (W.MOI_TYPES || []).filter(function(x){ return x.id === id; })[0]; return m ? T(m.label) : esc(id || ''); }
 // NATO evacuation categories: Urgent <=1 h, Priority <=4 h, Routine <=24 h. An explicit evacPriority wins, otherwise derived from the triage colour.
 function evacCat(s){
   var byP = { immediate:['Urgent ≤1 h','דחוף ≤שעה'], urgent:['Priority ≤4 h','בעדיפות ≤4 שעות'], routine:['Routine ≤24 h','שגרתי ≤24 שעות'], expectant:['Expectant','ציפייה'] };
   var byT = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant' };
-  var k = s.p || byT[s.t]; return byP[k] ? L(byP[k][0], byP[k][1]) : '';
+  var k = s.p || own(byT, s.t); return own(byP, k) ? L(byP[k][0], byP[k][1]) : '';
 }
 var ANALGESICS = ['קטמין', 'מורפין', 'פנטניל', 'Actiq OTFC', 'אופטלגין', 'פרצטמול', 'אקמול'], ANTIBIOTICS = ['צפטריאקסון', 'מטרונידזול', 'Ertapenem'], BLOOD = ['דם מלא', 'פלזמה/FFP', 'כדוריות', 'טרומבוציטים'];
 function minsAgo(t){ return t == null ? null : Math.max(0, Math.round((Date.now() / 1000 - t) / 60)); }
 function sideName(sd){ return sd === 'R' ? L('Right','ימין') : sd === 'L' ? L('Left','שמאל') : ''; }
-function airwayName(st){ var m = { clear:['Clear','פתוח'], compromised:['At risk','בסיכון'], obstructed:['Obstructed','חסום'] }; return m[st] ? L(m[st][0], m[st][1]) : T(st); }
-function hypoName(h){ var m = { HPMK:['HPMK (hypothermia prevention kit)','HPMK (ערכת מניעת היפותרמיה)'], blanket:['Blanket','שמיכה'] }; return m[h] ? L(m[h][0], m[h][1]) : T(h); }
+function airwayName(st){ var m = { clear:['Clear','פתוח'], compromised:['At risk','בסיכון'], obstructed:['Obstructed','חסום'] }; return own(m, st) ? L(m[st][0], m[st][1]) : T(st); }
+function hypoName(h){ var m = { HPMK:['HPMK (hypothermia prevention kit)','HPMK (ערכת מניעת היפותרמיה)'], blanket:['Blanket','שמיכה'] }; return own(m, h) ? L(m[h][0], m[h][1]) : T(h); }
 function pupilTxt(p, sd){ if (!p) return ''; return sd + ' ' + (p[0] != null ? esc(String(p[0])) + ' mm ' : '') + (p[1] === 1 ? L('reactive','מגיב לאור') : p[1] === 0 ? L('fixed','קבוע') : ''); }
 function timeAgoHtml(t){ var m = minsAgo(t); return hhmm(t) + ' · ' + m + L(' min ago',' ד׳ לפני'); }
 function cr(letter, text, tm){ return '<li><b class="cc-m">' + letter + '</b><span>' + esc(text) + '</span>' + (tm ? '<time>' + tm + '</time>' : '') + '</li>'; }
@@ -280,6 +328,7 @@ function cardHtml(s, opts){
   var tg = triageOf(s.t), h = '', black = s.t === 'black', v = s.v || [], now = Date.now() / 1000;
   var tt = Array.isArray(s.tt) ? s.tt : (s.tt ? ['', null] : null), meds = s.md || [], fl = s.fl || [];
   h += '<div class="cc-demo">' + L('DEMO — FICTIONAL PATIENT — NOT FOR CLINICAL USE','דמו — נפגע בדוי — לא לשימוש קליני') + '</div>';
+  if (s._u) h += '<div class="cc-demo cc-untrusted" role="note">' + L('UNVERIFIED DATA FROM A QR OR LINK. Anyone can create it. Nothing was saved. Confirm with the casualty.','נתונים לא מאומתים מ-QR או קישור. כל אחד יכול ליצור אותם. דבר לא נשמר. אמתו מול הנפגע.') + '</div>';
   // 1. Banner: triage + evacuation category + serial
   var ev = evacCat(s);
   h += '<div class="cc-banner" style="--tg:' + tg.c + '"><div><div class="cc-tri">' + L(tg.en, tg.he) + '</div><div class="cc-sub">' + L('Triage','מיון') + ' ' + tg.code + (ev ? ' · ' + ev : '') + '</div></div><div class="cc-serial">' + esc(s.s) + '</div></div>';
@@ -288,7 +337,7 @@ function cardHtml(s, opts){
   // 2. Time-critical box: tourniquet clock + minutes, then key drug / blood times
   var tc = [];
   (s.tq || []).forEach(function(q){
-    tc.push('<b>' + L('Tourniquet','חוסם עורקים') + '</b> — ' + esc(regionName(q[0])) + ' · ' + hhmm(q[1]) + ' · <b data-tq="' + (+q[1] || 0) + '">' + minsAgo(q[1]) + L(' min',' ד׳') + '</b>');
+    tc.push('<b>' + L('Tourniquet','חוסם עורקים') + '</b> — ' + esc(regionName(q[0])) + ' · ' + hhmm(q[1]) + ' · <b data-tq="' + (+q[1] || 0) + '">' + (minsAgo(q[1]) == null ? '?' : minsAgo(q[1])) + L(' min',' ד׳') + '</b>');
   });
   var keyT = [];
   meds.forEach(function(m){ if (m[0] === 'TXA') keyT.push('TXA ' + hm(m[3])); });
@@ -336,12 +385,12 @@ function cardHtml(s, opts){
   // 5. Vitals (0 is a value: no pulse / not breathing)
   var cell = function(label, val, unit, note){ return '<div class="cc-vit"><div class="cc-vl">' + label + '</div><div class="cc-vv">' + (hv(val) ? esc(String(val)) : '—') + '<small>' + (hv(val) ? unit : '') + '</small></div>' + (note ? '<div class="cc-vl" style="color:var(--re-hi)">' + note + '</div>' : '') + '</div>'; };
   var bp = hv(v[1]) ? v[1] + '/' + (hv(v[2]) ? v[2] : '–') : null;
-  var vit = [ cell('HR', v[0], '/min', v[0] === 0 ? L('No pulse','אין דופק') : ''), cell('BP', bp, '', ''), cell('SpO₂', v[3], '%', ''), cell('RR', v[4], '/min', v[4] === 0 ? L('Not breathing','אין נשימה') : ''), cell('Temp', v[5], '°C', '') ];
+  var vit = [ cell('HR', v[0], '/min', v[0] === 0 ? L('No pulse','אין דופק') : ''), cell('BP', bp, '', ''), cell('SpO₂', v[3], '%', ''), cell('RR', v[4], '/min', v[4] === 0 ? L('Not breathing','אין נשימה') : ''), cell(L('Temp','חום'), v[5], '°C', '') ];
   if (hv(v[7])) vit.push(cell('EtCO₂', v[7], 'mmHg', ''));
   h += '<section class="cc-sec"><h3>' + L('Last vitals','סימנים חיוניים אחרונים') + (v[6] ? ' <span>' + ago(v[6]) + '</span>' : '') + '</h3><div class="cc-vitals">' + vit.join('') + '</div>';
   var vl = [];
   if (hv(v[0]) && hv(v[1]) && v[1] > 0){ var si = v[0] / v[1]; vl.push(L('Shock index','מדד הלם') + ' <b>' + si.toFixed(2) + '</b>' + (si > 1 ? ' ⚠' : '')); }
-  if (s.pc) vl.push(L('Radial pulse','דופק רדיאלי') + ': ' + esc(T(({ strong:'חזק', weak:'חלש', absent:'אין', normal:'תקין' })[s.pc] || s.pc)));
+  if (s.pc) vl.push(L('Radial pulse','דופק רדיאלי') + ': ' + esc(T(own({ strong:'חזק', weak:'חלש', absent:'אין', normal:'תקין' }, s.pc) || s.pc)));
   if (hv(s.cr)) vl.push('CRT ' + esc(String(s.cr)) + 's');
   if (vl.length) h += '<div class="cc-line">' + vl.join(' · ') + '</div>';
   h += '</section>';
@@ -380,9 +429,10 @@ function cardHtml(s, opts){
 }
 
 // ── Overlay shell ──────────────────────────────────────────────
-var overlay = null, stopScan = null, last = null;
-function mount(inner, cls){
+var overlay = null, stopScan = null, last = null, redo = null;
+function mount(inner, cls, again){
   close(true);
+  redo = again || null;   // how to draw this view again (language switch)
   overlay = document.createElement('div');
   overlay.className = 'bo ' + (cls || '');
   overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true');
@@ -396,11 +446,12 @@ function close(silent){
   clearInterval(W.__cardTick);
   if (stopScan){ try { stopScan(); } catch(e){} stopScan = null; }
   if (overlay){ overlay.remove(); overlay = null; }
+  redo = null;
   document.body.classList.remove('bo-open');
   if (!silent && /#b=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
 }
 function topbar(title, back){
-  return '<header class="bo-top"><button class="bo-x" onclick="Bracelet.close()" aria-label="' + L('Close','סגור') + '">' + ico(back ? 'arrow-left' : 'x', 20) + '</button><div class="bo-title">' + title + '</div></header>';
+  return '<header class="bo-top"><button class="bo-x" onclick="Bracelet.close()" aria-label="' + L('Close','סגור') + '">' + ico(back ? (document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left') : 'x', 24) + '<span>' + (back ? L('BACK','חזרה') : L('CLOSE','סגור')) + '</span></button><div class="bo-title">' + title + '</div><button class="beta-pill" onclick="Disclaimer.open()" aria-label="' + L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים') + '"><b>' + L('BETA','בטא') + '</b><span>' + L('DEMO ONLY','דמו בלבד') + '</span></button></header>';
 }
 
 function showCard(s, src){
@@ -409,7 +460,7 @@ function showCard(s, src){
     + '<div class="bo-body"><div class="ccard">' + cardHtml(s) + '</div>'
     + '<div class="bo-actions">'
     + '<button class="xbtn" onclick="Bracelet.scan()">' + ico('scan-line', 18) + L('Scan another','סרוק נוסף') + '</button>'
-    + '<button class="xbtn xbtn-primary" onclick="Bracelet.close()">' + L('Done','סיום') + '</button></div></div>', 'bo-card');
+    + '<button class="xbtn xbtn-primary" onclick="Bracelet.close()">' + L('Done','סיום') + '</button></div></div>', 'bo-card', function(){ showCard(s, src); });
   clearInterval(W.__cardTick);
   var tick = W.__cardTick = setInterval(function(){
     if (!overlay) return clearInterval(tick);
@@ -428,7 +479,7 @@ function showBracelet(docId){
     + '<div class="bo-actions">'
     + '<button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(docId) + '\')">' + ico('eye', 18) + L('Preview scan result','תצוגת תוצאת סריקה') + '</button>'
     + '<button class="xbtn" onclick="Bracelet.copy(\'' + esc(docId) + '\')">' + ico('link', 18) + L('Copy link','העתק קישור') + '</button>'
-    + '<button class="xbtn xbtn-primary" onclick="Bracelet.print(\'' + esc(docId) + '\')">' + ico('printer', 18) + L('Print','הדפס') + '</button></div></div>', 'bo-brc');
+    + '<button class="xbtn xbtn-primary" onclick="Bracelet.print(\'' + esc(docId) + '\')">' + ico('printer', 18) + L('Print','הדפס') + '</button></div></div>', 'bo-brc', function(){ showBracelet(docId); });
 }
 function viewCard(docId){
   var c = (W._incidentCasualties || []).filter(function(x){ return x._docId === docId; })[0];
@@ -454,6 +505,7 @@ function print(docId){
   var w = W.open('', '_blank');
   if (!w){ W.toast(L('Allow pop-ups to print','אפשר חלונות קופצים כדי להדפיס'), false); return; }
   w.document.open(); w.document.write(html); w.document.close();
+  try { w.opener = null; } catch (e) {}
 }
 function printCss(){
   return '*{box-sizing:border-box;margin:0}body{font-family:Inter,Heebo,Arial,sans-serif;background:#eceff3;color:#111;padding:20px}'
@@ -478,17 +530,17 @@ function scan(){
     + '<div class="bs-view" id="bs-view"><video id="bs-video" playsinline muted></video><div class="bs-frame"></div><div class="bs-msg" id="bs-msg">' + L('Starting camera…','מפעיל מצלמה…') + '</div></div>'
     + '<div class="bs-or">' + L('No camera, or nothing to scan? Use a sample bracelet:','אין מצלמה? נסה צמיד לדוגמה:') + '</div>'
     + '<div class="bs-samples">' + samples + '</div>'
-    + '<form class="bs-manual" onsubmit="return Bracelet.manual(this)"><input data-autofocus name="c" placeholder="' + L('Or type a code, e.g. JFU-PQJ','או הקלד קוד, למשל JFU-PQJ') + '" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="xbtn">' + L('Open','פתח') + '</button></form></div>', 'bo-scan');
+    + '<form class="bs-manual" onsubmit="return Bracelet.manual(this)"><input data-autofocus name="c" placeholder="' + L('Or type a code, e.g. JFU-PQJ','או הקלד קוד, למשל JFU-PQJ') + '" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="xbtn">' + L('Open','פתח') + '</button></form></div>', 'bo-scan', function(){ scan(); });
   startCamera();
 }
 function startCamera(){
   var video = document.getElementById('bs-video'), msg = document.getElementById('bs-msg');
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ msg.textContent = L('Camera not available in this browser','המצלמה אינה זמינה בדפדפן זה'); return; }
   var stream, alive = true, det = null, canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently:true });
-  stopScan = function(){ alive = false; if (stream) stream.getTracks().forEach(function(t){ t.stop(); }); };
+  stopScan = function(){ alive = false; if (stream) stream.getTracks().forEach(function(t){ t.stop(); }); try { video.srcObject = null; } catch (e) {} };
   navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' }, width:{ ideal:1280 } }, audio:false }).then(function(st){
     if (!alive){ st.getTracks().forEach(function(t){ t.stop(); }); return; }
-    stream = st; video.srcObject = st; video.play();
+    stream = st; video.srcObject = st; try { var pp = video.play(); if (pp && pp.catch) pp.catch(function(){}); } catch(e){}   // closing the scanner while play() is pending must not raise
     msg.textContent = L('Point the camera at a bracelet QR code','כוון את המצלמה אל קוד ה-QR של הצמיד');
     if ('BarcodeDetector' in W){ try { det = new BarcodeDetector({ formats:['qr_code'] }); } catch(e){ det = null; } }
     var ready = det ? Promise.resolve() : loadJsQR();
@@ -510,7 +562,7 @@ function startCamera(){
           });
         } else setTimeout(tick, 120);
       })();
-    });
+    }, function(){ alive = false; stopScan(); msg.textContent = L('The scanner could not load. Type the code below, or use a sample bracelet.','לא ניתן לטעון את הסורק. הקלידו את הקוד למטה, או השתמשו בצמיד לדוגמה.'); });
   }).catch(function(){ msg.textContent = L('Camera blocked or unavailable — use a sample bracelet below','המצלמה חסומה או לא זמינה — השתמש בצמיד לדוגמה למטה'); });
 }
 function manual(form){
@@ -534,9 +586,9 @@ function renderTab(){
   list.forEach(function(c){
     var tg = triageOf(c.triageColor);
     h += '<article class="bt-item"><div class="bt-scale">' + braceletHtml(c, { list:true }) + '</div>'
-      + '<div class="bt-row"><div><div class="bt-name">' + esc(T(c.name)) + '</div><div class="bt-sub"><i style="background:' + tg.c + '"></i>' + L(tg.en, tg.he) + '</div></div>'
+      + '<div class="bt-row"><div><div class="bt-name">' + esc(T(c.name)) + '</div><div class="bt-sub"><i style="background:' + tg.c + '"></i>' + L(tg.en, tg.he) + (c.formLevel === 'quick' ? ' · ' + L('QUICK TRIAGE','מיון מהיר') : '') + '</div></div>'
       + '<div class="bt-btns"><button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(c._docId) + '\')">' + L('Scan result','תוצאת סריקה') + '</button>'
-      + '<button class="xbtn" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Open bracelet','פתח צמיד') + '">' + ico('printer', 16) + '</button></div></div></article>';
+      + '<button class="xbtn" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Print bracelet','הדפס צמיד') + '">' + ico('printer', 24) + L('PRINT','הדפס') + '</button></div></div></article>';
   });
   return h + '</div>';
 }
@@ -548,10 +600,11 @@ function route(){
   if (s) showCard(s); else { history.replaceState(null, '', location.pathname + location.search); W.toast(L('That wristband link is not valid','קישור הצמיד אינו תקין'), false); }
 }
 W.addEventListener('hashchange', route);
+W.addEventListener('pagehide', function(){ if (stopScan){ try { stopScan(); } catch (e) {} stopScan = null; } });
 
-W.Bracelet = { pack: pack, unpack: unpack, linkFor: linkFor,  serialFor: serialFor, snapshot: snapshot, braceletHtml: braceletHtml, renderTab: renderTab, route: route,
+W.Bracelet = { pack: pack, unpack: unpack, decode: decodeSnap, parse: parseScan, linkFor: linkFor,  serialFor: serialFor, snapshot: snapshot, braceletHtml: braceletHtml, renderTab: renderTab, route: route,
   open: showBracelet, viewCard: viewCard, copy: copy, print: print, scan: scan, manual: manual, close: close,
-  openCardFor: openSerialOrDoc, css: brcCss };
+  openCardFor: openSerialOrDoc, relang: function(){ if (overlay && redo) redo(); }, css: brcCss };
 
 // Hooks used by the shared form (pair wristband / find by code / export).
 W.openBraceletFromCard = function(docId){ showBracelet(docId); };

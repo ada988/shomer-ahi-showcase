@@ -185,7 +185,7 @@
       xabcde:e, evacPriority:'routine', painScore:3, avpu:'A', pulse:88, spo2:99, rr:16, bpSys:118, bpDia:72, temp:36.7,
       vitalsHistory:[vit(6,{pulse:92,bpSys:120,bpDia:74,spo2:99,rr:17,temp:36.7,radialPulse:'strong',painScore:4,avpu:'A'}),
                      vit(2,{pulse:88,bpSys:118,bpDia:72,spo2:99,rr:16,temp:36.7,radialPulse:'strong',painScore:3,avpu:'A'})],
-      timeline:[tl(7,'injury','סימון פציעה — כף יד L','hemorrhage'),tl(5,'treatment','חבישה — כף יד L',''),tl(2,'d','הערכה חוזרת: יציבה, הולכת',''),
+      timeline:[tl(7,'injury','סימון פציעה — כף יד L','hemorrhage'),tl(5,'treatment','חבישה — כף יד L',''),tl(2,'d','הערכה חוזרת: ללא החמרה, הולכת',''),
                 tl(1,'e','קטינה (17) — לידע הורה/אפוטרופוס; לבדוק חיסון טטנוס','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(8) },
 

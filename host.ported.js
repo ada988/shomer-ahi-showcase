@@ -708,7 +708,7 @@ function generate9LineMEDEVAC(){
   // Load per-team defaults so medics don't re-type freq/callsign/security
   // /marking/nationality/terrain every call. Stored locally; sync to the
   // team doc is a later-tier feature.
-  const defaults=(()=>{try{return JSON.parse(localStorage.getItem('sh_9line_defaults')||'{}');}catch(e){return {};}})();
+  const defaults=(()=>{try{const d=JSON.parse(localStorage.getItem('sh_9line_defaults')||'{}');return (d&&typeof d==='object'&&!Array.isArray(d))?d:{};}catch(e){return {};}})();
   const specialEquip=[];
   if(hasCric)specialEquip.push('מכשיר הנשמה');
   if(hasBurn)specialEquip.push('ציוד כוויות');
@@ -814,7 +814,7 @@ function share9LineWA(){
   const vals=_collect9LineValues();if(!vals)return;
   const missing=_validate9Line(vals);
   if(missing.length){toast('חובה למלא שורות: '+missing.map(m=>m.num).join(', '),false);return;}
-  window.open('https://wa.me/?text='+encodeURIComponent(get9LineText()),'_blank');
+  window.open('https://wa.me/?text='+encodeURIComponent(get9LineText()),'_blank','noopener,noreferrer');
 }
 const VEHICLE_STATUSES=[
   {v:'enroute', l:'בדרך',  c:'var(--bl)'},
@@ -832,7 +832,7 @@ const VEHICLE_TYPES=[
 function renderMCIEvac(){
   let h='';
   // Hospitals list — normalize to {name, etaMin} objects (Tier 19).
-  const hospitalsRaw=JSON.parse(localStorage.getItem('shomer_hospitals')||'[]');
+  const hospitalsRaw=(()=>{try{const a=JSON.parse(localStorage.getItem('shomer_hospitals')||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}})();
   const hospitals=hospitalsRaw.map(_hospitalRec).filter(h=>h.name);
   // Single "+ הוסף רכב" entry point → opens the type picker modal.
   h+=`<div style="display:flex;gap:6px;margin-bottom:8px">`;

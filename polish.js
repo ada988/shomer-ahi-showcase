@@ -60,6 +60,7 @@ function flatten(st){
   o = o.replace(/background(?:-image)?\s*:\s*linear-gradient\([^;]*\)/gi, flatGradient);
   o = o.replace(/background(?:-image)?\s*:\s*radial-gradient\([^;]*\)/gi, 'background:var(--c2)');
   o = o.replace(/1\.5px/g, '1px');
+  o = o.replace(/color\s*:\s*#c0392b/gi, 'color:var(--re)');
   // Stress rule: nothing small. Any inline text under 16px becomes 16px; tight gaps become 12px.
   o = o.replace(/font-size\s*:\s*(\d+(?:\.\d+)?)px/g, function(m, n){ return parseFloat(n) < 16 ? 'font-size:16px' : m; });
   o = o.replace(/(^|[;\s])gap\s*:\s*(\d+)px/g, function(m, pre, n){ return +n < 10 ? pre + 'gap:12px' : m; });
@@ -92,6 +93,7 @@ function polish(root){
   });
   var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function(n){ return n.parentNode && n.parentNode.closest && n.parentNode.closest('.no-polish, svg, textarea, script, style') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } });
   var nodes = [], n; while ((n = tw.nextNode())) nodes.push(n);
+  nodes.forEach(function(t){ var v = t.nodeValue.trim(); if (v === '▼') t.nodeValue = '+'; else if (v === '▲') t.nodeValue = '−'; });
   nodes.forEach(function(t){ EMO.lastIndex = 0; if (EMO.test(t.nodeValue)){ EMO.lastIndex = 0; replaceEmojiInText(t); } EMO.lastIndex = 0; });
 }
 

@@ -149,7 +149,7 @@ html[dir=rtl] .body-tap-menu{direction:rtl}
 /* mechanism chips and pediatric toggle: glove size */
 .fs-patient .cas-section button{min-height:56px!important;font-size:18px!important;font-weight:800;padding:6px 14px!important;border-width:3px!important;border-color:var(--line)!important;color:#fff!important}
 .fs-patient .cas-section button[style*="background:rgba"]{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
-#fs-record .fs-b>button[onclick*=togglePeds]{display:block;width:100%;min-height:56px!important;margin:0!important;border:3px dashed var(--line)!important;border-radius:12px!important;font-size:18px!important;font-weight:800;color:#fff!important}
+#fs-record .fs-b>button[onclick*=togglePeds]{display:block;width:100%;min-height:56px!important;margin:0 0 12px!important;border:3px solid var(--line)!important;border-radius:12px!important;font-size:18px!important;font-weight:800;color:#fff!important}
 #incident-content #cas-case-story{min-height:140px!important;font-size:18px!important}
 /* all-vitals fold: two columns, never wider than the screen */
 .fs-fold[data-k=vit] .fs-fold-b div[style*="grid-template-columns"]{grid-template-columns:1fr 1fr!important;gap:12px!important}

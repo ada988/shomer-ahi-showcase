@@ -191,7 +191,7 @@ html[dir=rtl] .tabnum,html[dir=rtl] [style*="monospace"],html[dir=rtl] time,html
 
 /* ── BOLD: saturated solid colour carries meaning; heavy type; no stripes/gradients/glows ── */
 :root{
-  --t-red:#e5242b; --t-yellow:#ffd400; --t-green:#19c37d; --t-gray:#b4bbc8; --t-black:#000;
+  --t-red:#d01a20; --t-yellow:#ffd400; --t-green:#19c37d; --t-gray:#b4bbc8; --t-black:#000;
   --accent:#1f6bff; --accent-edge:#b8d0ff;
 }
 body{font-weight:500}

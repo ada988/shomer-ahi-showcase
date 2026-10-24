@@ -35,7 +35,14 @@ w._writeOfflineCasualties = function(list){ _store = list; };
 
 // Undo history belongs to ONE open casualty (otherwise UNDO on B could restore A's data).
 function resetUndo(){ if (w._medUndoStack) w._medUndoStack.length = 0; w._medRedoStack = []; }
-['newCasualty','editCasualty'].forEach(function(n){ var o = w[n]; if (typeof o !== 'function') return; w[n] = function(){ resetUndo(); return o.apply(this, arguments); }; });
+// Where the list/board was scrolled when a casualty was opened: BACK returns to exactly that place.
+var _place = null;
+function rememberPlace(){
+  if (w._casualtyEditMode) return;
+  var c = document.getElementById('incident-content');
+  _place = c ? { tab: w._incidentTab, cas: w._casView, y: c.scrollTop } : null;
+}
+['newCasualty','editCasualty','editCasualtyById'].forEach(function(n){ var o = w[n]; if (typeof o !== 'function') return; w[n] = function(){ rememberPlace(); resetUndo(); return o.apply(this, arguments); }; });
 var _ocf = w.closeCasualtyForm;
 if (typeof _ocf === 'function') w.closeCasualtyForm = function(){ return Promise.resolve(_ocf.apply(this, arguments)).then(function(r){ resetUndo(); return r; }); };
 
@@ -43,7 +50,7 @@ if (typeof _ocf === 'function') w.closeCasualtyForm = function(){ return Promise
 var _avr = w.addVitalsReading;
 if (typeof _avr === 'function') w.addVitalsReading = function(){
   var i = w._casualtyVitalsInput || {}, lim = { pulse:[20,300], rr:[1,80], spo2:[30,100], bpSys:[30,300], bpDia:[10,200], temp:[25,45], etco2:[5,100] }, bad = false;
-  Object.keys(lim).forEach(function(k){ var v = parseFloat(i[k]); if (i[k] !== '' && i[k] != null && !isNaN(v) && (v < lim[k][0] || v > lim[k][1])){ bad = true; i[k] = ''; } });
+  Object.keys(lim).forEach(function(k){ var v = parseFloat(i[k]); if (i[k] !== '' && i[k] != null && !/^\d{1,4}([.]\d{1,2})?$/.test(String(i[k]).trim())){ bad = true; i[k] = ''; return; } if (i[k] !== '' && i[k] != null && !isNaN(v) && !(v === 0 && (k === 'pulse' || k === 'rr')) && (v < lim[k][0] || v > lim[k][1])){ bad = true; i[k] = ''; } });
   if (bad){ w.toast(L('Check the numbers — one value is not possible','בדקו את המספרים — אחד הערכים אינו אפשרי'), false); return; }
   return _avr.apply(this, arguments);
 };
@@ -66,7 +73,7 @@ Object.assign(w.MedHost, {
 
 // ── Triage language: SHAPE + WORD + COLOUR, always ─────────────
 var TG = {
-  red:    { c:'#e5242b', en:'URGENT', he:'דחוף',  shape:'oct' },
+  red:    { c:'#d01a20', en:'URGENT', he:'דחוף',  shape:'oct' },
   yellow: { c:'#ffd400', en:'DELAYED',   he:'דחוי',   shape:'tri' },
   green:  { c:'#19c37d', en:'NOT URGENT', he:'לא דחוף',     shape:'circ' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', shape:'hex' },
@@ -120,7 +127,7 @@ function renderOverview(){
     ? '<button class="ov-alert" onclick="Demo.openCasualty(\'' + esc(waitingReds[0]._docId) + '\')">' + ico('triangle-alert', 32)
       + '<span><b>' + L(waitingReds.length + ' URGENT ' + (waitingReds.length > 1 ? 'CASUALTIES' : 'CASUALTY') + ' WAITING FOR EVACUATION', waitingReds.length + ' נפגעים דחופים ממתינים לפינוי') + '</b><small>' + L('Tap to open the first one','לחצו לפתיחת הראשון') + '</small></span></button>'
     : '';
-  var tiles = ['red','yellow','green','black'].map(function(c){
+  var tiles = ['red','yellow','green','gray','black'].map(function(c){
     var t = tg(c);
     return '<button class="ov-tile t-' + c + '" onclick="Demo.filter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>';
   }).join('');
@@ -181,7 +188,7 @@ function renderPatients(){
       + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('LOW','נמוך'), v.bpSys < 90) + '</em>' : '')
       + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('LOW','נמוך'), v.spo2 < 92) + '</em>' : '')
       + (tqMin != null ? '<em class="warn">' + ico('timer', 22) + L('TOURNIQUET ','חוסם עורקים ') + '<i>' + tqMin + L(' MIN',' ד׳') + '</i></em>' : '')
-      + (onVeh ? '<em class="ok">' + ico('ambulance', 22) + L('ON AMBULANCE','באמבולנס') + '</em>' : '')
+      + (onVeh ? '<em class="ok">' + ico('ambulance', 22) + ((w.findVehicleForCasualty(c) || {}).status === 'athospital' ? L('AT HOSPITAL','בבית חולים') : L('ON AMBULANCE','באמבולנס')) + '</em>' : '')
       + '</span></span><span class="chev">' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</span></button>';
   });
   if (!list.length) h += '<p class="empty">' + L('No casualties in this group.','אין נפגעים בקבוצה זו.') + '</p>';
@@ -193,6 +200,10 @@ function renderBar(){
   var back = document.getElementById('app-back'), mark = document.getElementById('app-mark'),
       title = document.getElementById('app-title'), sub = document.getElementById('app-sub'), mb = document.getElementById('menu-btn');
   if (!back) return;
+  var pill = document.getElementById('beta-pill'), tabs = document.getElementById('incident-tabs'), skip = document.querySelector('.skip-link');
+  if (pill) pill.setAttribute('aria-label', L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים'));
+  if (tabs) tabs.setAttribute('aria-label', L('Sections','מקטעים'));
+  if (skip) skip.textContent = L('Skip to content','דלג לתוכן');
   back.innerHTML = ico(lang()==='he' ? 'arrow-right' : 'arrow-left', 26) + '<span>' + L('Back','חזרה') + '</span>';
   back.setAttribute('aria-label', L('Back','חזרה'));
   mb.innerHTML = ico('menu', 26) + '<span>' + L('Menu','תפריט') + '</span>';
@@ -208,6 +219,8 @@ function renderBar(){
     title.textContent = L('Shomer Ahi','שומר אחי');
     sub.textContent = '';
   }
+  var base = L('Shomer Ahi — early beta demo (not for clinical use)','שומר אחי — דמו בטא מוקדמת (לא לשימוש קליני)');
+  document.title = w._casualtyEditMode ? title.textContent + ' · ' + base : base;
 }
 
 // ── Page render ────────────────────────────────────────────────
@@ -223,21 +236,29 @@ function morph(a, b){
   var an = [].slice.call(a.childNodes), bn = [].slice.call(b.childNodes), m = Math.min(an.length, bn.length), i, x, y;
   for (i = 0; i < m; i++){
     x = an[i]; y = bn[i];
-    if (x.nodeType !== y.nodeType || (x.nodeType === 1 && x.tagName !== y.tagName)){ a.replaceChild(y.cloneNode(true), x); continue; }
+    if (x.nodeType !== y.nodeType || (x.nodeType === 1 && x.tagName !== y.tagName)){ if (x.parentNode === a) a.replaceChild(y.cloneNode(true), x); continue; }
     if (x.nodeType === 3 || x.nodeType === 8){ if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; continue; }
     if (x.nodeType === 1){
       syncAttrs(x, y);
       var focused = x === document.activeElement;
       if (x.tagName === 'INPUT' || x.tagName === 'SELECT'){ if (!focused && x.value !== y.value && y.hasAttribute('value')) x.value = y.getAttribute('value'); continue; }
       if (x.tagName === 'TEXTAREA'){ if (!focused && x.value !== y.value) x.value = y.value; continue; }
-      if (x.tagName === 'svg' || x.namespaceURI === 'http://www.w3.org/2000/svg'){ if (x.outerHTML !== y.outerHTML) a.replaceChild(y.cloneNode(true), x); continue; }
+      if (x.tagName === 'svg' || x.namespaceURI === 'http://www.w3.org/2000/svg'){ if (x.outerHTML !== y.outerHTML && x.parentNode === a) a.replaceChild(y.cloneNode(true), x); continue; }
       morph(x, y);
     }
   }
   while (a.childNodes.length > bn.length) a.removeChild(a.lastChild);
   for (i = m; i < bn.length; i++) a.appendChild(bn[i].cloneNode(true));
 }
+// Re-entrancy guard: replacing a focused input fires blur handlers that ask for another render while this one is mid-diff.
+var _rendering = false, _again = false;
 w.renderIncidentPage = function(){
+  if (_rendering){ _again = true; return; }
+  _rendering = true;
+  try { renderNow(); } finally { _rendering = false; }
+  if (_again){ _again = false; w.renderIncidentPage(); }
+};
+function renderNow(){
   var c = document.getElementById('incident-content');
   if (!c || !w._incidentData) return;
   // The engine board's own "Evac" mode is replaced by the Evacuate tab.
@@ -257,15 +278,16 @@ w.renderIncidentPage = function(){
   if (c.dataset.view === view && c.firstChild) morph(c, tmp);
   else { c.textContent = ''; while (tmp.firstChild) c.appendChild(tmp.firstChild); c.scrollTop = 0; if (w.FormUI) w.FormUI.cur = 'field'; }
   if (c.dataset.view && c.dataset.view !== view){ c.style.pointerEvents = 'none'; setTimeout(function(){ c.style.pointerEvents = ''; }, 380); }
+  if (_place && view !== 'form'){ if (_place.tab === w._incidentTab && _place.cas === w._casView) c.scrollTop = _place.y; _place = null; }
   c.dataset.view = view;
   if (view === 'form' && w.FormUI) w.FormUI.bind(c);
   renderTabbar(); renderBar();
-};
+}
 
 // ── Demo controller ────────────────────────────────────────────
 w._casView = 'list'; w._plFilter = null;
-function closeOverlays(){
-  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt'].forEach(function(id){ var e = document.getElementById(id); if (e) e.remove(); });
+function closeOverlays(keepQuick){
+  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
   if (w.Field) w.Field._k = null;
 }
 var Demo = w.Demo = {
@@ -391,7 +413,7 @@ document.addEventListener('input', function(e){
 });
 
 // ── Modal behaviour for every overlay/sheet: focus moves in, Tab stays inside (background is inert), Esc closes, focus returns ──
-var OVERLAY = '#f-kp,#f-sheet,#fs-sheet,#menu-sheet,#ev-assign-sheet,#ev-pre-sheet,#ev-arrive-sheet,.bo,.dn';
+var OVERLAY = '#f-kp,#f-sheet,#fs-sheet,#menu-sheet,#ev-assign-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
 var _ret = null;
 function topOverlay(){ var l = document.querySelectorAll(OVERLAY); return l.length ? l[l.length - 1] : null; }
 function syncModal(){
@@ -407,13 +429,54 @@ new MutationObserver(syncModal).observe(document.getElementById('app'), { childL
 document.addEventListener('keydown', function(e){
   if (e.key !== 'Escape') return;
   if (document.querySelector('.tour-card')) return;           // tour handles its own Esc
-  var t = topOverlay(); if (!t || t.classList.contains('dn')) return;   // the safety notice is dismissed with its button
+  var bm = document.getElementById('body-tap-overlay');       // body-map menu lives inside the page: close it through its own state
+  if (bm && !topOverlay()){ w._selectedRegion = null; w._bodyMenuStep = 0; w.MedHost.renderIncidentPage(); return; }
+  var t = topOverlay(); if (!t) return;
+  if (t.classList.contains('dn')){ if (t.getAttribute('role') !== 'alertdialog' && w.Disclaimer) w.Disclaimer.close(); return; }   // the first-visit gate is dismissed only with its button; the re-opened notice closes with Esc
+  if (t.id === 'qt' && w.Quick){ w.Quick.close(); return; }
+  if (t.id === 'f-tap' && w.Field){ w.Field.tapClose(); return; }
+  if (t.id === 'radio-overlay' && w.closeRadioReadout){ w.closeRadioReadout(); return; }
+  if (t.classList.contains('bo') && w.Bracelet){ w.Bracelet.close(); return; }
   var d = t.querySelector('.sheet-dim'), x = t.querySelector('.bo-x');
   if (d) d.click(); else if (x) x.click(); else t.remove();
+});
+
+// Tab wraps inside the open overlay (inert background would otherwise hand focus to the browser chrome)
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Tab') return;
+  var t = topOverlay(); if (!t) return;
+  var f = [].slice.call(t.querySelectorAll('button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])')).filter(function(x){ return !x.disabled && x.offsetParent !== null; });
+  if (!f.length) return;
+  var first = f[0], last = f[f.length - 1], act = document.activeElement;
+  if (!t.contains(act)){ e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && act === first){ e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && act === last){ e.preventDefault(); first.focus(); }
 });
 
 // ── Keyboard: make clickable non-buttons operable ──────────────
 document.addEventListener('keydown', function(e){
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role=button][onclick]:not(button):not([onkeydown])')){ e.preventDefault(); e.target.click(); }
+});
+
+// ── Phone BACK button / browser back: closes the top layer, then the form, then returns Home — it never throws the user out mid-casualty ──
+// One guard history entry is added after the first touch (browsers ignore entries made without a user gesture); every BACK that was used
+// to close something puts it back. On Home with nothing open the guard is left spent, so the next BACK leaves the page as usual.
+var _guard = false;
+function backStep(){
+  if (document.querySelector('.tour-card')){ w.Tour.stop(); return true; }
+  if (document.querySelector('.dn[role=alertdialog]')) return true;               // the first-visit notice can only be acknowledged
+  if (document.getElementById('body-tap-overlay') || topOverlay()){ document.dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true })); return true; }
+  if (w._casualtyEditMode){ Demo.back(); return true; }
+  if (w.Evac && w.Evac.state.view && w._incidentTab === 'evac'){ w.Evac.close(); return true; }
+  if (w._incidentTab === 'casualties' && w._casView === 'board'){ Demo.casView('list'); return true; }
+  if (w._incidentTab !== 'status'){ Demo.tab('status'); return true; }
+  return false;
+}
+function armGuard(){ if (_guard) return; _guard = true; try { history.pushState({ sc:1 }, ''); } catch(e){} }
+document.addEventListener('pointerdown', armGuard, true);
+document.addEventListener('keydown', armGuard, true);
+w.addEventListener('popstate', function(){
+  if (!_guard) return;
+  if (backStep()){ try { history.pushState({ sc:1 }, ''); } catch(e){} } else _guard = false;
 });
 })();

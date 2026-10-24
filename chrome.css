@@ -105,3 +105,89 @@
 
 .qt-rep{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:3px solid #fff;font-size:18px;font-weight:800}
 .qt-rep b{font-size:16px;letter-spacing:.06em;color:var(--t2)}
+
+/* ── Final UX QA pass ─────────────────────────────────────────── */
+/* Quick triage: BETA pill stays in the header, count chips carry a word, result screen scrolls fully */
+.qt-top .beta-pill{margin-inline-start:auto}
+.qt-title{min-width:0}
+.qt-count{grid-template-columns:repeat(3,1fr)}
+.qt-count span{flex-direction:column;gap:0;min-height:76px;padding:4px 2px;font-size:28px;line-height:1}
+.qt-count span svg{width:24px;height:24px}
+.qt-count span b{font-size:28px}
+.qt-count span em{font-style:normal;font-size:15px;font-weight:900;letter-spacing:.02em;line-height:1.1;text-align:center}
+.qt-count .t-gray{background:var(--t-gray);color:#111}
+.qt-inner{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+.qt-res{padding:16px 12px;gap:4px}
+.qt-res svg{width:48px;height:48px}
+.qt-res b{font-size:38px}
+.qt-res span{font-size:18px}
+.qt-next{min-height:72px;white-space:normal;text-align:center;line-height:1.15}
+.qt-body .btn-row{display:flex;flex-direction:column;gap:12px}
+.qt-body .btn-row>.xbtn,.qt-body .qt-back{width:100%;min-height:64px;display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;line-height:1.15;white-space:normal;flex:none}
+
+/* Record section: one consistent control language (chips, pediatric switch, narrative) */
+#fs-record div:has(>button[onclick*="_toggleMOI"]){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px!important}
+#fs-record button[onclick*="_toggleMOI"]{min-height:56px!important;padding:6px 10px!important;border:3px solid var(--line)!important;border-radius:12px!important;background:var(--c2)!important;color:#fff!important;font-size:18px!important;font-weight:800!important;width:100%}
+#fs-record button[onclick*="_toggleMOI"][style*="solid var(--or)"]{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+button[onclick*="togglePedsOverride"]{display:block!important;width:100%;min-height:56px!important;margin:0 0 12px!important;padding:8px 14px!important;border:3px solid var(--line)!important;border-radius:14px!important;background:var(--c2)!important;color:#fff!important;font-size:18px!important;font-weight:800!important;text-align:center}
+#cas-case-story{min-height:128px!important;font-size:18px!important;line-height:1.35;border:3px solid var(--line)!important;border-radius:12px;resize:vertical}
+.qt-top{flex-wrap:wrap}
+.qt-title{order:3;flex:1 1 100%}
+.qt-title small{display:block}
+.qt-count span{display:grid;grid-template-columns:auto auto;justify-content:center;align-content:center;align-items:center;column-gap:8px;row-gap:2px;min-height:64px}
+.qt-count span em{grid-column:1 / -1}
+@media (max-height:720px){.qt-title small{display:none}.qt-top{margin-bottom:6px}.qt-count{margin-bottom:8px}.qt-yn button{min-height:88px}.qt-step h2{font-size:26px}.qt-body{gap:10px}}
+/* Transport header: BACK and DRIVER VIEW share row one, the vehicle name gets its own full-width row (never clipped) */
+.tp-top{grid-template-columns:1fr 1fr!important}
+.tp-top b{grid-column:1 / -1;grid-row:2;text-align:start!important;font-size:24px!important}
+.tp-top .xbtn{justify-content:center}
+.ev-pt svg{width:24px;height:24px;flex:none}
+/* The round red "+" (no word, red = triage colour, covers board content) duplicated the Casualties tab entry buttons */
+.mci-fab{display:none!important}
+/* Command board cards: name on its own full row, vitals + clock below (was a 6-line word-per-line wrap) */
+.mci-card-row{display:flex!important;flex-wrap:wrap!important;align-items:center;gap:6px 14px!important}
+.mci-card-row>span:first-child{flex:1 1 100%!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:19px!important;font-weight:900!important}
+/* Casualty list card: triage word on its own row (shape + word), details get the full card width */
+.pl-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"chip chev" "main main";align-items:center!important;row-gap:8px!important}
+.pl-card>.tchip{grid-area:chip;justify-self:start;flex-direction:row!important;align-items:center;gap:8px!important;min-width:0!important;padding:6px 14px!important;font-size:17px!important;white-space:nowrap}
+.pl-card>.pl-main{grid-area:main}
+.pl-card>.chev{grid-area:chev;align-self:start}
+.lvl{white-space:normal}
+/* Wristband list row: name on its own line, two labelled buttons below */
+.bt-row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px}
+.bt-row .bt-name{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+.bt-btns{display:grid!important;grid-template-columns:1fr 1fr;gap:10px}
+.bt-btns .xbtn{display:flex;align-items:center;justify-content:center;gap:8px;white-space:normal;line-height:1.1}
+/* Bracelet / scan-card header: visible word on the back/close control, BETA pill stays in the top bar */
+.bo-top{gap:10px!important;padding:0 10px!important}
+.bo-x{width:auto!important;min-width:56px;padding:0 14px!important;display:flex!important;align-items:center;gap:8px;font-size:17px;font-weight:900;flex:none}
+.bo-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bo-top .beta-pill{height:52px;min-width:72px}
+.bo-top .beta-pill b{font-size:17px}
+/* Treatment picker: equal full-width buttons */
+div:has(>button[onclick*="startTreatmentPlacement"]){display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important}
+div:has(>button[onclick*="startTreatmentPlacement"])>button{width:100%;justify-content:flex-start;text-align:start;display:flex;align-items:center;gap:10px}
+@media (max-width:380px){div:has(>button[onclick*="startTreatmentPlacement"]){grid-template-columns:1fr}}
+.ev-pt .tchip svg,.ev-pt svg{width:24px!important;height:24px!important;flex:none}
+.bo-title{white-space:normal!important;line-height:1.1;font-size:19px!important}
+@media (max-width:340px){#app-mark{display:none!important}.appbar .ttl b{font-size:19px}}
+@media (max-width:340px){.appbar .ttl b{font-size:17px!important;letter-spacing:-.01em}.appbar{gap:6px}}
+/* Contrast (AA): no half-transparent text, dark text on the light-blue action button */
+.b-kpis>*,.b-kpis>* *,.cc-sub,.cc-banner *{opacity:1!important}
+.b-next button,.b-next button *{color:#0b0c0e!important}
+#incident-content button[style*="background:var(--bl)"],#incident-content button[style*="background:var(--bl)"] *{color:#0b0c0e!important}
+/* Platform behaviour: dark-only app (native controls + scrollbars follow), no text inflation, no double-tap zoom, no selecting controls */
+html{color-scheme:dark;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{touch-action:manipulation}
+button,summary,[role=button],.tabbar *,.sheet-row,.xbtn{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* Landscape phone (short viewport): full width, compact bars so the form keeps usable height */
+@media (max-height:500px) and (orientation:landscape){
+  .device,.is-app .device.device{zoom:1!important;width:100%!important;max-width:none!important;height:100dvh!important;border-radius:0!important;border:0!important;box-shadow:none!important}
+  .stage{width:100%!important}
+  .jb{position:static!important}
+  #incident-content .fs-bar,.fs-bar{grid-template-columns:1fr 1fr 1.6fr!important;padding-top:6px!important;padding-bottom:calc(6px + env(safe-area-inset-bottom))!important}
+  body #incident-content .fs-bar .xbtn,body #incident-content .fs-bar button{flex-direction:row!important;min-height:56px!important;gap:8px!important}
+  body #incident-content .fs-bar{padding-top:6px!important;padding-bottom:calc(6px + env(safe-area-inset-bottom))!important}
+  .appbar .ttl small{display:none}
+  .tabbar{padding-top:4px!important;padding-bottom:calc(4px + env(safe-area-inset-bottom))!important}
+}
