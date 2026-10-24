@@ -26,8 +26,8 @@ function tr(s){
   return rx ? s.replace(rx, function(m){ return dict[m]; }) : s;
 }
 
-var TRIAGE_CODES = { 'דחוף':'IMMEDIATE', 'מיידי':'IMMEDIATE', 'לא-דחוף':'DELAYED', 'דחוי':'DELAYED', 'קל':'MINOR', 'ממתין':'EXPECTANT', 'ציפייה':'EXPECTANT', 'חלל':'DECEASED', 'נפטר':'DECEASED', 'ללא סימני חיים':'DECEASED' };
-var EXACT = { 'Management':'TREAT', 'Evac':'EVACUATE', 'Triage':'TRIAGE', 'Minimal':'MINOR', 'Immediate':'IMMEDIATE', 'Delayed':'DELAYED', 'Expectant':'EXPECTANT', 'Deceased':'DECEASED' };
+var TRIAGE_CODES = { 'דחוף':'URGENT', 'מיידי':'URGENT', 'לא-דחוף':'NOT URGENT', 'לא דחוף':'NOT URGENT', 'דחוי':'DELAYED', 'קל':'NOT URGENT', 'ממתין':'WAITING', 'ציפייה':'WAITING', 'חלל':'DECEASED', 'נפטר':'DECEASED', 'ללא סימני חיים':'DECEASED' };
+var EXACT = { 'Management':'TREAT', 'Evac':'EVACUATE', 'Triage':'TRIAGE', 'Minimal':'NOT URGENT', 'Immediate':'URGENT', 'Delayed':'DELAYED', 'Expectant':'WAITING', 'Deceased':'DECEASED' };
 var HE_FIX = { 'hemorrhage':'דימום', 'penetrating':'חודר', 'fracture':'שבר', 'burn':'כוויה', 'weak':'חלש', 'Vented':'מאוורר', 'Handoff':'העברה', 'Temp':'חום', 'mmHg':'מ״מ כספית' };
 function exact(s){
   if (lang === 'he'){ var th = String(s).trim(); if (HE_FIX[th]) return s.replace(th, HE_FIX[th]); return s; } var t = String(s).trim(); return EXACT[t] ? s.replace(t, EXACT[t]) : s; }

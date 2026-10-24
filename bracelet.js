@@ -17,13 +17,13 @@ function hhmm(sec){ var d = new Date(sec * 1000); return String(d.getHours()).pa
 function ago(sec){ var m = Math.max(0, Math.round((Date.now()/1000 - sec) / 60)); if (m < 1) return L('just now','זה עתה'); if (m < 60) return m + L(' min ago',' ד׳ לפני'); return Math.floor(m/60) + L(' h ',' ש׳ ') + (m%60) + L(' min ago',' ד׳ לפני'); }
 
 var TRIAGE = {
-  red:    { c:'#e5484d', en:'Immediate', he:'מיידי',  code:'T1' },
-  yellow: { c:'#f5b82e', en:'Delayed',   he:'דחוי',   code:'T2' },
-  green:  { c:'#30a46c', en:'Minimal',   he:'קל',     code:'T3' },
-  gray:   { c:'#9aa0a6', en:'Expectant', he:'ציפייה', code:'T4' },
-  black:  { c:'#4b4f56', en:'No signs of life', he:'ללא סימני חיים', code:'T0' }
+  red:    { c:'#d7191c', en:'URGENT', he:'דחוף', code:'T1', sh:'oct', tx:'#fff' },
+  yellow: { c:'#f5b82e', en:'DELAYED', he:'דחוי', code:'T2', sh:'tri', tx:'#111' },
+  green:  { c:'#19a463', en:'NOT URGENT', he:'לא דחוף', code:'T3', sh:'circ', tx:'#fff' },
+  gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', code:'T4', sh:'hex', tx:'#111' },
+  black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים', code:'T0', sh:'sqx', tx:'#fff' }
 };
-function triageOf(t){ return TRIAGE[t] || { c:'#6b7078', en:'Not triaged', he:'טרם סווג', code:'—' }; }
+function triageOf(t){ return TRIAGE[t] || { c:'#6b7078', en:'NOT TRIAGED', he:'טרם סווג', code:'—', sh:'circ', tx:'#fff' }; }
 
 // ── Serial assignment ──────────────────────────────────────────
 function serialFor(c){
@@ -201,28 +201,49 @@ function qrSvg(text, px){
 }
 
 // ── Bracelet design ────────────────────────────────────────────
+var BRC_CSS = '.brc-list .b2-grid,.brc-list .b2-foot{display:none}.brc-list .b2-qr svg{width:9em;height:9em}.brc-list .b2-main{gap:.3em}.brc2{font-size:16px;display:flex;flex-direction:column;background:#fff;color:#111;border:3px solid #111;border-radius:.9em;overflow:hidden;font-family:Inter,Heebo,Arial,sans-serif;width:100%}'
+  + '.b2-tri{display:flex;align-items:center;gap:.6em;padding:.55em .9em;background:var(--tg);color:var(--tgt,#fff)}.b2-tri svg{width:2.3em;height:2.3em;flex:none;min-width:2.3em;min-height:2.3em}'
+  + '.b2-tri b{font-size:1.65em;font-weight:900;line-height:1;letter-spacing:.02em;flex:1}.b2-tri i{font-style:normal;font-weight:900;font-size:1.2em;border:.14em solid currentColor;border-radius:.3em;padding:.04em .4em}'
+  + '.b2-main{padding:.7em .9em;display:flex;flex-direction:column;gap:.5em;flex:1;min-width:0}'
+  + '.b2-top{display:flex;justify-content:space-between;align-items:center;gap:.5em;font-size:.875em;font-weight:800;color:#444;letter-spacing:.05em}.b2-top em{font-style:normal;background:#ffd400;color:#000;border:2px solid #000;border-radius:.3em;padding:0 .5em;font-weight:900}'
+  + '.b2-no{display:flex;align-items:baseline;gap:.5em}.b2-no small{font-weight:900;font-size:.875em;color:#444}.b2-no b{font:900 2.3em ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;line-height:1}'
+  + '.b2-who{font-weight:800;font-size:1.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+  + '.b2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.4em}'
+  + '.b2-box{border:2px solid #111;border-radius:.5em;padding:.3em .5em;min-height:3.5em;display:flex;flex-direction:column;min-width:0}.b2-box small{font-size:.875em;font-weight:900;letter-spacing:.05em;color:#444}'
+  + '.b2-box b{font-size:1.4em;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}.b2-box span{font-size:.875em;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+  + '.b2-box.blank{background:repeating-linear-gradient(0deg,#fff 0,#fff 1.1em,#cfd3da 1.1em,#cfd3da calc(1.1em + 1px))}.b2-box.set{background:#fff6cc}'
+  + '.b2-qr{display:flex;flex-direction:column;align-items:center;gap:.3em;padding:.7em;border-top:3px dashed #111}.b2-qr svg{width:11em;height:11em}.b2-qr small{font-weight:900;font-size:.875em;letter-spacing:.05em;text-align:center}'
+  + '.b2-foot{font-size:.875em;font-weight:700;color:#444;line-height:1.25}'
+  + '.brc-print{flex-direction:row;width:150mm;height:58mm;font-size:8.5pt;border-width:.6mm;border-radius:3mm}.brc-print .b2-tri{flex-direction:column;justify-content:center;text-align:center;width:27mm;padding:2mm;gap:1.5mm}'
+  + '.brc-print .b2-tri svg{width:11mm;height:11mm;min-width:0;min-height:0}.brc-print .b2-tri b{font-size:1.35em;flex:none}.brc-print .b2-tri i{font-size:1em}'
+  + '.brc-print .b2-main{padding:2mm 3mm;gap:1.2mm}.brc-print .b2-top{font-size:.8em}.brc-print .b2-no b{font-size:2.6em}.brc-print .b2-who{font-size:1em}.brc-print .b2-box{min-height:11mm;padding:.8mm 1.6mm;border-width:.35mm}.brc-print .b2-box small{font-size:.8em}.brc-print .b2-box b{font-size:1.35em}.brc-print .b2-box span{font-size:.8em}.brc-print .b2-foot{font-size:.72em}'
+  + '.brc-print .b2-qr{border-top:0;border-inline-start:.5mm dashed #111;padding:2mm;width:44mm;justify-content:center}.brc-print .b2-qr svg{width:37mm;height:37mm}.brc-print .b2-qr small{font-size:.75em}';
+function ensureBrcCss(){ if (document.getElementById('brc2-css')) return; var st = document.createElement('style'); st.id = 'brc2-css'; st.textContent = BRC_CSS; document.head.appendChild(st); }
 function braceletHtml(c, opts){
-  opts = opts || {};
-  var s = snapshot(c), tg = triageOf(s.t), url = baseUrl() + '#b=' + s.s + '.' + encodeSnap(s);
-  var tqLine = s.tq.length ? 'TQ ' + hhmm(s.tq[0][1]) : '';
-  return '<div class="brc' + (opts.print ? ' brc-print' : '') + '">'
-    + '<div class="brc-band" style="--tg:' + tg.c + '"><span>' + tg.code + '</span></div>'
-    + '<div class="brc-qr">' + qrSvg(url, opts.print ? 118 : 104) + '</div>'
-    + '<div class="brc-info">'
-    +   '<div class="brc-brand">' + L('SHOMER AHI · CASUALTY ID','שומר אחי · זיהוי נפגע') + '</div>'
-    +   '<div class="brc-serial">' + esc(s.s) + '</div>'
-    +   '<div class="brc-name">' + esc(T(s.n) || L('Unnamed casualty','נפגע ללא שם')) + '</div>'
-    +   '<div class="brc-write">'
-    +     '<span>TQ <i>' + (tqLine ? hhmm(s.tq[0][1]) : '__ : __') + '</i></span>'
-    +     '<span>' + L('MEDS','תרופות') + ' <i>' + (s.md.length ? s.md.length + '×' : '__ : __') + '</i></span>'
+  opts = opts || {}; ensureBrcCss();
+  var s = snapshot(c), tg = triageOf(s.t), url = baseUrl() + '#b=' + s.s + '.' + encodeSnap(s), sh = W.TriageUI ? W.TriageUI.shapeSvg(tg.sh, 40) : '';
+  var tq = s.tq[0], meds = s.md.slice(-3);
+  var who = [T(s.n) || L('Unnamed casualty','נפגע ללא שם'), s.ag != null ? s.ag + L(' y',' שנים') : '', (s.sx === 'M' || s.sx === 'male') ? L('M','ז') : (s.sx === 'F' || s.sx === 'female') ? L('F','נ') : ''].filter(Boolean).join(' · ');
+  return '<div class="brc2' + (opts.print ? ' brc-print' : '') + (opts.list ? ' brc-list' : '') + '" style="--tg:' + tg.c + ';--tgt:' + tg.tx + '">'
+    + '<div class="b2-tri">' + sh + '<b>' + esc(L(tg.en, tg.he)) + '</b><i>' + tg.code + '</i></div>'
+    + '<div class="b2-main">'
+    +   '<div class="b2-top"><span>' + L('SHOMER AHI · CASUALTY ID','שומר אחי · זיהוי נפגע') + '</span><em>' + L('DEMO','דמו') + '</em></div>'
+    +   '<div class="b2-no"><small>' + L('NO.','מס׳') + '</small><b dir="ltr">' + esc(s.s) + '</b></div>'
+    +   '<div class="b2-who">' + esc(who) + '</div>'
+    +   '<div class="b2-grid">'
+    +     (tq ? '<div class="b2-box set"><small>' + L('TQ','חוסם') + '</small><b>' + hhmm(tq[1]) + '</b><span>' + esc(regionName(tq[0])) + '</span></div>' : '<div class="b2-box blank"><small>' + L('TQ','חוסם') + '</small><b>__ : __</b></div>')
+    +     (meds.length ? '<div class="b2-box set"><small>' + L('DRUGS','תרופות') + '</small>' + meds.map(function(m){ return '<span><b style="font-size:1em">' + hhmm(m[3]) + '</b> ' + esc(T(m[0])) + '</span>'; }).join('') + '</div>' : '<div class="b2-box blank"><small>' + L('DRUGS + TIME','תרופות + שעה') + '</small></div>')
+    +     '<div class="b2-box blank"><small>' + L('EVAC ORDER','סדר פינוי') + '</small><b>#</b></div>'
     +   '</div>'
-    +   '<div class="brc-write brc-write2">'
-    +     '<span>' + L('NPO','צום') + ' <i>' + (s.np ? '✓' : '☐') + '</i></span>'
-    +     '<span>' + L('ALLERGY','אלרגיה') + ' <i>' + (s.al ? esc(String(s.al).slice(0, 8)) : '____') + '</i></span>'
-    +     '<span>' + L('BLOOD','סוג דם') + ' <i>____</i></span>'
+    +   '<div class="b2-grid">'
+    +     '<div class="b2-box ' + (s.np ? 'set' : 'blank') + '"><small>' + L('NIL BY MOUTH','צום') + '</small><b>' + (s.np ? L('YES','כן') : '☐') + '</b></div>'
+    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('ALLERGY','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 14)) + '</span>' : '') + '</div>'
+    +     '<div class="b2-box blank"><small>' + L('BLOOD TYPE','סוג דם') + '</small></div>'
     +   '</div>'
-    +   '<div class="brc-foot">' + L('DEMO · NOT FOR CLINICAL USE · scan with any phone camera','דמו · לא לשימוש קליני · סרוק בכל מצלמת טלפון') + '</div>'
-    + '</div></div>';
+    +   '<div class="b2-foot">' + L('DEMO. NOT FOR CLINICAL USE. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
+    + '</div>'
+    + '<div class="b2-qr">' + qrSvg(url, opts.print ? 140 : 176) + '<small>' + L('SCAN WITH ANY PHONE CAMERA','סרקו בכל מצלמת טלפון') + '</small></div>'
+    + '</div>';
 }
 
 // ── Scan-result casualty card ──────────────────────────────────
@@ -432,19 +453,10 @@ function printCss(){
     + '.bar{max-width:210mm;margin:0 auto 14px;background:#fff;border-radius:10px;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between}'
     + '.bar b{display:block;font-size:15px}.bar span{font-size:12px;color:#555}.bar button{background:#111;color:#fff;border:0;border-radius:8px;padding:11px 18px;font:600 14px inherit;cursor:pointer}'
     + '.sheet{max-width:210mm;margin:0 auto;background:#fff;padding:10mm;display:grid;grid-template-columns:1fr;gap:6mm;justify-items:center}'
-    + brcCss() + '.brc{outline:1px dashed #888;outline-offset:2mm;break-inside:avoid}'
+    + brcCss() + '.brc2{outline:1px dashed #888;outline-offset:2mm;break-inside:avoid}'
     + '@media print{body{background:#fff;padding:0}.bar{display:none}.sheet{padding:8mm;max-width:none}@page{size:A4;margin:0}}';
 }
-function brcCss(){
-  return '.brc{display:flex;align-items:stretch;width:150mm;height:44mm;background:#fff;color:#111;border:1px solid #111;border-radius:3mm;overflow:hidden;font-family:Inter,Heebo,Arial,sans-serif}'
-    + '.brc-band{width:15mm;background:var(--tg);display:flex;align-items:center;justify-content:center;color:#fff;font:700 13px/1 Inter,Arial}.brc-band span{writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.12em}'
-    + '.brc-qr{padding:3mm;display:flex;align-items:center}.brc-qr .qr{width:36mm;height:36mm}'
-    + '.brc-info{flex:1;padding:3.5mm 4mm 3mm 1mm;display:flex;flex-direction:column;min-width:0}'
-    + '.brc-brand{font:700 7.5pt Inter,Arial;letter-spacing:.08em;color:#555}.brc-serial{font:700 22pt ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;margin-top:1mm}'
-    + '.brc-name{font:600 10pt Inter,Heebo,Arial;margin-top:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-    + '.brc-write{display:flex;gap:5mm;margin-top:auto;font:700 8pt Inter,Arial}.brc-write i{display:inline-block;min-width:14mm;border-bottom:1px solid #111;font-style:normal;font-weight:600;text-align:center;margin-inline-start:1.5mm}'
-    + '.brc-foot{font:500 6.5pt Inter,Arial;color:#666;margin-top:1.5mm}';
-}
+function brcCss(){ return BRC_CSS; }
 
 // ── Scanner ────────────────────────────────────────────────────
 function loadJsQR(){
@@ -514,7 +526,7 @@ function renderTab(){
     + '<div class="bt-list">';
   list.forEach(function(c){
     var tg = triageOf(c.triageColor);
-    h += '<article class="bt-item"><div class="bt-scale">' + braceletHtml(c) + '</div>'
+    h += '<article class="bt-item"><div class="bt-scale">' + braceletHtml(c, { list:true }) + '</div>'
       + '<div class="bt-row"><div><div class="bt-name">' + esc(T(c.name)) + '</div><div class="bt-sub"><i style="background:' + tg.c + '"></i>' + L(tg.en, tg.he) + '</div></div>'
       + '<div class="bt-btns"><button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(c._docId) + '\')">' + L('Scan result','תוצאת סריקה') + '</button>'
       + '<button class="xbtn" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Open bracelet','פתח צמיד') + '">' + ico('printer', 16) + '</button></div></div></article>';

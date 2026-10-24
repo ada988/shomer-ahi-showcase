@@ -116,7 +116,7 @@ function render(){
   var road = vs.filter(function(v){ return v.status === 'evacuating'; }), fleet = vs.filter(function(v){ return v.status !== 'evacuating' && v.status !== 'athospital'; }), done = vs.filter(function(v){ return v.status === 'athospital'; });
   var h = '<div class="pl-head"><div><h2>' + L('Evacuate','פינוי') + '</h2><p>' + L('Who is on which ambulance, and when they arrive.','מי על איזה אמבולנס, ומתי יגיעו.') + '</p></div></div>';
   var waiting = casualties().filter(function(c){ return c.triageColor === 'red' && !W.isCasualtyAssignedToVehicle(c); }).length;
-  if (waiting) h += '<div class="b-alert ev-alert">' + ico('triangle-alert', 30) + '<span>' + L(waiting + ' IMMEDIATE ' + (waiting > 1 ? 'CASUALTIES' : 'CASUALTY') + ' STILL ON SCENE', waiting + ' נפגעים מיידיים עדיין בזירה') + '</span></div>';
+  if (waiting) h += '<div class="b-alert ev-alert">' + ico('triangle-alert', 30) + '<span>' + L(waiting + ' URGENT ' + (waiting > 1 ? 'CASUALTIES' : 'CASUALTY') + ' STILL ON SCENE', waiting + ' נפגעים מיידיים עדיין בזירה') + '</span></div>';
   road.forEach(function(v){ h += transportCard(v); });
   fleet.forEach(function(v){ h += fleetCard(v); });
   done.forEach(function(v){ h += '<section class="ev-card done"><b>' + name(v) + '</b><span>' + L('AT HOSPITAL — handed over','בבית חולים — נמסרו') + ' (' + (v.casualties || []).length + ')</span></section>'; });
@@ -133,8 +133,8 @@ function renderTransport(v){
   h += '<div class="tp-eta ' + cls + '"><small>' + L('ARRIVE IN','הגעה בעוד') + '</small><b>' + etaText(v) + '</b><span>' + (hosp ? esc(L(hosp.en, hosp.he)) : L('Choose a hospital','בחרו בית חולים')) + '</span>'
     + '<div class="tp-step"><button onclick="Evac.eta(\'' + v.id + '\',-1)">−1</button><button onclick="Evac.eta(\'' + v.id + '\',1)">+1</button><button onclick="Evac.eta(\'' + v.id + '\',5)">+5</button></div></div>';
   if (state.driver){
-    var sirens = counts.red ? L('YES — IMMEDIATE ON BOARD','כן — מיידי על הסיפון') : L('NO','לא');
-    h += '<div class="tp-driver"><div><small>' + L('ON BOARD','על הסיפון') + '</small><b>' + m.length + '</b></div><div><small>' + L('IMMEDIATE','מיידי') + '</small><b>' + (counts.red || 0) + '</b></div><div><small>' + L('DELAYED','דחוי') + '</small><b>' + (counts.yellow || 0) + '</b></div></div>'
+    var sirens = counts.red ? L('YES — URGENT ON BOARD','כן — דחוף על הסיפון') : L('NO','לא');
+    h += '<div class="tp-driver"><div><small>' + L('ON BOARD','על הסיפון') + '</small><b>' + m.length + '</b></div><div><small>' + L('URGENT','דחוף') + '</small><b>' + (counts.red || 0) + '</b></div><div><small>' + L('DELAYED','דחוי') + '</small><b>' + (counts.yellow || 0) + '</b></div></div>'
       + '<div class="tp-siren ' + (counts.red ? 'yes' : '') + '"><small>' + L('FAST TRANSPORT','הובלה מהירה') + '</small><b>' + sirens + '</b></div>';
   } else {
     h += '<div class="ev-h">' + L('ON BOARD','על הסיפון') + ' (' + m.length + ')</div><div class="tp-pts">' + m.map(function(c){

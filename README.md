@@ -3,7 +3,7 @@
 A login-free, static demo of the medical half of Shomer Ahi, built to be understood in under a minute:
 
 - **Form 101** digital casualty card: body map, vitals with trends, MARCH-ordered care log, medication prep sheets, decision support (shock, TBI, drug time windows), MIST+ / radio handoff and a printable record.
-- **Two ways to start:** ONE PATIENT opens the full Form 101; MANY CASUALTIES opens QUICK TRIAGE (five yes/no questions, a colour in seconds). A quick record can be upgraded to a full Form 101 later. Every record is labelled FULL or QUICK.
+- **Two ways to start:** ONE PATIENT opens the full Form 101; MANY CASUALTIES opens QUICK TRIAGE (the book's S-A-B-C steps as yes/no questions: URGENT, NOT URGENT or WAITING in seconds). A quick record can be upgraded to a full Form 101 later. Every record is labelled FULL or QUICK.
 - **Field panel** with big buttons for gloved hands: triage colour, tourniquet clock, MARCH tiles, vitals keypad, GIVE NOW drugs with undo, adaptive WHAT TO DO NEXT, and tap-to-measure heart rate and breathing.
 - **Evacuation board** (ambulances, hospitals, ETA countdown, driver view, pre-alert text) and a command board with triage colours.
 - **QR wristbands**: each casualty gets a printable bracelet whose QR code carries a compact copy of their record. Scan it (in-app camera scanner, or any phone camera when deployed) and the record opens — no server, no network.

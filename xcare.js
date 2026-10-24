@@ -85,19 +85,12 @@ var SECONDARY = [
 
 Field._xs = 'primary'; Field._xo = {};
 function done(it){ var m = (X().xcare || {})[it[0]]; if (m) return m; return it[8] && it[8]() ? true : false; }
-function stage(){ return Field._xs === 'secondary' ? SECONDARY : PRIMARY; }
-function pref(){ return Field._xs === 'secondary' ? 's' : 'p'; }
 
-Field.xcareHtml = function(){
-  var all = stage(), tabs = '<div class="xc-tabs" role="tablist">'
-    + '<button role="tab" aria-selected="' + (Field._xs !== 'secondary') + '" class="' + (Field._xs !== 'secondary' ? 'on' : '') + '" onclick="Field.xcStage(\'primary\')"><b>' + L('PRIMARY SURVEY','סקר ראשוני') + '</b><small>X · C · A · R · E</small></button>'
-    + '<button role="tab" aria-selected="' + (Field._xs === 'secondary') + '" class="' + (Field._xs === 'secondary' ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C · A · R · E · PFC</small></button></div>';
-  // open the first unfinished block unless the user chose
-  var firstOpen = null;
+function groupsHtml(sec){
+  var all = sec ? SECONDARY : PRIMARY, pf = sec ? 's' : 'p', firstOpen = null, h = '<div class="xc-list">';
   all.forEach(function(g){ if (firstOpen == null && g.items.some(function(it){ return !done(it); })) firstOpen = g.k; });
-  var h = '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + '<div class="xc-list">';
   all.forEach(function(g){
-    var n = g.items.filter(done).length, tot = g.items.length, key = pref() + g.k;
+    var n = g.items.filter(done).length, tot = g.items.length, key = pf + g.k;
     var open = Field._xo[key] != null ? Field._xo[key] : (g.k === firstOpen);
     h += '<section class="xc-g ' + COL[g.k] + (open ? ' open' : '') + (n === tot ? ' all' : '') + '">'
       + '<button class="xc-gh" aria-expanded="' + open + '" onclick="Field.xcOpen(\'' + key + '\',' + (open ? 0 : 1) + ')"><span class="xc-let">' + (g.k === 'P' ? 'PFC' : g.k) + '</span><span class="xc-gt"><b>' + L(g.en, g.he) + '</b><small>' + L(g.sub[0], g.sub[1]) + '</small></span><span class="xc-pr">' + (n === tot ? ico('check', 24) : '') + n + '/' + tot + '</span></button>';
@@ -113,6 +106,14 @@ Field.xcareHtml = function(){
     h += '</section>';
   });
   return h + '</div>';
+}
+Field.xcareGroups = groupsHtml;
+Field.xcareHtml = function(){
+  var sec = Field._xs === 'secondary';
+  var tabs = '<div class="xc-tabs" role="tablist">'
+    + '<button role="tab" aria-selected="' + !sec + '" class="' + (!sec ? 'on' : '') + '" onclick="Field.xcStage(\'primary\')"><b>' + L('PRIMARY SURVEY','סקר ראשוני') + '</b><small>X · C · A · R · E</small></button>'
+    + '<button role="tab" aria-selected="' + sec + '" class="' + (sec ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C · A · R · E · PFC</small></button></div>';
+  return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + groupsHtml(sec);
 };
 Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; W.MedHost.renderIncidentPage(); };
 Field.xcOpen = function(key, v){ Field._xo[key] = !!v; W.MedHost.renderIncidentPage(); };

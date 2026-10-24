@@ -38,3 +38,18 @@
 .fs-bar{display:grid!important;grid-template-columns:1fr 1fr 1.4fr;gap:8px!important}
 .fs-bar .xbtn{min-width:0!important;flex-direction:column;gap:0;padding:4px 6px!important;white-space:nowrap}
 .fs-bar .xbtn span{font-size:17px!important;line-height:1.1;overflow:hidden;text-overflow:clip}
+
+/* Engine primary-survey groups in the Care section get the same letter colours */
+.eg{border:4px solid var(--xc)!important;border-radius:16px!important;background:var(--c2)!important;margin-bottom:10px!important}
+.eg>div:first-child{background:var(--xc);min-height:64px;padding:0 14px!important;gap:12px!important}
+.eg>div:first-child span{color:#fff!important;font-weight:900!important}
+.eg>div:first-child span:first-child{font-size:30px!important}
+.eg>div:first-child span:nth-child(2){font-size:19px!important}
+.eg>div:first-child span:last-child{display:none}
+.xc-sec{margin-top:22px}
+.xc-sech{display:flex;flex-direction:column;gap:2px;font-size:24px;font-weight:900;margin-bottom:10px;padding-top:14px;border-top:4px solid #fff}
+.xc-sech small{font-size:16px;color:var(--t2);letter-spacing:.08em}
+
+#fs-care .cas-section[data-tour=care]>.cas-section-title{display:none}
+
+.del-btn{display:inline-flex!important;align-items:center;gap:6px;min-width:56px!important;min-height:48px!important;padding:0 10px!important;border:2px solid #ff6b6b!important;border-radius:10px!important;background:transparent!important;color:#ff9a9a!important;font-size:16px!important;font-weight:900!important}

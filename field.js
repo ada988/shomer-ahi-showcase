@@ -12,7 +12,7 @@ function hhmm(iso){ var d = new Date(iso); return String(d.getHours()).padStart(
 function minsAgo(iso){ return Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); }
 function app(){ return document.getElementById('app'); }
 
-var TRI = [['red','IMMEDIATE','מיידי'], ['yellow','DELAYED','דחוי'], ['green','MINOR','קל'], ['gray','EXPECTANT','ציפייה'], ['black','DECEASED','נפטר']];
+var TRI = [['red','URGENT','דחוף'], ['yellow','DELAYED','דחוי'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['black','DECEASED (DOCTOR)','חלל (רופא)']];
 var EVAC = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant', black:'' };
 var SITES = [['r_upper_arm','RIGHT ARM','יד ימין'], ['l_upper_arm','LEFT ARM','יד שמאל'], ['r_thigh','RIGHT LEG (THIGH)','רגל ימין (ירך)'], ['l_thigh','LEFT LEG (THIGH)','רגל שמאל (ירך)'], ['r_shin','RIGHT LOWER LEG','שוק ימין'], ['l_shin','LEFT LOWER LEG','שוק שמאל']];
 var GIVE = [
@@ -48,7 +48,7 @@ function quickBanner(){
   return '<div class="f-quick"><span class="f-qi">' + ico('zap', 30) + '</span><span><b>' + L('QUICK TRIAGE RECORD','רשומת מיון מהיר') + '</b><small>' + L('Only the triage colour was recorded. Complete the full Form 101 when you have time to give care.','נרשם רק צבע המיון. השלימו את טופס 101 המלא כשיש זמן לטיפול.') + '</small></span><button onclick="Field.upgrade()">' + L('START FULL FORM 101','התחילו טופס 101 מלא') + '</button></div>';
 }
 function html(){
-  var c = ctx(), tqs = c.x.tourniquets || [], cur = W._casualtyTriageColor, h = quickBanner() + (Field.nextHtml ? Field.nextHtml() : '');
+  var c = ctx(), tqs = c.x.tourniquets || [], cur = W._casualtyTriageColor, h = quickBanner();
   // 1 · triage
   h += '<div class="f-h">' + L('TRIAGE','מיון') + '</div><div class="f-tri">';
   TRI.forEach(function(t){
@@ -81,13 +81,6 @@ function html(){
     + vt(L('BREATHS','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 30 || v.rr < 10))
     + '</div>'
     + '<div class="f-tapbar"><button onclick="Field.tapStart(\'pulse\')">' + ico('heart-pulse', 30) + '<span>' + L('TAP THE HEARTBEAT','הקישו את הדופק') + '</span></button><button onclick="Field.tapStart(\'rr\')">' + ico('wind', 30) + '<span>' + L('TAP THE BREATHS','הקישו את הנשימות') + '</span></button></div>';
-  // 6 · give now
-  h += '<div class="f-h">' + L('GIVE NOW — ONE TAP, TIME IS RECORDED','לתת עכשיו — לחיצה אחת, הזמן נרשם') + '</div><div class="f-give">';
-  GIVE.forEach(function(g){
-    var m = g.fluid ? null : lastMed(new RegExp('^' + g.drug)), fl = g.fluid ? ((W._casualtyXABCDE.c || {}).fluids || []).filter(function(f){ return f.type === g.type; }).slice(-1)[0] : null, t = (m || fl) ? (m || fl).time : null;
-    h += '<button class="f-g' + (t ? ' given' : '') + '" onclick="Field.give(\'' + g.key + '\')"><b>' + L(g.en, g.he) + '</b><span>' + L(g.sub, g.subHe) + '</span>' + (t ? '<i>' + ico('check', 20) + L('GIVEN ','ניתן ') + hhmm(t) + '</i>' : '') + '</button>';
-  });
-  h += '</div><button class="xbtn f-more" onclick="Field.march(\'e\')">' + L('MORE DRUGS AND FLUIDS','עוד תרופות ונוזלים') + '</button>';
   return '<section class="field" id="field" data-tour="field">' + h + '</section>';
 }
 function vt(label, val, unit, idx, bad){

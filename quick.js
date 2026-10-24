@@ -1,5 +1,5 @@
 /* QUICK TRIAGE — the short form for mass-casualty events (many casualties, seconds each).
-   Five plain questions (START logic) decide the colour; one tap saves the record and moves on to the next casualty.
+   Steps follow the book's S-A-B-C triage: bleeding, breathing, airway, chest, circulation, life or limb threat. Results: URGENT, NOT URGENT, WAITING (never DECEASED: only a doctor declares death).
    A quick record is a real casualty: it can be opened later as a full Form 101 (formLevel 'quick' → 'full'). */
 (function(){
 'use strict';
@@ -11,22 +11,23 @@ function esc(s){ return W.escapeHtml(s); }
 function app(){ return document.getElementById('app'); }
 
 var EVAC = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant', black:'' };
+var DEFAULT_COL = 'green';
 
 // Question graph. yes/no → next step id or a final colour.
 var STEPS = {
-  walk:    { q:['Can they WALK?','האם הם יכולים ללכת?'], yes:['green',  ['Walking','הולך']], no:'breath', yesL:['YES — walking','כן — הולכים'], noL:['NO','לא'] },
-  breath:  { q:['Are they BREATHING?','האם הם נושמים?'], yes:'rate', no:'airway', yesL:['YES','כן'], noL:['NO','לא'] },
-  airway:  { q:['Open the airway. Are they breathing now?','פתחו נתיב אוויר. האם נושמים עכשיו?'], yes:['red', ['Breathing only after the airway was opened','נושם רק לאחר פתיחת נתיב אוויר']], no:['black', ['WAITING: not breathing. Go back only after the urgent casualties are treated. Death is declared by a physician.','ממתין: לא נושם. חוזרים רק אחרי שהדחופים טופלו. קביעת מוות רק על ידי רופא.']], yesL:['YES, now breathing','כן, נושם עכשיו'], noL:['NO, still not','לא, עדיין לא'] },
-  rate:    { q:['More than 30 breaths a minute?','יותר מ-30 נשימות בדקה?'], yes:['red', ['Breathing too fast','נשימה מהירה מדי']], no:'pulse', yesL:['YES, over 30','כן, מעל 30'], noL:['NO, 30 or fewer','לא, 30 או פחות'] },
-  pulse:   { q:['Is the wrist pulse STRONG, or does a pressed fingernail refill in under 2 seconds?','האם הדופק בפרק היד חזק, או שציפורן לחוצה מתמלאת בפחות מ-2 שניות?'], yes:'obey', no:['red', ['Poor circulation','זרימת דם לקויה']], yesL:['YES, good','כן, תקין'], noL:['NO, weak or slow','לא, חלש או איטי'] },
-  obey:    { q:['Can they follow a SIMPLE COMMAND, like “squeeze my hand”?','האם הם מבצעים פקודה פשוטה, כמו “לחצו את ידי”?'], yes:['yellow', ['Stable for now','יציב כרגע']], no:['red', ['Cannot follow commands','לא מבצע פקודות']], yesL:['YES','כן'], noL:['NO','לא'] }
+  bleed:  { q:['S · Life-threatening bleeding? Stop it now: tourniquet, packing, pressure.','S · דימום מסכן חיים? עוצרים עכשיו: חוסם עורקים, אריזה, לחץ.'], yes:'breath', no:'breath', flag:'bleed', yesL:['YES — stopped it','כן — עצרתי'], noL:['NO bleeding','אין דימום'] },
+  breath: { q:['Is the casualty breathing on their own? Gasping counts as NOT breathing.','האם הפצוע נושם בכוחות עצמו? נשימה אגונלית נחשבת כלא נושם.'], yes:'airway', no:['gray', ['WAITING: not breathing. Move out of the row. Come back only after every urgent casualty is treated. Only a doctor declares death.','ממתין: לא נושם. מוציאים מהשורה. חוזרים רק אחרי שכל הדחופים טופלו. רק רופא קובע מוות.']], yesL:['YES, breathing','כן, נושם'], noL:['NO, not breathing','לא נושם'] },
+  airway: { q:['A · Airway at risk? Unconscious, cannot speak, stridor, gurgling, face or neck injury.','A · נתיב אוויר בסיכון? מחוסר הכרה, לא מדבר, סטרידור, חרחור, פגיעת פנים או צוואר.'], yes:['red', ['URGENT: open the airway, put them in the recovery position.','דחוף: פתחו נתיב אוויר, הניחו בתנוחת החלמה.']], no:'chest', yesL:['YES','כן'], noL:['NO','לא'] },
+  chest:  { q:['B · Chest wound, fast or laboured breathing, or low SpO₂ (under 90)?','B · פצע חזה, נשימה מהירה או מאומצת, או סטורציה נמוכה (מתחת ל-90)?'], yes:['red', ['URGENT: breathing problem. Oxygen if you have it, let them sit up.','דחוף: בעיה בנשימה. חמצן אם יש, אפשרו ישיבה.']], no:'circ', yesL:['YES','כן'], noL:['NO','לא'] },
+  circ:   { q:['C · Weak or absent radial pulse, pale cold skin, or confused or drowsy (not from a head injury)?','C · דופק רדיאלי חלש או חסר, עור חיוור וקר, או מבולבל או ישנוני (לא מפגיעת ראש)?'], yes:['red', ['URGENT: signs of shock. Measure blood pressure, plan IV and blood.','דחוף: סימני הלם. מדדו לחץ דם, תכננו עירוי ודם.']], no:'limb', yesL:['YES','כן'], noL:['NO','לא'] },
+  limb:   { q:['Injury that threatens life or limb? Penetrating head, neck, chest, belly or groin; penetrating eye; a tourniquet on a limb.','פציעה שמסכנת חיים או איבר? חדירה בראש, בצוואר, בחזה, בבטן או במפשעה; פגיעה חודרת בעין; חוסם עורקים על גפה.'], yes:['red', ['URGENT: injury threatens life or limb.','דחוף: פציעה מסכנת חיים או איבר.']], no:['green', ['NOT URGENT for now. Walking casualties are not automatically safe: check them like everyone else.','לא דחוף כרגע. גם הולכים לא בטוחים אוטומטית: בדקו אותם כמו כולם.']], yesL:['YES','כן'], noL:['NO','לא'] }
 };
 var S = null;   // {step, history:[], result:null}
 
 function counts(){ var c = { red:0, yellow:0, green:0, gray:0, black:0 }; (W._incidentCasualties || []).forEach(function(x){ if (c[x.triageColor] != null) c[x.triageColor]++; }); return c; }
 function countBar(){
   var c = counts();
-  return '<div class="qt-count">' + ['red','yellow','green','black'].map(function(k){ var t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 20) + '<b>' + c[k] + '</b></span>'; }).join('') + '</div>';
+  return '<div class="qt-count">' + ['red','green','gray'].map(function(k){ var t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 20) + '<b>' + c[k] + '</b></span>'; }).join('') + '</div>';
 }
 function head(){
   return '<div class="qt-top"><button class="xbtn" onclick="Quick.close()">' + ico('x', 26) + L('CLOSE','סגור') + '</button><div class="qt-title"><b>' + L('QUICK TRIAGE','מיון מהיר') + '</b><small>' + L('Many casualties — seconds each','נפגעים רבים — שניות לכל אחד') + '</small></div></div>' + countBar();
@@ -54,7 +55,7 @@ function finish(color, reason){ S.result = { color:color, reason:reason }; draw(
 
 var Quick = {
   open: function(){
-    Quick.close(); S = { step:'walk', history:[], result:null };
+    Quick.close(); S = { step:'bleed', history:[], result:null, flags:{} };
     var el = document.createElement('div'); el.id = 'qt'; el.className = 'qt no-polish'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', L('Quick triage','מיון מהיר'));
     el.innerHTML = '<div class="qt-inner"></div>'; app().appendChild(el); draw();
   },
@@ -62,10 +63,13 @@ var Quick = {
   answer: function(yes){
     var st = STEPS[S.step], nxt = yes ? st.yes : st.no;
     S.history.push(S.step);
-    if (typeof nxt === 'string'){ S.step = nxt; draw(); } else finish(nxt[0], nxt[1]);
+    if (st.flag) S.flags[st.flag] = yes;
+    if (typeof nxt === 'string'){ S.step = nxt; draw(); }
+    else if (nxt[0] === 'green' && S.flags.bleed) finish('red', ['URGENT: life-threatening bleeding (stopped). A bleed controlled with a tourniquet stays urgent.','דחוף: דימום מסכן חיים (נעצר). דימום שנעצר בחוסם עורקים נשאר דחוף.']);
+    else finish(nxt[0], nxt[1]);
   },
   back: function(){
-    if (S.result){ S.result = null; S.step = S.history.pop() || 'walk'; draw(); return; }
+    if (S.result){ S.result = null; S.step = S.history.pop() || 'bleed'; draw(); return; }
     if (S.history.length){ S.step = S.history.pop(); draw(); }
   },
   change: function(){
@@ -86,7 +90,7 @@ var Quick = {
     rec.bracelet = { serial: W.Bracelet.serialFor(rec) };
     W._upsertOfflineCasualty(rec);
     if (openFull){ Quick.close(); W._incidentTab = 'casualties'; setTimeout(function(){ W.editCasualtyById(id); }, 60); return; }
-    S = { step:'walk', history:[], result:null }; draw();
+    S = { step:'bleed', history:[], result:null, flags:{} }; draw();
     if (W.Field && W.Field.toast) W.Field.toast(L(rec.name + ' saved as ' + W.TriageUI.word(color), rec.name + ' נשמר כ-' + W.TriageUI.word(color)), null);
   }
 };

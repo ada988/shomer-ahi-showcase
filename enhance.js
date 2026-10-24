@@ -58,7 +58,7 @@ function enhanceForm(c){
   var sNow  = section('fs-now',   L('Decision support','תמיכה בהחלטות'), L('Software suggestions — can be wrong. A medical professional decides.','הצעות תוכנה — עלולות לטעות. איש צוות רפואי מחליט.'));
   var sBody = section('fs-body',  L('Body map','מפת גוף'), L('Tap a body part to mark a wound','לחצו על אזור בגוף כדי לסמן פציעה'));
   var sVit  = section('fs-vitals',L('Vitals','מדדים'), L('Every reading is logged with trends','כל מדידה נרשמת עם מגמות'));
-  var sCare = section('fs-care',  L('Care','טיפול'), L('MARCH order','לפי סדר MARCH'));
+  var sCare = section('fs-care',  L('Details','פרטים'), L('Enter the details behind each X-CARE step (optional)','הזנת הפרטים מאחורי כל שלב ב-X-CARE (לא חובה)'));
   var sRec  = section('fs-record',L('Record','תיק'), L('Details, timeline and handoff chain','פרטים, ציר זמן ושרשרת העברה'));
 
   // Now: alerts, clocks, MARCH-P, recommendations
@@ -121,6 +121,8 @@ function enhanceForm(c){
   [autosave, saveBtn, closeBtn].forEach(function(e){ if (e) foot.appendChild(e); });
   frag.appendChild(foot); frag.appendChild(hand); frag.appendChild(bar);
   c.innerHTML = ''; c.appendChild(frag);
+  c.querySelectorAll('#fs-care [onclick*="_casualtyActiveTab"]').forEach(function(h){ var m = /cur===.(\w)./.exec(h.getAttribute('onclick') || ''); var g = h.parentNode; if (m && g) g.classList.add('eg', 'xc-' + m[1]); });
+  c.querySelectorAll('button[aria-label]').forEach(function(b){ if (!b.textContent.trim() && !b.querySelector('svg') && /delete|remove|מחק/i.test(b.getAttribute('aria-label'))) { b.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; b.classList.add('del-btn'); } });
   c.dataset.enh = 'form';
   flattenSvg(c); flattenVitals(c);
   nav.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === (W.FormUI.cur || 'field')); });

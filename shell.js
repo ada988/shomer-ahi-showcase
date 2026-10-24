@@ -66,11 +66,11 @@ Object.assign(w.MedHost, {
 
 // ── Triage language: SHAPE + WORD + COLOUR, always ─────────────
 var TG = {
-  red:    { c:'#e5242b', en:'IMMEDIATE', he:'מיידי',  shape:'oct' },
+  red:    { c:'#e5242b', en:'URGENT', he:'דחוף',  shape:'oct' },
   yellow: { c:'#ffd400', en:'DELAYED',   he:'דחוי',   shape:'tri' },
-  green:  { c:'#19c37d', en:'MINOR',     he:'קל',     shape:'circ' },
-  gray:   { c:'#b4bbc8', en:'EXPECTANT', he:'ציפייה', shape:'hex' },
-  black:  { c:'#000000', en:'DECEASED',  he:'נפטר',   shape:'sqx' }
+  green:  { c:'#19c37d', en:'NOT URGENT', he:'לא דחוף',     shape:'circ' },
+  gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', shape:'hex' },
+  black:  { c:'#000000', en:'DECEASED (DOCTOR)', he:'חלל (רופא)',   shape:'sqx' }
 };
 var NONE = { c:'#6b7078', en:'NOT TRIAGED', he:'טרם סווג', shape:'circ' };
 function tg(color){ return TG[color] || NONE; }
@@ -118,7 +118,7 @@ function renderOverview(){
   var waitingReds = list.filter(function(x){ return x.triageColor === 'red' && unassigned(x); });
   var alertHtml = waitingReds.length
     ? '<button class="ov-alert" onclick="Demo.openCasualty(\'' + esc(waitingReds[0]._docId) + '\')">' + ico('triangle-alert', 32)
-      + '<span><b>' + L(waitingReds.length + ' IMMEDIATE ' + (waitingReds.length > 1 ? 'CASUALTIES' : 'CASUALTY') + ' WAITING FOR EVACUATION', waitingReds.length + ' נפגעים מיידיים ממתינים לפינוי') + '</b><small>' + L('Tap to open the first one','לחצו לפתיחת הראשון') + '</small></span></button>'
+      + '<span><b>' + L(waitingReds.length + ' URGENT ' + (waitingReds.length > 1 ? 'CASUALTIES' : 'CASUALTY') + ' WAITING FOR EVACUATION', waitingReds.length + ' נפגעים דחופים ממתינים לפינוי') + '</b><small>' + L('Tap to open the first one','לחצו לפתיחת הראשון') + '</small></span></button>'
     : '';
   var tiles = ['red','yellow','green','black'].map(function(c){
     var t = tg(c);
