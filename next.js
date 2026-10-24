@@ -62,7 +62,7 @@ function items(){
 
   if (ctx.pediatric) {
     var wk = Number(e.weightKg) || 0, age = Number(e.ageYears), est = false;
-    if (!wk) { est = true; wk = age < 0.5 ? 3.5 : age < 1 ? 7 : age < 4 ? 11 : age < 8 ? 17 : 27; }
+    if (!wk) { est = true; wk = W._broselowWeight ? W._broselowWeight(age) : (age < 0.5 ? 3.5 : age < 1 ? 7 : age < 4 ? 11 : age < 8 ? 17 : 27); }
     var r1 = function(v){ return Math.round(v * 10) / 10; };
     add(3.2, 'urgent', 'syringe', L('CHILD ' + wk + ' kg' + (est ? ' (estimated from age)' : ''), 'ילד ' + wk + ' ק״ג' + (est ? ' (הערכה לפי גיל)' : '')),
       L('TXA ' + Math.round(wk * 15) + ' mg · fluid or blood ' + Math.round(wk * 20) + ' mL (shock only) · ketamine ' + r1(wk * 0.3) + ' mg IV · ceftriaxone ' + Math.min(2000, Math.round(wk * 100)) + ' mg. Use the length tape if you have one.',
@@ -165,6 +165,7 @@ Field.tapClose = function(){ var e = document.getElementById('f-tap'); if (e) e.
 Field.tapSave = function(){
   var est = estimate(); if (!est || !T) return;
   var kind = T.kind, rate = est.rate, n = T.taps.length;
+  if (kind === 'rr' ? (rate < 1 || rate > 80) : (rate < 20 || rate > 300)){ var h = document.querySelector('#f-tap .tap-hint'); if (h) h.textContent = L('Not possible (' + rate + '/min). Start over and tap with each ' + (kind === 'rr' ? 'breath' : 'beat') + '.', 'לא אפשרי (' + rate + '/דק׳). התחילו מחדש.'); return; }
   Field.tapClose();
   if (W.pushMedHistory) W.pushMedHistory();
   var vi = (W._casualtyVitalsInput = W._casualtyVitalsInput || {}), X = W._casualtyXABCDE;

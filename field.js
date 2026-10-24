@@ -52,9 +52,9 @@ function idStrip(){
   var col = W._casualtyTriageColor, tg = col ? W.TriageUI.tg(col) : null;
   var dark = col === 'yellow' || col === 'gray';
   var X = W._casualtyXABCDE || {}, e = X.e || {};
-  var who = [e.ageYears != null ? e.ageYears + L(' y',' שנים') : '', e.sex === 'M' || e.sex === 'male' ? L('Male','זכר') : (e.sex === 'F' || e.sex === 'female' ? L('Female','נקבה') : ''), e.weightKg ? e.weightKg + ' kg' : ''].filter(Boolean).join(' · ');
+  var who = [e.ageYears != null ? e.ageYears + L(' y',' שנים') : '', e.sex === 'M' || e.sex === 'male' ? L('Male','זכר') : (e.sex === 'F' || e.sex === 'female' ? L('Female','נקבה') : ''), e.weightKg ? e.weightKg + L(' kg',' ק״ג') : ''].filter(Boolean).join(' · ');
   var serial = c && W.Bracelet ? W.Bracelet.serialFor(c) : '';
-  var name = c ? esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(c.name) : c.name) : '';
+  var live = (W._casualtyName || '').trim(), name = live ? esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(live) : live) : L('No name yet','עדיין ללא שם');
   return '<div class="f-id' + (dark ? ' dark' : '') + '" style="--tg:' + (tg ? tg.c : '#3a3f4a') + '">'
     + '<span class="f-id-i">' + (tg ? W.TriageUI.shapeSvg(tg.shape, 44) : ico('circle-help', 44)) + '</span>'
     + '<span class="f-id-t"><b>' + (tg ? L(tg.en, tg.he) : L('NOT TRIAGED','טרם סווג')) + '</b><em>' + name + '</em>' + (who ? '<small>' + who + '</small>' : '') + '</span>'
@@ -105,9 +105,34 @@ function vt(label, val, unit, idx, bad){
 function lastVal(k){ var v = (W._casualtyVitals || []).slice(-1)[0]; return v && v[k] != null ? v[k] : null; }
 // ── Actions ────────────────────────────────────────────────────
 function render(){ W.MedHost.renderIncidentPage(); }
+function patientHtml(){
+  var e = ctx().e, sx = e.sex === 'M' || e.sex === 'male' ? 'M' : (e.sex === 'F' || e.sex === 'female' ? 'F' : '');
+  var v = function(x){ return x == null || x === '' ? '' : esc(String(x)); };
+  return '<div class="f-pat"><div class="f-pat-f"><label for="pat-age">' + L('AGE (YEARS)','גיל (שנים)') + '</label><input id="pat-age" data-k="age" class="fi" type="number" inputmode="numeric" min="0" max="120" placeholder="—" value="' + v(e.ageYears) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
+    + '<div class="f-pat-f"><label for="pat-wt">' + L('WEIGHT (KG)','משקל (ק״ג)') + '</label><input id="pat-wt" data-k="wt" class="fi" type="number" inputmode="decimal" min="1" max="250" placeholder="—" value="' + v(e.weightKg) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
+    + '<div class="f-pat-sex" role="group" aria-label="' + L('Sex','מין') + '"><button class="' + (sx === 'M' ? 'on' : '') + '" aria-pressed="' + (sx === 'M') + '" onclick="Field.setSex(this.dataset.s)" data-s="M">' + (sx === 'M' ? ico('check', 24) : '') + L('MALE','זכר') + '</button><button class="' + (sx === 'F' ? 'on' : '') + '" aria-pressed="' + (sx === 'F') + '" onclick="Field.setSex(this.dataset.s)" data-s="F">' + (sx === 'F' ? ico('check', 24) : '') + L('FEMALE','נקבה') + '</button></div></div>';
+}
 var Field = {
   html: html,
+  patientHtml: patientHtml,
+  patIn: function(k, val){
+    var X = W._casualtyXABCDE; if (!X) return; X.e = X.e || {}; var n = parseFloat(val);
+    if (k === 'age') X.e.ageYears = (!isNaN(n) && n >= 0 && n <= 120) ? Math.floor(n) : null;
+    else X.e.weightKg = (!isNaN(n) && n >= 1 && n <= 250) ? n : null;
+    W.MedHost.triggerAutoSave();
+  },
+  patDone: function(k, val){
+    var n = parseFloat(val); if (isNaN(n)) return;
+    if (k === 'age'){ if (n < 0 || n > 120){ undoToast(L('Age must be 0 to 120','הגיל חייב להיות 0 עד 120'), null); return; } snapshot(); W._setPatientAge(Math.floor(n)); }
+    else { if (n < 1 || n > 250){ undoToast(L('Weight must be 1 to 250 kg','המשקל חייב להיות 1 עד 250 ק״ג'), null); return; } snapshot(); W._setPatientWeight(n); }
+  },
+  setSex: function(s){
+    var X = W._casualtyXABCDE; if (!X) return; snapshot(); X.e = X.e || {};
+    X.e.sex = (X.e.sex === s) ? '' : s;
+    W.MedHost.triggerAutoSave(); render();
+  },
   triage: function(color){
+    if (W._casualtyTriageColor === color){ var T0 = W.TriageUI.tg(color); undoToast(L('Already set: ' + T0.en, 'כבר נקבע: ' + T0.he), null); return; }
     snapshot();
     W._casualtyTriageColor = color; W._casualtyEvacPriority = EVAC[color] || '';
     var T = W.TriageUI.tg(color);
@@ -134,13 +159,59 @@ var Field = {
     W._casualtyActiveTab = tab; render();
     setTimeout(function(){ if (W.FormUI) W.FormUI.jump('fs-care'); }, 60);
   },
-  give: function(key){
+  // Doses come from the IDF protocol: adult TXA 1 g, ketamine 25 mg IV, blood 500 mL; child TXA 15 mg/kg (max 1 g), ketamine 0.3 mg/kg, fluid 20 mL/kg (max 500 mL).
+  dosing: function(g){
+    var e = ctx().e, peds = W.isPedsMode && W.isPedsMode();
+    if (!peds) return { dose:g.dose, vol:g.vol, sub:g.sub, subHe:g.subHe };
+    var kg = e.weightKg || (e.ageYears != null && W._broselowWeight ? W._broselowWeight(e.ageYears) : null);
+    if (!kg) return null;
+    var note = e.weightKg ? '' : '~';
+    if (g.key === 'txa'){ var mg = Math.min(1000, Math.round(15 * kg)); return { dose:mg + 'mg', sub:mg + ' mg IV (15 mg/kg, ' + note + kg + ' kg)', subHe:mg + ' מ״ג IV (15 מ״ג/ק״ג, ' + note + kg + ' ק״ג)' }; }
+    if (g.key === 'ket'){ var k = Math.round(0.3 * kg * 10) / 10; return { dose:k + 'mg', sub:k + ' mg IV (0.3 mg/kg, ' + note + kg + ' kg)', subHe:k + ' מ״ג IV (0.3 מ״ג/ק״ג, ' + note + kg + ' ק״ג)' }; }
+    if (g.key === 'blood'){ var ml = Math.min(500, Math.round(20 * kg)); return { vol:ml, sub:ml + ' mL (20 mL/kg, ' + note + kg + ' kg)', subHe:ml + ' מ״ל (20 מ״ל/ק״ג, ' + note + kg + ' ק״ג)' }; }
+    if (g.key === 'cef'){ var c = Math.min(2000, Math.round(100 * kg / 50) * 50); return { dose:c + 'mg', sub:c + ' mg IV (' + note + kg + ' kg)', subHe:c + ' מ״ג IV (' + note + kg + ' ק״ג)' }; }
+    return { dose:g.dose, vol:g.vol, sub:g.sub, subHe:g.subHe };
+  },
+  // Things the medic should see before a repeat or an out-of-window dose. Returns plain sentences in the display language.
+  warn: function(g){
+    var X = W._casualtyXABCDE || {}, meds = (X.e || {}).medications || [], fl = (X.c || {}).fluids || [], now = Date.now(), out = [];
+    var mins = function(t){ return Math.round((now - new Date(t).getTime()) / 60000); };
+    var last = function(re){ var m = meds.filter(function(x){ return re.test(x.drug || x.name || ''); }); return m.length ? m[m.length - 1] : null; };
+    if (g.key === 'txa'){
+      var t = last(/^TXA/i), inj = (W._casualtyTimeline || []).filter(function(x){ return x.category === 'injury'; })[0], e0 = (X.e || {}).timeOfInjury;
+      if (t) out.push(L('TXA was already given ' + mins(t.time) + ' min ago. One dose only.', 'TXA כבר ניתן לפני ' + mins(t.time) + ' דקות. מנה אחת בלבד.'));
+      var it = e0 || (inj && inj.time);
+      if (it && mins(it) > 180) out.push(L('More than 3 hours since injury. TXA gives no benefit now.', 'עברו יותר מ-3 שעות מהפציעה. אין יתרון ל-TXA.'));
+      if (fl.some(function(f){ return /דם|פלזמה|כדוריות/.test(f.type || ''); })) out.push(L('Blood in the line. Flush 10 mL saline between TXA and blood.', 'דם בקו. שטפו 10 מ״ל מלח בין TXA לדם.'));
+    } else if (g.key === 'ket'){
+      var k = last(/^קטמין|ketamine/i); if (k && mins(k.time) < 20) out.push(L('Ketamine was given ' + mins(k.time) + ' min ago. Repeat only after 20 min.', 'קטמין ניתן לפני ' + mins(k.time) + ' דקות. מנה חוזרת רק אחרי 20 דקות.'));
+    } else if (g.key === 'cef'){
+      var c = last(/צפטריאקסון|ceftriaxone/i); if (c && mins(c.time) < 12 * 60) out.push(L('Ceftriaxone was already given at ' + hhmm(c.time) + '.', 'צפטריאקסון כבר ניתן ב-' + hhmm(c.time) + '.'));
+      if (fl.some(function(f){ return /הרטמן|Ringer/i.test(f.type || ''); })) out.push(L('Ringer in the line. Never mix with ceftriaxone. Flush the line first.', 'הרטמן בקו. לעולם לא לערבב עם צפטריאקסון. שטפו את הקו קודם.'));
+    } else if (g.fluid){
+      var f = fl.filter(function(x){ return x.type === g.type; }).slice(-1)[0]; if (f && mins(f.time) < 5) out.push(L('Blood was given ' + mins(f.time) + ' min ago. Reassess shock before the next unit.', 'דם ניתן לפני ' + mins(f.time) + ' דקות. העריכו הלם מחדש לפני המנה הבאה.'));
+    }
+    return out;
+  },
+  give: function(key, ok){
     var g = GIVE.filter(function(x){ return x.key === key; })[0]; if (!g) return;
+    var d = Field.dosing(g);
+    if (!d){ undoToast(L('Child: enter weight or age first (Record section).','ילד: הזינו משקל או גיל קודם (באזור התיק).'), null); return; }
+    var w = ok ? [] : Field.warn(g);
+    if (w.length){
+      Field.closeSheet();
+      var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
+      el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet" role="dialog" aria-label="' + L('Check before giving','בדקו לפני מתן') + '"><div class="sheet-grab"></div><h3>' + L(g.en + ': CHECK FIRST', g.he + ': בדקו קודם') + '</h3>'
+        + w.map(function(t){ return '<p class="sheet-p f-warn"><b>' + esc(t) + '</b></p>'; }).join('')
+        + '<button class="xbtn f-cancel" onclick="Field.closeSheet()">' + L('CANCEL','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.closeSheet();Field.give(\'' + key + '\', true)">' + L('GIVE ANYWAY','תנו בכל זאת') + '</button></div>';
+      app().appendChild(el); return;
+    }
     snapshot();
     var X = W._casualtyXABCDE, nMed = (X.e.medications || []).length, nFl = (X.c.fluids || []).length;
-    if (g.fluid) W.addFluidEntry(g.type, g.vol); else W.addMedication(g.drug, g.dose, g.route);
+    W._fieldConfirmed = true;
+    try { if (g.fluid) W.addFluidEntry(g.type, d.vol); else W.addMedication(g.drug, d.dose, g.route); } finally { W._fieldConfirmed = false; }
     if ((X.e.medications || []).length === nMed && (X.c.fluids || []).length === nFl){ if (W._medUndoStack) W._medUndoStack.pop(); return; }
-    undoToast(L(g.en + ' ' + g.sub + ' — given ' + hhmm(new Date().toISOString()), g.he + ' ' + g.subHe + ' — ניתן ' + hhmm(new Date().toISOString())), doUndo);
+    undoToast(L(g.en + ' ' + d.sub + ' — given ' + hhmm(new Date().toISOString()), g.he + ' ' + d.subHe + ' — ניתן ' + hhmm(new Date().toISOString())), doUndo);
   },
   undo: function(){ doUndo(); },
   upgrade: function(){ var c = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0]; if (!c) return; W._upsertOfflineCasualty({ _docId:c._docId, formLevel:'full' }); undoToast(L('Now a FULL Form 101','כעת טופס 101 מלא'), null); render(); },
@@ -149,11 +220,11 @@ var Field = {
   _k: null,
   keypad: function(idx){
     var fields = [
-      { k:'pulse', en:'HEART RATE', he:'דופק', unit:'/min', max:300 },
-      { k:'bpSys', en:'BLOOD PRESSURE — TOP NUMBER', he:'לחץ דם — מספר עליון', unit:'mmHg', max:300 },
-      { k:'bpDia', en:'BLOOD PRESSURE — BOTTOM NUMBER', he:'לחץ דם — מספר תחתון', unit:'mmHg', max:200 },
-      { k:'spo2',  en:'OXYGEN (SpO₂)', he:'חמצן (SpO₂)', unit:'%', max:100 },
-      { k:'rr',    en:'BREATHS PER MINUTE', he:'נשימות בדקה', unit:'/min', max:80 }
+      { k:'pulse', en:'HEART RATE', he:'דופק', unit:'/min', min:20, max:300 },
+      { k:'bpSys', en:'BLOOD PRESSURE — TOP NUMBER', he:'לחץ דם — מספר עליון', unit:'mmHg', min:30, max:300 },
+      { k:'bpDia', en:'BLOOD PRESSURE — BOTTOM NUMBER', he:'לחץ דם — מספר תחתון', unit:'mmHg', min:10, max:200 },
+      { k:'spo2',  en:'OXYGEN (SpO₂)', he:'חמצן (SpO₂)', unit:'%', min:30, max:100 },
+      { k:'rr',    en:'BREATHS PER MINUTE', he:'נשימות בדקה', unit:'/min', min:1, max:80 }
     ];
     var vi = (W._casualtyVitalsInput = W._casualtyVitalsInput || {});
     Field._k = { f: fields, i: idx === 1 ? 1 : idx, v: { pulse:'', bpSys:'', bpDia:'', spo2:'', rr:'' } };
@@ -172,22 +243,33 @@ var Field = {
       + '<div class="kp-step">' + (K.i + 1) + ' / ' + K.f.length + '</div>'
       + '<div class="kp-label">' + L(f.en, f.he) + '</div>'
       + '<div class="kp-val"><b>' + (cur === '' ? '—' : cur) + '</b><span>' + f.unit + '</span></div>'
+      + '<div class="kp-hint' + (K.err ? ' bad' : '') + '" role="status">' + (K.err || L('Allowed: ' + f.min + ' to ' + f.max, 'טווח מותר: ' + f.min + ' עד ' + f.max)) + '</div>'
       + '<div class="kp-keys">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.kpKey(\'' + k + '\')">' + (k === 'OK' ? (last ? L('SAVE','שמור') : L('NEXT','הבא')) : (k === '⌫' ? ico('undo-2', 30) : k)) + '</button>'; }).join('') + '</div>'
       + (lastVal(f.k) != null ? '<button class="xbtn kp-same" onclick="Field.kpSame()">' + L('SAME AS LAST: ','כמו הקודם: ') + lastVal(f.k) + '</button>' : '') + '<div class="kp-row"><button class="xbtn" onclick="Field.kpSkip()">' + L('SKIP','דלג') + '</button><button class="xbtn xbtn-primary" onclick="Field.kpSave()">' + L('SAVE NOW','שמור עכשיו') + '</button></div></div>';
   },
+  // Returns '' when the field is fine, otherwise a sentence saying why not.
+  _kpCheck: function(i){
+    var K = Field._k, f = K.f[i], v = K.v[f.k]; if (v === '') return '';
+    var n = parseInt(v, 10);
+    if (n < f.min || n > f.max) return L('Not possible. Allowed: ' + f.min + ' to ' + f.max, 'לא אפשרי. טווח מותר: ' + f.min + ' עד ' + f.max);
+    if (f.k === 'bpDia' && K.v.bpSys !== '' && n >= parseInt(K.v.bpSys, 10)) return L('Bottom number must be lower than the top number', 'המספר התחתון חייב להיות נמוך מהעליון');
+    if (f.k === 'bpSys' && K.v.bpDia !== '' && n <= parseInt(K.v.bpDia, 10)) return L('Top number must be higher than the bottom number', 'המספר העליון חייב להיות גבוה מהתחתון');
+    return '';
+  },
   kpKey: function(k){
-    var K = Field._k; if (!K) return; var f = K.f[K.i];
+    var K = Field._k; if (!K) return; var f = K.f[K.i]; K.err = '';
     if (k === '⌫'){ K.v[f.k] = K.v[f.k].slice(0, -1); }
-    else if (k === 'OK'){ if (K.i === K.f.length - 1) return Field.kpSave(); K.i++; }
+    else if (k === 'OK'){ K.err = Field._kpCheck(K.i); if (K.err){ if (navigator.vibrate) navigator.vibrate([30, 40, 30]); return Field._kpDraw(); } if (K.i === K.f.length - 1) return Field.kpSave(); K.i++; }
     else { var nv = (K.v[f.k] + k).slice(0, 3); if (parseInt(nv, 10) <= f.max) K.v[f.k] = nv; }
     if (navigator.vibrate) navigator.vibrate(8);
     Field._kpDraw();
   },
   kpSame: function(){ var K = Field._k; if (!K) return; var f0 = K.f[K.i], lv0 = lastVal(f0.k); if (lv0 != null){ K.v[f0.k] = String(lv0); if (K.i < K.f.length - 1) K.i++; Field._kpDraw(); } },
-  kpSkip: function(){ var K = Field._k; if (!K) return; if (K.i === K.f.length - 1) return Field.kpSave(); K.i++; Field._kpDraw(); },
+  kpSkip: function(){ var K = Field._k; if (!K) return; K.err = ''; if (K.i === K.f.length - 1) return Field.kpSave(); K.i++; Field._kpDraw(); },
   kpClose: function(){ var s = document.getElementById('f-kp'); if (s) s.remove(); Field._k = null; },
   kpSave: function(){
     var K = Field._k; if (!K) return; var v = K.v;
+    for (var ci = 0; ci < K.f.length; ci++){ var msg = Field._kpCheck(ci); if (msg){ K.i = ci; K.err = msg; if (navigator.vibrate) navigator.vibrate([30, 40, 30]); return Field._kpDraw(); } }
     var any = v.pulse || v.bpSys || v.bpDia || v.spo2 || v.rr;
     Field.kpClose();
     if (!any) return;

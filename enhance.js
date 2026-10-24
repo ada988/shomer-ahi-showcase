@@ -35,7 +35,7 @@ function enhanceForm(c){
   var peds     = ks.filter(function(k){ return k.tagName === 'BUTTON' && /פעוטות|ילדים|פדיאטרי|🧒/.test(txt(k)); })[0];
   var tqBanner = ks.filter(function(k){ return /^\W*(🔴\s*)?ח"ע|ח״ע/.test(txt(k)) && /Long|ארוך|⋯/.test(txt(k)); })[0] || ks.filter(function(k){ return /rgba\(231,76,60/.test(styleOf(k)) && /\d\d:\d\d/.test(txt(k)) && k.children.length <= 4; })[0];
   var hdr      = ks.filter(function(k){ return /עריכת נפגע|Edit casualty/.test(txt(k)); })[0];
-  var nameRow  = hdr ? hdr.nextElementSibling : null;
+  var nameIn   = c.querySelector('#cas-name'), nameRow = nameIn && nameIn.parentNode !== c ? nameIn.parentNode : (hdr ? hdr.nextElementSibling : null);   // by id: the header text differs for a new casualty
   var moi      = cls('cas-section').filter(function(k){ return /מנגנון/.test(txt(k)); })[0];
   var seg      = cls('seg')[0];
   var map      = cls('body-map-wrap')[0];
@@ -71,14 +71,26 @@ function enhanceForm(c){
   var fInj = fold('inj', '<span>' + L('Marked injuries','פציעות מסומנות') + '</span>'); put(fInj, inj); if (inj) sBody.querySelector('.fs-b').appendChild(fInj);
   var fTr = fold('tr', '<span>' + L('Treatments on the body','טיפולים על הגוף') + '</span>'); put(fTr, treat); if (treat) sBody.querySelector('.fs-b').appendChild(fTr);
 
+  if (ventry) [].slice.call(ventry.querySelectorAll('button[onclick*="radialPulse="]')).forEach(function(bt){
+    var on = !/background:\s*#[0-9a-f]{6}15/i.test(bt.getAttribute('style') || ''); bt.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (on){ bt.classList.add('sel'); bt.insertAdjacentHTML('afterbegin', ico('check', 22)); }
+  });
   var sCare = document.createElement('div'); sCare.className = 'fs-more-b';
   var fVit = fold('vit', '<span>' + L('Enter all vitals','הזנת כל המדדים') + '</span>'); put(fVit, ventry); put(fVit, savevit); sCare.appendChild(fVit);
-  if (urgency) sCare.appendChild(urgency);
+  if (urgency){
+    // selected = filled button + tick + aria-pressed (not colour alone)
+    [].slice.call(urgency.querySelectorAll('button[onclick*="_casualtyEvacPriority"]')).forEach(function(bt){
+      var on = !/background:\s*none/.test(bt.getAttribute('style') || ''); bt.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (on){ bt.classList.add('sel'); bt.insertAdjacentHTML('afterbegin', ico('check', 24)); }
+    });
+    sCare.appendChild(urgency);
+  }
 
   // Record: who, mechanism, timeline, casualty details. Diagnoses list, care echelons, undo/redo and the old strips are dropped.
   var sRec = section('fs-record', L('Record','תיק'), L('Who, what happened, timeline','מי, מה קרה, ציר זמן'));
   var patient = document.createElement('div'); patient.className = 'fs-patient';
-  [nameRow, moi].forEach(function(el){ if (el) patient.appendChild(el); });
+  var pat = document.createElement('div'); pat.innerHTML = W.Field && W.Field.patientHtml ? W.Field.patientHtml() : '';
+  [nameRow, pat.firstChild, moi].forEach(function(el){ if (el) patient.appendChild(el); });
   var rec = sRec.querySelector('.fs-b'); rec.appendChild(patient);
   if (peds) rec.appendChild(peds);
   if (timeline) rec.appendChild(timeline);
@@ -98,16 +110,16 @@ function enhanceForm(c){
   var topSec = fieldWrap.querySelector('#field'), monSec = fieldWrap.querySelector('#fs-more');
   var jb = document.createElement('nav'); jb.className = 'jb'; jb.setAttribute('aria-label', L('Jump to','קפיצה אל'));
   [['field', L('101 FORM','טופס 101')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-more', L('VITALS + MORE','מדדים ועוד')]].forEach(function(q){
-    var bt = document.createElement('button'); bt.textContent = q[1]; bt.dataset.t = q[0]; bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
+    var bt = document.createElement('button'); bt.textContent = q[1]; bt.dataset.t = q[0]; bt.className = (W.FormUI.cur || 'field') === q[0] ? 'on' : ''; if (bt.className) bt.setAttribute('aria-current', 'true'); bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
   });
-  if (monSec) { monSec.appendChild(sCare); monSec.appendChild(sSug); monSec.appendChild(sRec); }
+  if (monSec) { monSec.appendChild(sCare); if (recs) monSec.appendChild(sSug); monSec.appendChild(sRec); }   // no suggestions yet = no empty box
   frag.appendChild(jb);
   if (topSec) frag.appendChild(topSec);
   frag.appendChild(sBody);
   if (monSec) frag.appendChild(monSec);
   var spacer = document.createElement('div'); spacer.className = 'fs-foot'; frag.appendChild(spacer); frag.appendChild(hand); frag.appendChild(bar);
   c.innerHTML = ''; c.appendChild(frag);
-  c.querySelectorAll('button[aria-label]').forEach(function(bt){ if (!bt.textContent.trim() && !bt.querySelector('svg') && /delete|remove|מחק/i.test(bt.getAttribute('aria-label'))) { bt.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; bt.classList.add('del-btn'); } });
+  c.querySelectorAll('button[aria-label]').forEach(function(bt){ if (!/[A-Za-z0-9א-ת]/.test(bt.textContent) && !bt.querySelector('svg') && /delete|remove|מחק|הסר/i.test(bt.getAttribute('aria-label'))) { bt.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; bt.classList.add('del-btn'); } });
   c.dataset.enh = 'form';
   flattenSvg(c); flattenVitals(c);
 }
@@ -153,16 +165,18 @@ W.FormUI = {
     c.addEventListener('click', function(ev){ var sm = ev.target.closest && ev.target.closest('details.fs-fold > summary'); if (!sm) return; var d = sm.parentNode; W.FormUI.open[d.dataset.k] = !d.open; }, true);
     c.addEventListener('scroll', function(){
       if (c.dataset.view !== 'form') return;
-      var top = c.getBoundingClientRect().top, cur = 'field';
-      ['field','fs-body','fs-more'].forEach(function(id){ var e = document.getElementById(id); if (e && e.getBoundingClientRect().top - top <= 120) cur = id; });
-      if (cur !== W.FormUI.cur){ W.FormUI.cur = cur; c.querySelectorAll('.jb button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === cur); }); }
+      var top = c.getBoundingClientRect().top, cur = 'field', jb = c.querySelector('.jb'), lim = (jb ? jb.getBoundingClientRect().bottom - top : 84) + 40;
+      ['field','fs-body','fs-more'].forEach(function(id){ var e = document.getElementById(id); if (e && e.getBoundingClientRect().top - top <= lim) cur = id; });
+      if (cur !== W.FormUI.cur){ W.FormUI.cur = cur; c.querySelectorAll('.jb button').forEach(function(b){ var on = b.dataset.t === cur; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); }); }
     }, { passive:true });
   },
   enhance: function(c){ enhanceForm(c); },
   jump: function(id){
     var c = document.getElementById('incident-content'), e = document.getElementById(id); if (!c || !e) return;
     if (id === 'fs-now'){ W.FormUI.open.sug = true; e.setAttribute('open', ''); }
-    c.scrollTo({ top: c.scrollTop + e.getBoundingClientRect().top - c.getBoundingClientRect().top - 56, behavior: 'smooth' });
+    var jb = c.querySelector('.jb'), off = jb ? jb.getBoundingClientRect().bottom - c.getBoundingClientRect().top + 6 : 60;
+    c.scrollTo({ top: id === 'field' ? 0 : c.scrollTop + e.getBoundingClientRect().top - c.getBoundingClientRect().top - off, behavior: 'smooth' });
+    if (['field','fs-body','fs-more'].indexOf(id) >= 0){ W.FormUI.cur = id; c.querySelectorAll('.jb button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === id); }); }
   },
   handoff: function(){
     var app = document.getElementById('app'); if (document.getElementById('fs-sheet')) return;

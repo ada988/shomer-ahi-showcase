@@ -1002,7 +1002,8 @@ function renderFloatingRegionMenu(regionId){
   const headRegions=['head','neck','back_head','back_neck'];
   let txOpts=[];
   if(extremities.includes(regionId))txOpts=[{t:'tourniquet',e:'🔴',l:'חסם עורקים'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'hemostatic',e:'🟧',l:'גזה המוסטטית'},{t:'woundPacking',e:'🟫',l:'אריזת פצע'},{t:'splint',e:'🪵',l:'קיבוע שבר'}];
-  else if(chestRegions.includes(regionId))txOpts=[{t:'needleDecompression',e:'💉',l:'דקירת מחט (NDC)'},{t:'tubeThora',e:'🩻',l:'נקז חזה'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'}];
+  // IDF protocol: no needle decompression and no chest seal. Open chest wound = 3-side dressing; chest drain only on indication.
+  else if(chestRegions.includes(regionId))txOpts=[{t:'bandage',e:'🩹',l:'חבישה (3 צדדים)'},{t:'tubeThora',e:'🩻',l:'נקז חזה'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'}];
   else if(headRegions.includes(regionId))txOpts=[{t:'bandage',e:'🩹',l:'חבישה'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'hemostatic',e:'🟧',l:'המוסטטי'}];
   else txOpts=[{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'woundPacking',e:'🟫',l:'אריזת פצע'},{t:'hemostatic',e:'🟧',l:'המוסטטי'}];
   const steps=['סוג פציעה','טיפול','הערות'];
@@ -1159,7 +1160,7 @@ function setInjuryType(regionId,type){
   } else {
     _casualtyInjuries.push({region:regionId,side,type,severity:'moderate',notes:''});
   }
-  _selectedRegion=null;
+  // The popup stays open: the next step (treatment) is shown by the caller. Closing it here made step 2 unreachable.
   addTimestampedAction('injury','סימון פציעה — '+BODY_LABELS[regionId],type);
   if(navigator.vibrate)navigator.vibrate(10);
   MedHost.triggerAutoSave();MedHost.renderIncidentPage();
@@ -1217,8 +1218,13 @@ function _restoreMedState(snap){
     MedHost.renderIncidentPage();
   }catch(e){}
 }
+var _medPushLock=false;
 function pushMedHistory(){
   if(!_casualtyEditMode)return;
+  // One user action = one undo step: later pushes in the same tick (e.g. addTimestampedAction after the
+  // state was already changed) would snapshot the NEW state and make UNDO look like it did nothing.
+  if(_medPushLock)return;
+  _medPushLock=true;Promise.resolve().then(()=>{_medPushLock=false;});
   _medUndoStack.push(_snapshotMedState());
   if(_medUndoStack.length>_MED_UNDO_MAX)_medUndoStack.shift();
   _medRedoStack=[];
@@ -1290,7 +1296,7 @@ function _inProfoundShock(){
   const hrShock=(age!=null&&age<12)?(age<1?170:age<3?160:age<6?150:130):130;
   return _inTccShock()||!!(hr&&hr>hrShock);
 }
-// Deep shock = SBP below limit AND (absent radial OR P/U not attributable to head trauma / sedation). Reserved for the strongest wording.
+// Deep shock (strongest wording): SBP below the age limit, or no BP reading + absent radial pulse / P-U not from head trauma or sedation.
 function _isDeepShock(){
   const {sys,rp}=_shockInputs();
   const age=_casualtyXABCDE?.e?.ageYears;
@@ -1299,7 +1305,8 @@ function _isDeepShock(){
   const avpu=(_casualtyXABCDE?.d?.avpu||'').toUpperCase();
   const altered=avpu==='P'||avpu==='U';
   const cleanAltered=altered&&!_headPenetrating()&&!_recentSedation();
-  return sbpLow&&(rpAbsent||cleanAltered);
+  // IDF: SBP under the limit, OR no measurable BP together with no radial pulse / altered consciousness not caused by head injury or sedation.
+  return sbpLow||(sys===null&&(rpAbsent||cleanAltered));
 }
 
 // ── [cds] block from beta lines 6961-7214 ──
@@ -1852,7 +1859,7 @@ function addMedication(name,dose,route){
     const lastSame=_casualtyXABCDE.e.medications.filter(m=>m.drug===name).slice(-1)[0];
     if(lastSame){
       const minsAgo=(Date.now()-new Date(lastSame.time).getTime())/60000;
-      if(minsAgo<5){
+      if(minsAgo<5&&!window._fieldConfirmed){
         if(!confirm(`${name} ניתן לפני ${Math.round(minsAgo)} דקות. להמשיך?`))return;
       }
     }
@@ -2274,7 +2281,7 @@ function runClinicalAlerts(pulse,rr,spo2,bpSys,temp,etco2,radialPulse){
   const _lx=(typeof _casualtyExams!=='undefined'&&_casualtyExams.length)?_casualtyExams[_casualtyExams.length-1]:null;
   const reducedAir=_lx?.breathL==='absent'||_lx?.breathR==='absent'||_lx?.breathL==='reduced'||_lx?.breathR==='reduced';
   if((hasChestInj||reducedAir)&&!hasTube&&tensionSigns){
-    alerts.push({level:'🔴',msg:'חשד לפנאומותורקס מתח — דקירה/נקז מחט (10–14G, אורך 8 ס״מ, צלע 5 אקסילרי קדמי או צלע 2 אמצע-הבריח) ע״י מוסמך'});
+    alerts.push({level:'🔴',msg:'חשד לפנאומותורקס מתח — חמצן, ישיבה, פינוי דחוף; נקז חזה ע״י מוסמך לפי פרוטוקול (בלי דקירת מחט ובלי אטם חזה)'});
   }
   // v3.29 M5 — book red-flag additions
   // Fixed bilateral pupils + blunt MOI → futility per book (no other vital signs)
@@ -2303,7 +2310,7 @@ function runClinicalAlerts(pulse,rr,spo2,bpSys,temp,etco2,radialPulse){
     // Absent breath sounds + hypotension → tension pneumothorax suspicion
     const absent=lastExam?.breathL==='absent'||lastExam?.breathR==='absent';
     if(absent&&sys&&sys<90){
-      alerts.push({level:'🔴',msg:'אווריריות נעדרת חד-צדדית + יתר-לחץ נמוך — חשד לפנאומותורקס מתח (דקירה/נקז מחט 10–14G באורך 8 ס״מ, 5th ICS AAL או 2nd ICS MCL)'});
+      alerts.push({level:'🔴',msg:'אווריריות נעדרת חד-צדדית + יתר-לחץ נמוך — חשד לפנאומותורקס מתח — חמצן, פינוי דחוף; נקז חזה ע״י מוסמך לפי פרוטוקול (בלי דקירת מחט)'});
     }
   }
   // GCS ≤5 + trismus hint (no induction drugs per book)
@@ -2986,16 +2993,14 @@ function renderBTab(){
     const c=b.respiratoryRate>30?'#e74c3c':b.respiratoryRate>20?'#f1c40f':b.respiratoryRate<12?'#3498db':'#2ecc71';
     h+=`<div style="text-align:center;font-size:18px;font-weight:900;color:${c};margin:6px 0">${b.respiratoryRate}/דקה</div>`;
   }
-  // Penetrating chest -> vented chest seal (TCCC / PHTLS / CoTCCC); 3-sided dressings are obsolete
+  // IDF protocol: open chest wound = 3-side dressing. No chest seal, no needle decompression.
   const penChest=_casualtyInjuries.some(i=>i.type==='penetrating'&&['chest_r','chest_l'].includes(i.region));
   if(penChest){
-    h+='<div style="padding:6px 8px;border-radius:6px;background:rgba(230,126,34,.12);border-right:2px solid var(--or);margin:6px 0;font-size:10px;color:var(--or);font-weight:700">פצע חזה חודר — אטם חזה מאוורר (Vented) על הפצע. אין אטם מאוורר: אטם אטום + מעקב צמוד; החמרה נשימתית/ל"ד: הרם פינה ("burp") ושקול דקירת מחט.</div>';
+    h+='<div style="padding:6px 8px;border-radius:6px;background:rgba(230,126,34,.12);border-right:2px solid var(--or);margin:6px 0;font-size:10px;color:var(--or);font-weight:700">פצע חזה חודר — חבישה משלושה צדדים. בלי אטם חזה ובלי דקירת מחט. חמצן, ישיבה, שיכוך כאב; נקז חזה רק לפי פרוטוקול.</div>';
   }
-  // Chest intervention — IDF 2026: tube thoracostomy (rib 4-5, anterior-mid axillary); needle decompression (14G, 5th ICS AAL or 2nd ICS MCL) for tension pneumothorax
+  // Chest intervention — IDF 2026: tube thoracostomy only on indication (rib 4-5, anterior-mid axillary)
   h+='<div style="font-size:10px;font-weight:700;color:#e67e22;margin:8px 0 4px 0">התערבות חזה (דורש הכשרה ייעודית)</div>';
   h+='<div style="display:flex;gap:4px;margin-bottom:6px">';
-  h+=`<button class="xabcde-btn" style="flex:1" onclick="addBreathingEntry('needleDecompression','דקירת מחט שמאל (10–14G, אורך 8 ס״מ, צלע 5 אקסילרי קדמי / צלע 2 אמצע-הבריח)','L')">דקירת מחט L</button>`;
-  h+=`<button class="xabcde-btn" style="flex:1" onclick="addBreathingEntry('needleDecompression','דקירת מחט ימין (10–14G, אורך 8 ס״מ, צלע 5 אקסילרי קדמי / צלע 2 אמצע-הבריח)','R')">דקירת מחט R</button>`;
   h+=`<button class="xabcde-btn" style="flex:1" onclick="addBreathingEntry('tubeThora','נקז חזה שמאל (צלע 4-5 אקסילרי קדמי-אמצעי)','L')">נקז חזה L</button>`;
   h+=`<button class="xabcde-btn" style="flex:1" onclick="addBreathingEntry('tubeThora','נקז חזה ימין (צלע 4-5 אקסילרי קדמי-אמצעי)','R')">נקז חזה R</button>`;
   h+='</div>';

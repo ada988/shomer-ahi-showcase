@@ -18,6 +18,12 @@ python -m http.server 8080      # then open http://localhost:8080/
 ```
 The camera scanner needs `localhost` or HTTPS. On a phone, open the deployed URL (the desktop page shows a QR for it).
 
+## Install as a phone app
+The site is an installable PWA (manifest, PNG icons, service worker, standalone full screen, offline after first load).
+- **Android / Chrome:** an INSTALL banner appears, or Menu > Install as an app.
+- **iPhone / iPad (Safari):** Share > Add to Home Screen (the app shows the steps).
+The service worker is network-first, so a new deploy shows up on the next load; the cache is only the offline fallback. Bump `CACHE` in `sw.js` when adding files.
+
 ## Deploy
 - **Vercel:** import the repo, set *Root Directory* to `showcase`, preset *Other*, no build step (`vercel.json` included).
 - **GitHub Pages:** serve the `showcase/` folder from a public repo or a Pages workflow (Pages is disabled on private repos on the free plan).

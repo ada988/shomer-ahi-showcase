@@ -1,10 +1,25 @@
 {
+  "id": "./",
   "name": "Shomer Ahi — early beta demo",
   "short_name": "Shomer Ahi",
   "description": "Early beta demo with fictional data. Not for clinical use.",
-  "start_url": "./",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
   "background_color": "#0b0c0e",
   "theme_color": "#0b0c0e",
-  "icons": [{ "src": "shared/logo-shield.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "categories": ["medical", "utilities"],
+  "lang": "en",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "shared/logo-shield.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Quick triage", "short_name": "Quick triage", "url": "./?quick=1", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Wristbands", "short_name": "Wristbands", "url": "./?tab=bracelets", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
 }

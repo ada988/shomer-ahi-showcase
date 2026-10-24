@@ -43,7 +43,7 @@ if (typeof _ocf === 'function') w.closeCasualtyForm = function(){ return Promise
 var _avr = w.addVitalsReading;
 if (typeof _avr === 'function') w.addVitalsReading = function(){
   var i = w._casualtyVitalsInput || {}, lim = { pulse:[20,300], rr:[1,80], spo2:[30,100], bpSys:[30,300], bpDia:[10,200], temp:[25,45], etco2:[5,100] }, bad = false;
-  Object.keys(lim).forEach(function(k){ var v = parseFloat(i[k]); if (i[k] !== '' && i[k] != null && !isNaN(v) && (v < lim[k][0] || v > lim[k][1])) bad = true; });
+  Object.keys(lim).forEach(function(k){ var v = parseFloat(i[k]); if (i[k] !== '' && i[k] != null && !isNaN(v) && (v < lim[k][0] || v > lim[k][1])){ bad = true; i[k] = ''; } });
   if (bad){ w.toast(L('Check the numbers — one value is not possible','בדקו את המספרים — אחד הערכים אינו אפשרי'), false); return; }
   return _avr.apply(this, arguments);
 };
@@ -255,7 +255,7 @@ w.renderIncidentPage = function(){
   if (w.ShowcaseI18n) w.ShowcaseI18n.apply(tmp);
   if (w.Polish) w.Polish.apply(tmp);
   if (c.dataset.view === view && c.firstChild) morph(c, tmp);
-  else { c.textContent = ''; while (tmp.firstChild) c.appendChild(tmp.firstChild); c.scrollTop = 0; }
+  else { c.textContent = ''; while (tmp.firstChild) c.appendChild(tmp.firstChild); c.scrollTop = 0; if (w.FormUI) w.FormUI.cur = 'field'; }
   if (c.dataset.view && c.dataset.view !== view){ c.style.pointerEvents = 'none'; setTimeout(function(){ c.style.pointerEvents = ''; }, 380); }
   c.dataset.view = view;
   if (view === 'form' && w.FormUI) w.FormUI.bind(c);
@@ -387,7 +387,7 @@ new MutationObserver(function(list){
 }).observe(document.body, { childList:true });
 
 document.addEventListener('input', function(e){
-  if (e.target && e.target.id === 'cas-name'){ var t = document.getElementById('app-title'); if (t) t.textContent = e.target.value.trim() || L('New casualty','נפגע חדש'); }
+  if (e.target && e.target.id === 'cas-name'){ var t = document.getElementById('app-title'); if (t) t.textContent = e.target.value.trim() || L('New casualty','נפגע חדש'); var em = document.querySelector('.f-id-t em'); if (em) em.textContent = e.target.value.trim() || L('No name yet','עדיין ללא שם'); }
 });
 
 // ── Modal behaviour for every overlay/sheet: focus moves in, Tab stays inside (background is inert), Esc closes, focus returns ──

@@ -28,7 +28,7 @@ var PRIMARY = [
     ['p_c3','Blood pressure','לחץ דם','Cuff on early. Under 90 = deep shock.','שרוול מוקדם. מתחת ל-90 = הלם עמוק.','ENTER BP','הזינו ל״ד','Field.keypad(1)', function(){ return vitalsHave('bpSys'); }],
     ['p_c4','Pulse: strength and rate','דופק: חוזק וקצב','Radial pulse. None: carotid. Count 15 s if no reading.','דופק רדיאלי. אין: קרוטידי. ספרו 15 שניות אם אין קריאה.','TAP PULSE','הקישו דופק',"Field.tapStart('pulse')", function(){ return vitalsHave('pulse'); }],
     ['p_c5','Oxygen saturation','סטורציה','Pulse oximeter. Unreliable in deep shock.','מד סטורציה. לא אמין בהלם עמוק.','ENTER SpO₂','הזינו סטורציה','Field.keypad(3)', function(){ return vitalsHave('spo2'); }],
-    ['p_c6','Deep shock: IV and blood now','הלם עמוק: עירוי ודם עכשיו','BP under 90, or no radial pulse + altered mind. Medics set the line, senior continues survey.','ל״ד מתחת ל-90, או אין דופק רדיאלי + שינוי הכרה. החובשים מכניסים עירוי.','WHOLE BLOOD','דם מלא',"Field.give('blood')", function(){ return ((X().c || {}).fluids || []).length; }]
+    ['p_c6','Deep shock: IV and blood now','הלם עמוק: עירוי ודם עכשיו','BP under 90, or no BP reading with no radial pulse or an altered mind (not from a head injury). Medics set the line.','ל״ד מתחת ל-90, או אין קריאת ל״ד יחד עם היעדר דופק רדיאלי או שינוי הכרה (לא מפגיעת ראש). החובשים מכניסים עירוי.','WHOLE BLOOD','דם מלא',"Field.give('blood')", function(){ return ((X().c || {}).fluids || []).length; }]
   ]},
   { k:'A', en:'AIRWAY', he:'נתיב אוויר', sub:['Talk to them. Basic steps only.','דברו אליהם. פעולות בסיסיות בלבד.'], items:[
     ['p_a1','Airway checked','נתיב אוויר נבדק','Does the casualty speak in full sentences? Stridor, gurgling, face or neck injury?','האם מדבר במשפטים שלמים? סטרידור, חרחור, פגיעת פנים או צוואר?',null,null,null, function(){ return !!((X().a || {}).status); }],
@@ -88,7 +88,15 @@ function done(it){ var m = (X().xcare || {})[it[0]]; if (m) return m; return it[
 
 function groupsHtml(sec){
   var all = sec ? SECONDARY : PRIMARY, pf = sec ? 's' : 'p', firstOpen = null, h = '<div class="xc-list">';
-  all.forEach(function(g){ if (firstOpen == null && g.items.some(function(it){ return !done(it); })) firstOpen = g.k; });
+  // Open/closed state belongs to ONE casualty: switching patient resets it. The default open group is chosen once
+  // (so ticking the last row of a group does not collapse it under the medic's thumb).
+  if (Field._xcid !== W._casualtyEditId){ Field._xcid = W._casualtyEditId; Field._xo = {}; Field._xfo = {}; }
+  Field._xfo = Field._xfo || {};
+  if (Field._xfo[pf] === undefined){
+    all.forEach(function(g){ if (firstOpen == null && g.items.some(function(it){ return !done(it); })) firstOpen = g.k; });
+    Field._xfo[pf] = firstOpen || '';
+  }
+  firstOpen = Field._xfo[pf];
   all.forEach(function(g){
     var n = g.items.filter(done).length, tot = g.items.length, key = pf + g.k;
     var open = Field._xo[key] != null ? Field._xo[key] : (g.k === firstOpen);
@@ -97,8 +105,8 @@ function groupsHtml(sec){
     if (open){
       h += '<div class="xc-items">';
       g.items.forEach(function(it){
-        var d = done(it), manual = (X().xcare || {})[it[0]];
-        h += '<div class="xc-i' + (d ? ' done' : '') + '"><button class="xc-row" role="checkbox" aria-checked="' + !!d + '" onclick="Field.xcToggle(\'' + it[0] + '\')"><span class="xc-box">' + (d ? ico('check', 26) : '') + '</span><span class="xc-t"><b>' + L(it[1], it[2]) + '</b><small>' + L(it[3], it[4]) + '</small>' + (manual && manual !== true ? '<em>' + L('DONE ','בוצע ') + hhmm(manual) + '</em>' : '') + '</span></button>'
+        var d = done(it), manual = (X().xcare || {})[it[0]], auto = d && !manual;
+        h += '<div class="xc-i' + (d ? ' done' : '') + '"><button class="xc-row" role="checkbox" aria-checked="' + !!d + '" onclick="Field.xcToggle(\'' + it[0] + '\')"><span class="xc-box">' + (d ? ico('check', 26) : '') + '</span><span class="xc-t"><b>' + L(it[1], it[2]) + '</b><small>' + L(it[3], it[4]) + '</small>' + (manual && manual !== true ? '<em>' + L('DONE ','בוצע ') + hhmm(manual) + '</em>' : (auto ? '<em>' + L('FROM THE RECORD','מתוך התיק') + '</em>' : '')) + '</span></button>'
           + (it[7] ? '<button class="xc-act" onclick="' + it[7] + '">' + L(it[5], it[6]) + '</button>' : '') + '</div>';
       });
       h += '</div>';
@@ -115,10 +123,12 @@ Field.xcareHtml = function(){
     + '<button role="tab" aria-selected="' + sec + '" class="' + (sec ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C · A · R · E · PFC</small></button></div>';
   return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + groupsHtml(sec);
 };
-Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; W.MedHost.renderIncidentPage(); };
+Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; Field._xfo = {}; W.MedHost.renderIncidentPage(); };
 Field.xcOpen = function(key, v){ Field._xo[key] = !!v; W.MedHost.renderIncidentPage(); };
 Field.xcToggle = function(k){
   var Xo = X(); if (!Xo) return;
+  var cur = PRIMARY.concat(SECONDARY).reduce(function(a, g){ return a || g.items.filter(function(i){ return i[0] === k; })[0]; }, null);
+  if (!Xo.xcare || !Xo.xcare[k]) if (cur && cur[8] && cur[8]()){ if (Field.toast) Field.toast(L('Already done in the record. Undo it there.','כבר בוצע לפי התיק. בטלו אותו שם.'), null); return; }
   if (W.pushMedHistory) W.pushMedHistory();
   Xo.xcare = Xo.xcare || {};
   var all = PRIMARY.concat(SECONDARY), it = null; all.forEach(function(g){ g.items.forEach(function(i){ if (i[0] === k) it = i; }); });
