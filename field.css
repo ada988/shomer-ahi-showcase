@@ -207,7 +207,6 @@ svg.ui-i{min-width:24px;min-height:24px}
 .tap-save:disabled{opacity:.4}
 
 .f-tbtn.t-gray{background:var(--t-gray);color:#111}
-.f-tri .f-tbtn:last-child:nth-child(odd){grid-column:1 / -1;min-height:84px}
 
 /* No content may be wider than the screen */
 #incident-content,#incident-content *{min-width:0}

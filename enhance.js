@@ -55,79 +55,55 @@ function enhanceForm(c){
   var autosave = c.querySelector('#autosave-status');
   var saveBtn  = c.querySelector('button.bp'), closeBtn = c.querySelector('button.bs');
 
-  var sNow  = section('fs-now',   L('Decision support','תמיכה בהחלטות'), L('Software suggestions — can be wrong. A medical professional decides.','הצעות תוכנה — עלולות לטעות. איש צוות רפואי מחליט.'));
-  var sBody = section('fs-body',  L('Body map','מפת גוף'), L('Tap a body part to mark a wound','לחצו על אזור בגוף כדי לסמן פציעה'));
-  var sVit  = section('fs-vitals',L('Vitals','מדדים'), L('Every reading is logged with trends','כל מדידה נרשמת עם מגמות'));
-  var sCare = section('fs-care',  L('Details','פרטים'), L('Enter the details behind each X-CARE step (optional)','הזנת הפרטים מאחורי כל שלב ב-X-CARE (לא חובה)'));
-  var sRec  = section('fs-record',L('Record','תיק'), L('Details, timeline and handoff chain','פרטים, ציר זמן ושרשרת העברה'));
+  // ── New, lean structure ─────────────────────────────────────────
+  // 1 field panel (identity, triage, X-CARE, clocks, vitals)  2 suggestions (folded)  3 body map  4 details (folded)  5 record
+  var open = W.FormUI.open;
+  function fold(key, title, cls){ var d = document.createElement('details'); d.className = 'fs-fold ' + (cls || ''); d.dataset.k = key; if (open[key]) d.setAttribute('open', ''); var sm = document.createElement('summary'); sm.innerHTML = title; d.appendChild(sm); var w = document.createElement('div'); w.className = 'fs-fold-b'; d.appendChild(w); return d; }
+  function put(d, el){ if (el) d.querySelector('.fs-fold-b').appendChild(el); }
 
-  // Now: alerts, clocks, MARCH-P, recommendations
-  [cds, recs].forEach(function(e){ move(sNow, e); });
-  var tools = document.createElement('details'); tools.className = 'fs-tools';
-  tools.innerHTML = '<summary>' + L('Undo, redo and pediatric mode','ביטול, שחזור ומצב ילדים') + '</summary><div></div>';
-  [undo, peds].forEach(function(e){ if (e) tools.querySelector('div').appendChild(e); });
-  sNow.querySelector('.fs-b').appendChild(tools);
+  var sSug = fold('sug', '<span>' + L('Software suggestions','הצעות תוכנה') + '<small>' + L('Can be wrong. A medical professional decides.','עלולות לטעות. איש צוות רפואי מחליט.') + '</small></span>', 'fs-sug');
+  [cds, recs].forEach(function(el){ put(sSug, el); });
+  if (recs) { recs.classList.add('b-recs'); recs.setAttribute('data-tour', 'alerts'); }
+  sSug.id = 'fs-now';
 
-  // Body map
-  [seg, map].forEach(function(e){ move(sBody, e); });
-  if (inj) move(sBody, inj); if (treat) move(sBody, treat);
+  var sBody = section('fs-body', L('Body map','מפת גוף'), L('Tap a body part to mark a wound','לחצו על אזור בגוף כדי לסמן פציעה'));
+  [seg, map].forEach(function(el){ move(sBody, el); });
+  var fInj = fold('inj', '<span>' + L('Marked injuries','פציעות מסומנות') + '</span>'); put(fInj, inj); if (inj) sBody.querySelector('.fs-b').appendChild(fInj);
+  var fTr = fold('tr', '<span>' + L('Treatments on the body','טיפולים על הגוף') + '</span>'); put(fTr, treat); if (treat) sBody.querySelector('.fs-b').appendChild(fTr);
 
-  // Vitals
-  [vstrip, ctimers, vsummary, ventry, savevit].forEach(function(e){ move(sVit, e); });
+  var sCare = section('fs-care', L('Details','פרטים'), L('Optional: enter the full details behind each step','לא חובה: הזנת הפרטים המלאים מאחורי כל שלב'));
+  var fVit = fold('vit', '<span>' + L('Enter all vitals','הזנת כל המדדים') + '</span>'); put(fVit, ventry); put(fVit, savevit); sCare.querySelector('.fs-b').appendChild(fVit);
+  var fPri = fold('pri', '<span>' + L('Entries per step: IV, fluids, drugs, notes','הזנה לפי שלב: עירוי, נוזלים, תרופות, הערות') + '</span>'); put(fPri, primary); sCare.querySelector('.fs-b').appendChild(fPri);
+  if (urgency) sCare.querySelector('.fs-b').appendChild(urgency);
+  if (primary) primary.setAttribute('data-tour', 'care');
 
-  // Care
-  [primary, urgency].forEach(function(e){ move(sCare, e); });
-  if (second){ var d = document.createElement('details'); d.className = 'fs-fold'; var sm = document.createElement('summary'); sm.textContent = L('Secondary survey','סקירה שניונית'); d.appendChild(sm); d.appendChild(second); move(sCare, d); }
-
-  // Record: patient identity + mechanism + timeline + details
+  // Record: who, mechanism, timeline, casualty details. Diagnoses list, care echelons, undo/redo and the old strips are dropped.
+  var sRec = section('fs-record', L('Record','תיק'), L('Who, what happened, timeline','מי, מה קרה, ציר זמן'));
   var patient = document.createElement('div'); patient.className = 'fs-patient';
-  [hdr, nameRow, moi].forEach(function(e){ if (e) patient.appendChild(e); });
-
-  var rec = sRec.querySelector('.fs-b');
-  rec.appendChild(patient);
+  [nameRow, moi].forEach(function(el){ if (el) patient.appendChild(el); });
+  var rec = sRec.querySelector('.fs-b'); rec.appendChild(patient);
+  if (peds) rec.appendChild(peds);
   if (timeline) rec.appendChild(timeline);
-  details.forEach(function(e){ rec.appendChild(e); });
+  var cdet = details.filter(function(el){ return /פרטי הפצוע/.test(txt(el)); })[0]; if (cdet) rec.appendChild(cdet);
 
-  // Handoff actions → one sticky bar + sheet (originals stay inside the sheet so every action still works)
+  var m = sBody.querySelector('.body-map-wrap'); if (m) m.setAttribute('data-tour', 'bodymap');
+
   var hand = document.createElement('div'); hand.className = 'fs-handoff';
-  handoff.forEach(function(e){ hand.appendChild(e); });
+  handoff.forEach(function(el){ hand.appendChild(el); });
   var bar = document.createElement('div'); bar.className = 'fs-bar';
   bar.innerHTML = '<button class="xbtn bar-back" onclick="Demo.back()">' + ico(document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left', 26) + '<span>' + L('BACK','חזרה') + '</span></button>'
     + '<button class="xbtn" onclick="Field.undo()">' + ico('undo-2', 28) + '<span>' + L('UNDO','בטל') + '</span></button>'
     + '<button class="xbtn xbtn-primary" data-tour="handoff" onclick="FormUI.handoff()">' + ico('radio', 28) + '<span>' + L('HANDOFF','העברה') + '</span></button>';
 
-  // Nav chips
-  var nav = document.createElement('nav'); nav.className = 'fnav'; nav.setAttribute('aria-label', L('Jump to section','קפיצה לסעיף'));
-  [['field', L('TREAT NOW','טיפול מיידי')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-vitals', L('VITALS','מדדים')], ['fs-care', L('CARE','טיפול')], ['fs-record', L('RECORD','תיק')], ['fs-now', L('ADVICE','תמיכה')]].forEach(function(p){
-    var b = document.createElement('button'); b.textContent = p[1]; b.onclick = function(){ FormUI.jump(p[0]); }; b.dataset.t = p[0]; nav.appendChild(b);
-  });
-
-  if (recs) recs.classList.add('b-recs');
-  // Tour anchors
-  var m = sBody.querySelector('.body-map-wrap'); if (m) m.setAttribute('data-tour', 'bodymap');
-  var vs = sVit.querySelector('.fs-b > div'); if (vs) vs.setAttribute('data-tour', 'vitals');
-  sNow.setAttribute('data-tour', 'alerts-wrap'); var cm = sNow.querySelector('#cds-alert-mount'); if (recs) recs.setAttribute('data-tour', 'alerts');
-  if (primary) primary.setAttribute('data-tour', 'care');
-
-  // Rebuild content in the new order (anything unclaimed stays at the end so nothing is lost)
-  [timers, march, tqBanner].forEach(function(d){ if (d && d.parentNode) d.parentNode.removeChild(d); });
-  var rest = kids(c).filter(function(e){ return [autosave, saveBtn, closeBtn].indexOf(e) < 0; });
   var frag = document.createDocumentFragment();
   var fieldWrap = document.createElement('div'); fieldWrap.innerHTML = W.Field ? W.Field.html() : ''; while (fieldWrap.firstChild) frag.appendChild(fieldWrap.firstChild);
-  frag.appendChild(nav);
-  [sNow, sBody, sVit, sCare, sRec].forEach(function(s){ frag.appendChild(s); });
-  rest.forEach(function(e){ if (e.parentNode === c) frag.appendChild(e); });
-  var foot = document.createElement('div'); foot.className = 'fs-foot';
-  [autosave, saveBtn, closeBtn].forEach(function(e){ if (e) foot.appendChild(e); });
-  frag.appendChild(foot); frag.appendChild(hand); frag.appendChild(bar);
+  [sSug, sBody, sCare, sRec].forEach(function(s){ frag.appendChild(s); });
+  var spacer = document.createElement('div'); spacer.className = 'fs-foot'; frag.appendChild(spacer); frag.appendChild(hand); frag.appendChild(bar);
   c.innerHTML = ''; c.appendChild(frag);
-  c.querySelectorAll('#fs-care [onclick*="_casualtyActiveTab"]').forEach(function(h){ var m = /cur===.(\w)./.exec(h.getAttribute('onclick') || ''); var g = h.parentNode; if (m && g) g.classList.add('eg', 'xc-' + m[1]); });
-  c.querySelectorAll('button[aria-label]').forEach(function(b){ if (!b.textContent.trim() && !b.querySelector('svg') && /delete|remove|מחק/i.test(b.getAttribute('aria-label'))) { b.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; b.classList.add('del-btn'); } });
+  c.querySelectorAll('#fs-care [onclick*="_casualtyActiveTab"]').forEach(function(h){ var mm = /cur===.(\w)./.exec(h.getAttribute('onclick') || ''); var g = h.parentNode; if (mm && g) g.classList.add('eg', 'xc-' + mm[1]); });
+  c.querySelectorAll('button[aria-label]').forEach(function(bt){ if (!bt.textContent.trim() && !bt.querySelector('svg') && /delete|remove|מחק/i.test(bt.getAttribute('aria-label'))) { bt.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; bt.classList.add('del-btn'); } });
   c.dataset.enh = 'form';
   flattenSvg(c); flattenVitals(c);
-  nav.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === (W.FormUI.cur || 'field')); });
-  // collapse the long, rarely-needed blocks by default
-  c.querySelectorAll('#fs-record .cas-section').forEach(function(e){ /* keep timeline visible */ });
 }
 
 function flattenSvg(root){
@@ -165,8 +141,10 @@ function enhanceBoard(c){
 
 W.FormUI = {
   cur: 'field',
+  open: {},
   bind: function(c){
     if (c.__spy) return; c.__spy = true;
+    c.addEventListener('click', function(ev){ var sm = ev.target.closest && ev.target.closest('details.fs-fold > summary'); if (!sm) return; var d = sm.parentNode; W.FormUI.open[d.dataset.k] = !d.open; }, true);
     c.addEventListener('scroll', function(){
       if (c.dataset.view !== 'form') return;
       var top = c.getBoundingClientRect().top, cur = 'field';
@@ -177,6 +155,8 @@ W.FormUI = {
   enhance: function(c){ enhanceForm(c); },
   jump: function(id){
     var c = document.getElementById('incident-content'), e = document.getElementById(id); if (!c || !e) return;
+    if (id === 'fs-care'){ W.FormUI.open.pri = true; var f = e.querySelector('details[data-k=pri]'); if (f) f.setAttribute('open', ''); }
+    if (id === 'fs-now'){ W.FormUI.open.sug = true; e.setAttribute('open', ''); }
     c.scrollTo({ top: c.scrollTop + e.getBoundingClientRect().top - c.getBoundingClientRect().top - 56, behavior: 'smooth' });
   },
   handoff: function(){

@@ -211,10 +211,16 @@ var BRC_CSS = '.brc-list .b2-grid,.brc-list .b2-foot{display:none}.brc-list .b2-
   + '.b2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.4em}'
   + '.b2-box{border:2px solid #111;border-radius:.5em;padding:.3em .5em;min-height:3.5em;display:flex;flex-direction:column;min-width:0}.b2-box small{font-size:.875em;font-weight:900;letter-spacing:.05em;color:#444}'
   + '.b2-box b{font-size:1.4em;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}.b2-box span{font-size:.875em;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-  + '.b2-box.blank{background:repeating-linear-gradient(0deg,#fff 0,#fff 1.1em,#cfd3da 1.1em,#cfd3da calc(1.1em + 1px))}.b2-box.set{background:#fff6cc}'
+  + '.b2-box.blank{background:repeating-linear-gradient(0deg,#fff 0,#fff 1.1em,#cfd3da 1.1em,#cfd3da calc(1.1em + 1px)) no-repeat 0 1.5em/100% calc(100% - 1.5em)}.b2-box.blank small{background:#fff}.b2-box.set{background:#fff6cc}'
   + '.b2-qr{display:flex;flex-direction:column;align-items:center;gap:.3em;padding:.7em;border-top:3px dashed #111}.b2-qr svg{width:11em;height:11em}.b2-qr small{font-weight:900;font-size:.875em;letter-spacing:.05em;text-align:center}'
   + '.b2-foot{font-size:.875em;font-weight:700;color:#444;line-height:1.25}'
-  + '.brc-print{flex-direction:row;width:150mm;height:58mm;font-size:8.5pt;border-width:.6mm;border-radius:3mm}.brc-print .b2-tri{flex-direction:column;justify-content:center;text-align:center;width:27mm;padding:2mm;gap:1.5mm}'
+  + '.b2-no{background:#111;color:#fff;border-radius:.5em;padding:.25em .6em;justify-content:space-between}.b2-no small{color:#ffd400}.b2-no b{font-size:2.5em}'
+  + '.b2-qr{background:#f3f4f6}.b2-qr svg{background:#fff;border:3px solid var(--tg);border-radius:.4em;padding:.2em}'
+  + '.b2-stub{display:none}'
+  + '.brc-print .b2-stub{display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:17mm;padding:2mm 1mm;border-inline-start:.5mm dashed #111;background:var(--tg);color:var(--tgt,#fff);text-align:center}'
+  + '.b2-stub b{font:900 1.15em ui-monospace,Menlo,Consolas,monospace;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.06em}.b2-stub span{font-size:.7em;font-weight:900;line-height:1.1}'
+  + '.brc-print .b2-no{padding:.3mm 2mm}.brc-print .b2-no b{font-size:2.3em}.brc-print .b2-qr{background:#fff}'
+  + '.brc-print{flex-direction:row;width:170mm;height:58mm;font-size:8.5pt;border-width:.6mm;border-radius:3mm}.brc-print .b2-tri{flex-direction:column;justify-content:center;text-align:center;width:27mm;padding:2mm;gap:1.5mm}'
   + '.brc-print .b2-tri svg{width:11mm;height:11mm;min-width:0;min-height:0}.brc-print .b2-tri b{font-size:1.35em;flex:none}.brc-print .b2-tri i{font-size:1em}'
   + '.brc-print .b2-main{padding:2mm 3mm;gap:1.2mm}.brc-print .b2-top{font-size:.8em}.brc-print .b2-no b{font-size:2.6em}.brc-print .b2-who{font-size:1em}.brc-print .b2-box{min-height:11mm;padding:.8mm 1.6mm;border-width:.35mm}.brc-print .b2-box small{font-size:.8em}.brc-print .b2-box b{font-size:1.35em}.brc-print .b2-box span{font-size:.8em}.brc-print .b2-foot{font-size:.72em}'
   + '.brc-print .b2-qr{border-top:0;border-inline-start:.5mm dashed #111;padding:2mm;width:44mm;justify-content:center}.brc-print .b2-qr svg{width:37mm;height:37mm}.brc-print .b2-qr small{font-size:.75em}';
@@ -243,6 +249,7 @@ function braceletHtml(c, opts){
     +   '<div class="b2-foot">' + L('DEMO. NOT FOR CLINICAL USE. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
     + '</div>'
     + '<div class="b2-qr">' + qrSvg(url, opts.print ? 140 : 176) + '<small>' + L('SCAN WITH ANY PHONE CAMERA','סרקו בכל מצלמת טלפון') + '</small></div>'
+    + '<div class="b2-stub"><span>' + L('TEAR OFF · KEEP WITH STRETCHER','גזרו · הצמידו לאלונקה') + '</span><b dir="ltr">' + esc(s.s) + '</b><span>' + esc(L(tg.en, tg.he)) + '</span></div>'
     + '</div>';
 }
 

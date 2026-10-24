@@ -12,7 +12,7 @@ function hhmm(iso){ var d = new Date(iso); return String(d.getHours()).padStart(
 function minsAgo(iso){ return Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); }
 function app(){ return document.getElementById('app'); }
 
-var TRI = [['red','URGENT','דחוף'], ['yellow','DELAYED','דחוי'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['black','DECEASED (DOCTOR)','חלל (רופא)']];
+var TRI = [['red','URGENT','דחוף'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['yellow','DELAYED','דחוי'], ['black','DECEASED (DOCTOR)','חלל (רופא)']];
 var EVAC = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant', black:'' };
 var SITES = [['r_upper_arm','RIGHT ARM','יד ימין'], ['l_upper_arm','LEFT ARM','יד שמאל'], ['r_thigh','RIGHT LEG (THIGH)','רגל ימין (ירך)'], ['l_thigh','LEFT LEG (THIGH)','רגל שמאל (ירך)'], ['r_shin','RIGHT LOWER LEG','שוק ימין'], ['l_shin','LEFT LOWER LEG','שוק שמאל']];
 var GIVE = [
@@ -47,10 +47,24 @@ function quickBanner(){
   if (!c || c.formLevel !== 'quick') return '';
   return '<div class="f-quick"><span class="f-qi">' + ico('zap', 30) + '</span><span><b>' + L('QUICK TRIAGE RECORD','רשומת מיון מהיר') + '</b><small>' + L('Only the triage colour was recorded. Complete the full Form 101 when you have time to give care.','נרשם רק צבע המיון. השלימו את טופס 101 המלא כשיש זמן לטיפול.') + '</small></span><button onclick="Field.upgrade()">' + L('START FULL FORM 101','התחילו טופס 101 מלא') + '</button></div>';
 }
+function idStrip(){
+  var c = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0];
+  var col = W._casualtyTriageColor, tg = col ? W.TriageUI.tg(col) : null;
+  var dark = col === 'yellow' || col === 'gray';
+  var X = W._casualtyXABCDE || {}, e = X.e || {};
+  var who = [e.ageYears != null ? e.ageYears + L(' y',' שנים') : '', e.sex === 'M' || e.sex === 'male' ? L('Male','זכר') : (e.sex === 'F' || e.sex === 'female' ? L('Female','נקבה') : ''), e.weightKg ? e.weightKg + ' kg' : ''].filter(Boolean).join(' · ');
+  var serial = c && W.Bracelet ? W.Bracelet.serialFor(c) : '';
+  var name = c ? esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(c.name) : c.name) : '';
+  return '<div class="f-id' + (dark ? ' dark' : '') + '" style="--tg:' + (tg ? tg.c : '#3a3f4a') + '">'
+    + '<span class="f-id-i">' + (tg ? W.TriageUI.shapeSvg(tg.shape, 44) : ico('circle-help', 44)) + '</span>'
+    + '<span class="f-id-t"><b>' + (tg ? L(tg.en, tg.he) : L('NOT TRIAGED','טרם סווג')) + '</b><em>' + name + '</em>' + (who ? '<small>' + who + '</small>' : '') + '</span>'
+    + (serial ? '<button class="f-id-b" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Wristband','צמיד') + '"><small>' + L('NO.','מס׳') + '</small><b dir="ltr">' + esc(serial) + '</b><span>' + ico('qr-code', 24) + L('WRISTBAND','צמיד') + '</span></button>' : '')
+    + '</div>';
+}
 function html(){
-  var c = ctx(), tqs = c.x.tourniquets || [], cur = W._casualtyTriageColor, h = quickBanner();
+  var c = ctx(), tqs = c.x.tourniquets || [], cur = W._casualtyTriageColor, h = idStrip() + quickBanner();
   // 1 · triage
-  h += '<div class="f-h">' + L('TRIAGE','מיון') + '</div><div class="f-tri">';
+  h += '<div class="f-h">' + L('SET TRIAGE','קביעת מיון') + '</div><div class="f-tri">';
   TRI.forEach(function(t){
     var on = cur === t[0], T = W.TriageUI.tg(t[0]);
     h += '<button class="f-tbtn t-' + t[0] + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Field.triage(\'' + t[0] + '\')">' + W.TriageUI.shapeSvg(T.shape, 32) + '<b>' + L(t[1], t[2]) + '</b>' + (on ? '<i>' + ico('check', 22) + L('SET','נקבע') + '</i>' : '') + '</button>';
