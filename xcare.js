@@ -31,18 +31,18 @@ var PRIMARY = [
     ['p_c6','Deep shock: IV and blood now','הלם עמוק: עירוי ודם עכשיו','BP under 90, or no radial pulse + altered mind. Medics set the line, senior continues survey.','ל״ד מתחת ל-90, או אין דופק רדיאלי + שינוי הכרה. החובשים מכניסים עירוי.','WHOLE BLOOD','דם מלא',"Field.give('blood')", function(){ return ((X().c || {}).fluids || []).length; }]
   ]},
   { k:'A', en:'AIRWAY', he:'נתיב אוויר', sub:['Talk to them. Basic steps only.','דברו אליהם. פעולות בסיסיות בלבד.'], items:[
-    ['p_a1','Airway checked','נתיב אוויר נבדק','Does the casualty speak in full sentences? Stridor, gurgling, face or neck injury?','האם מדבר במשפטים שלמים? סטרידור, חרחור, פגיעת פנים או צוואר?','OPEN CARE','פתחו טיפול',"Field.march('a')", function(){ return !!((X().a || {}).status); }],
+    ['p_a1','Airway checked','נתיב אוויר נבדק','Does the casualty speak in full sentences? Stridor, gurgling, face or neck injury?','האם מדבר במשפטים שלמים? סטרידור, חרחור, פגיעת פנים או צוואר?',null,null,null, function(){ return !!((X().a || {}).status); }],
     ['p_a2','Basic airway only','נתיב אוויר בסיסי בלבד','Open mouth, suction, sit up or recovery position. No head tilt if spine injury is suspected.','פתיחת פה, שאיבה, ישיבה או שכיבה על הצד. בלי הטיית ראש בחשד לעמוד שדרה.']
   ]},
   { k:'R', en:'BREATHING', he:'נשימה', sub:['Rate, saturation, oxygen, chest.','קצב, סטורציה, חמצן, חזה.'], items:[
     ['p_r1','Breathing rate','קצב נשימה','Count for 30 seconds. Not breathing: BVM.','ספרו 30 שניות. לא נושם: אמבו ומסכה.','TAP BREATHS','הקישו נשימות',"Field.tapStart('rr')", function(){ return vitalsHave('rr'); }],
-    ['p_r2','Oxygen if indicated','חמצן לפי התוויה','Chest injury, shock, head injury, distress. BVM only if SpO₂ 88 or less after basic care.','פגיעת חזה, הלם, פגיעת ראש, מצוקה. אמבו רק בסטורציה 88 ומטה אחרי טיפול בסיסי.','OPEN CARE','פתחו טיפול',"Field.march('b')", function(){ return !!((X().b || {}).oxygen); }],
+    ['p_r2','Oxygen if indicated','חמצן לפי התוויה','Chest injury, shock, head injury, distress. BVM only if SpO₂ 88 or less after basic care.','פגיעת חזה, הלם, פגיעת ראש, מצוקה. אמבו רק בסטורציה 88 ומטה אחרי טיפול בסיסי.',null,null,null, function(){ return !!((X().b || {}).oxygen); }],
     ['p_r3','Chest exposed and looked at','חזה נחשף ונבדק','Wounds, bruising, shape. Open wound: 3-side dressing. No needle, no chest seal.','פצעים, חבלה, צורה. פצע פתוח: חבישה משלושה צדדים. בלי מחט ובלי אטם.']
   ]},
   { k:'E', en:'EXPOSURE + EVACUATION', he:'חשיפה ופינוי', sub:['Complete the exam, keep warm, load, report.','השלמת בדיקה, חימום, העמסה, דיווח.'], items:[
     ['p_e1','Fully undressed and rolled','הפשטה מלאה והפיכה','Everything off, including boots and underwear. No hidden wounds.','הכל מוסר, כולל נעליים ותחתונים. אין פצעים נסתרים.'],
-    ['p_e2','Head, neck, pelvis','ראש, צוואר, אגן','Collar if spine injury suspected (not for penetrating neck wound). Pelvic binder at the trochanters.','צווארון בחשד לעמוד שדרה (לא בפצע חודר בצוואר). מקבע אגן בגובה הטרוכנטרים.','OPEN CARE','פתחו טיפול',"Field.march('e')"],
-    ['p_e3','Covered and warm','מכוסים וחמים','Blanket, active warming if under 36 °C.','שמיכה, חימום אקטיבי מתחת ל-36 מעלות.','OPEN CARE','פתחו טיפול',"Field.march('e')", function(){ return !!((X().e || {}).hypothermiaPrevention); }],
+    ['p_e2','Head, neck, pelvis','ראש, צוואר, אגן','Collar if spine injury suspected (not for penetrating neck wound). Pelvic binder at the trochanters.','צווארון בחשד לעמוד שדרה (לא בפצע חודר בצוואר). מקבע אגן בגובה הטרוכנטרים.',null,null,null],
+    ['p_e3','Covered and warm','מכוסים וחמים','Blanket, active warming if under 36 °C.','שמיכה, חימום אקטיבי מתחת ל-36 מעלות.',null,null,null, function(){ return !!((X().e || {}).hypothermiaPrevention); }],
     ['p_e4','On the stretcher','על האלונקה','Strapped, covered, tubes secured.','קשור, מכוסה, צנרת מקובעת.'],
     ['p_e5','Team huddle: urgency and plan','חיתוך מצב: דחיפות ותוכנית','Say it aloud: urgency of evacuation, plan, who does what.','אמרו בקול: דחיפות פינוי, תוכנית, מי עושה מה.'],
     ['p_e6','Medical report sent','דיווח רפואי הועבר','MIST+: what happened, injuries, signs, treatment.','MIST+: מה קרה, פציעות, סימנים, טיפול.','HANDOFF','העברה','FormUI.handoff()'],
@@ -59,17 +59,17 @@ var SECONDARY = [
     ['s_c6','Second IV for shock casualty','עירוי שני לפצוע בהלם','Do not delay evacuation for it.','לא מעכבים פינוי בגללו.']
   ]},
   { k:'A', en:'AIRWAY', he:'נתיב אוויר', sub:['Re-check. Conservative first.','בדיקה חוזרת. קודם שמרני.'], items:[
-    ['s_a1','Airway re-assessed','נתיב אוויר נבדק שוב','Conservative care or by indication. Advanced airway is rare and needs a team.','טיפול שמרני או לפי התוויה. נתיב מתקדם נדיר ודורש צוות.','OPEN CARE','פתחו טיפול',"Field.march('a')"]
+    ['s_a1','Airway re-assessed','נתיב אוויר נבדק שוב','Conservative care or by indication. Advanced airway is rare and needs a team.','טיפול שמרני או לפי התוויה. נתיב מתקדם נדיר ודורש צוות.',null,null,null]
   ]},
   { k:'R', en:'BREATHING', he:'נשימה', sub:['Oxygen, ventilator, chest drain only if needed.','חמצן, מנשם, נקז חזה רק לפי צורך.'], items:[
-    ['s_r1','Oxygen','חמצן','Keep SpO₂ at 94 or more when possible.','שמרו על סטורציה 94 ומעלה כשאפשר.','OPEN CARE','פתחו טיפול',"Field.march('b')", function(){ return !!((X().b || {}).oxygen); }],
+    ['s_r1','Oxygen','חמצן','Keep SpO₂ at 94 or more when possible.','שמרו על סטורציה 94 ומעלה כשאפשר.',null,null,null, function(){ return !!((X().b || {}).oxygen); }],
     ['s_r2','Ventilated casualty: ventilator, bite block, ETCO₂','מונשם: מנשם, מגן נשיכה, ETCO₂','ETCO₂ target 30 to 35. Gastric tube. Check tube depth.','יעד ETCO₂ 30 עד 35. זונדה. בדקו עומק טובוס.'],
     ['s_r3','Chest drain only if needed','נקז חזה רק לפי צורך','Ventilated chest casualty, or all four: one-sided sign, worsening, SpO₂ 88 or less, 2 h after injury.','פצוע חזה מונשם, או כל ארבעת: סימן חד צדדי, החמרה, סטורציה 88 ומטה, שעתיים מהפציעה.']
   ]},
   { k:'E', en:'EVERYTHING ELSE', he:'כל השאר', sub:['Pain, infection, head to toe, splints, 101.','כאב, זיהום, מראש עד רגל, קיבועים, 101.'], items:[
     ['s_e1','Pain assessed and treated','כאב הוערך וטופל','Ketamine 25 mg IV first. Morphine 5 mg (2 mg in shock). Pills if they can swallow.','קטמין 25 מ״ג IV קודם. מורפין 5 מ״ג (2 בהלם). כדורים אם יכולים לבלוע.','KETAMINE','קטמין',"Field.give('ket')", function(){ return medGiven(/קטמין|פנטניל|מורפין|אופטלגין|פרצטמול/); }],
     ['s_e2','Wounds washed, dressed, antibiotic','פצעים נשטפו, נחבשו, אנטיביוטיקה','Irrigate. Ceftriaxone 2 g IV if evacuation over 1 h; belly or head: add metronidazole.','שטיפה. צפטריאקסון 2 גרם IV אם פינוי מעל שעה; בטן או ראש: הוסיפו מטרונידזול.','CEFTRIAXONE','צפטריאקסון',"Field.give('cef')", function(){ return medGiven(/צפטריאקסון|ceftriaxone/i); }],
-    ['s_e3','GCS, limb movement, pupils','GCS, תנועת גפיים, אישונים','Record eye, verbal, motor separately.','רשמו עיניים, דיבור ומוטורי בנפרד.','OPEN CARE','פתחו טיפול',"Field.march('e')", function(){ return (X().d || {}).gcs != null; }],
+    ['s_e3','GCS, limb movement, pupils','GCS, תנועת גפיים, אישונים','Record eye, verbal, motor separately.','רשמו עיניים, דיבור ומוטורי בנפרד.',null,null,null, function(){ return (X().d || {}).gcs != null; }],
     ['s_e4','Head to toe exam, treat as you go','סריקה מראש עד רגל, טיפול תוך כדי','Every injury found is treated.','כל פציעה שנמצאת מטופלת.'],
     ['s_e5','Fractures splinted, all splints checked','שברים קובעו, כל הקיבועים נבדקו','SAM splint. Re-check the circulation line.','סד SAM. בדקו שוב את קו הזרימה.'],
     ['s_e6','Stress reaction checked','תגובת דחק נבדקה','Calm, explain, keep talking.','הרגעה, הסבר, המשיכו לדבר.'],

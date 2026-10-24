@@ -71,6 +71,7 @@ function html(){
   });
   h += '</div>';
   h += (Field.xcareHtml ? Field.xcareHtml() : '');
+  var top = h; h = '';
   // 2 · clocks
   var tq0 = tqs[0], txa = lastMed(/^TXA/i), lv = c.vitals.length ? c.vitals[c.vitals.length - 1] : null, veh = vehicleOf();
   var tile = function(label, big, sub, cls){ return '<div class="f-clock ' + (cls || '') + '"><small>' + label + '</small><b>' + big + '</b><span>' + sub + '</span></div>'; };
@@ -95,7 +96,7 @@ function html(){
     + vt(L('BREATHS','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 30 || v.rr < 10))
     + '</div>'
     + '<div class="f-tapbar"><button onclick="Field.tapStart(\'pulse\')">' + ico('heart-pulse', 30) + '<span>' + L('TAP THE HEARTBEAT','הקישו את הדופק') + '</span></button><button onclick="Field.tapStart(\'rr\')">' + ico('wind', 30) + '<span>' + L('TAP THE BREATHS','הקישו את הנשימות') + '</span></button></div>';
-  return '<section class="field" id="field" data-tour="field">' + h + '</section>';
+  return '<section class="field" id="field" data-tour="field">' + top + '</section><section class="field fmon" id="fs-more"><div class="fs-h-wrap"><h2 class="fs-h">' + L('Monitor','ניטור') + '<small>' + L('Clocks, tourniquet, vitals','שעונים, חוסם עורקים, מדדים') + '</small></h2></div>' + h + '</section>';
 }
 function vt(label, val, unit, idx, bad){
   return '<button class="f-v' + (bad ? ' bad' : '') + '" onclick="Field.keypad(' + idx + ')"><small>' + label + '</small><b>' + val + '</b><span>' + unit + '</span></button>';

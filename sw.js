@@ -1,6 +1,6 @@
 /* Offline shell. Install is tolerant (one missing file never blocks the worker), and files are served
-   stale-while-revalidate so a deployed update shows up on the next load instead of staying cached forever. */
-const CACHE = 'shomer-showcase-v7';
+   network-first so a deployed update shows up immediately; the cache is only the offline fallback. */
+const CACHE = 'shomer-showcase-v8';
 const ASSETS = ['./', 'index.html', 'app.css', 'ui.css', 'form.css', 'disclaimer.css', 'stress.css', 'field.css', 'chrome.css', 'shared/medical-forms.css',
   'shared/core.js', 'shared/icons.js', 'shared/medical-forms.js', 'host.ported.js', 'ui-icons.js', 'i18n-dict.js', 'i18n.js', 'scenario.js',
   'disclaimer.js', 'bracelet.js', 'enhance.js', 'field.js', 'next.js', 'quick.js', 'xcare.js', 'swipe.js', 'xcare.css', 'evac.js', 'shell.js', 'polish.js', 'tour.js',
@@ -14,9 +14,16 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
+  // network first (always fresh when online), cache as the offline fallback
   e.respondWith(caches.open(CACHE).then(async c => {
-    const hit = await c.match(e.request, { ignoreSearch: true });
-    const net = fetch(e.request).then(r => { if (r && r.ok) c.put(e.request, r.clone()); return r; }).catch(() => hit);
-    return hit || net;
+    try {
+      const r = await fetch(e.request, { cache: 'no-cache' });
+      if (r && r.ok) c.put(e.request, r.clone());
+      return r;
+    } catch (err) {
+      const hit = await c.match(e.request, { ignoreSearch: true });
+      if (hit) return hit;
+      throw err;
+    }
   }));
 });

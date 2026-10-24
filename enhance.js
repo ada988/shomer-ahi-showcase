@@ -71,11 +71,9 @@ function enhanceForm(c){
   var fInj = fold('inj', '<span>' + L('Marked injuries','פציעות מסומנות') + '</span>'); put(fInj, inj); if (inj) sBody.querySelector('.fs-b').appendChild(fInj);
   var fTr = fold('tr', '<span>' + L('Treatments on the body','טיפולים על הגוף') + '</span>'); put(fTr, treat); if (treat) sBody.querySelector('.fs-b').appendChild(fTr);
 
-  var sCare = section('fs-care', L('Details','פרטים'), L('Optional: enter the full details behind each step','לא חובה: הזנת הפרטים המלאים מאחורי כל שלב'));
-  var fVit = fold('vit', '<span>' + L('Enter all vitals','הזנת כל המדדים') + '</span>'); put(fVit, ventry); put(fVit, savevit); sCare.querySelector('.fs-b').appendChild(fVit);
-  var fPri = fold('pri', '<span>' + L('Entries per step: IV, fluids, drugs, notes','הזנה לפי שלב: עירוי, נוזלים, תרופות, הערות') + '</span>'); put(fPri, primary); sCare.querySelector('.fs-b').appendChild(fPri);
-  if (urgency) sCare.querySelector('.fs-b').appendChild(urgency);
-  if (primary) primary.setAttribute('data-tour', 'care');
+  var sCare = document.createElement('div'); sCare.className = 'fs-more-b';
+  var fVit = fold('vit', '<span>' + L('Enter all vitals','הזנת כל המדדים') + '</span>'); put(fVit, ventry); put(fVit, savevit); sCare.appendChild(fVit);
+  if (urgency) sCare.appendChild(urgency);
 
   // Record: who, mechanism, timeline, casualty details. Diagnoses list, care echelons, undo/redo and the old strips are dropped.
   var sRec = section('fs-record', L('Record','תיק'), L('Who, what happened, timeline','מי, מה קרה, ציר זמן'));
@@ -96,11 +94,19 @@ function enhanceForm(c){
     + '<button class="xbtn xbtn-primary" data-tour="handoff" onclick="FormUI.handoff()">' + ico('radio', 28) + '<span>' + L('HANDOFF','העברה') + '</span></button>';
 
   var frag = document.createDocumentFragment();
-  var fieldWrap = document.createElement('div'); fieldWrap.innerHTML = W.Field ? W.Field.html() : ''; while (fieldWrap.firstChild) frag.appendChild(fieldWrap.firstChild);
-  [sSug, sBody, sCare, sRec].forEach(function(s){ frag.appendChild(s); });
+  var fieldWrap = document.createElement('div'); fieldWrap.innerHTML = W.Field ? W.Field.html() : '';
+  var topSec = fieldWrap.querySelector('#field'), monSec = fieldWrap.querySelector('#fs-more');
+  var jb = document.createElement('nav'); jb.className = 'jb'; jb.setAttribute('aria-label', L('Jump to','קפיצה אל'));
+  [['field', L('101 FORM','טופס 101')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-more', L('VITALS + MORE','מדדים ועוד')]].forEach(function(q){
+    var bt = document.createElement('button'); bt.textContent = q[1]; bt.dataset.t = q[0]; bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
+  });
+  if (monSec) { monSec.appendChild(sCare); monSec.appendChild(sSug); monSec.appendChild(sRec); }
+  frag.appendChild(jb);
+  if (topSec) frag.appendChild(topSec);
+  frag.appendChild(sBody);
+  if (monSec) frag.appendChild(monSec);
   var spacer = document.createElement('div'); spacer.className = 'fs-foot'; frag.appendChild(spacer); frag.appendChild(hand); frag.appendChild(bar);
   c.innerHTML = ''; c.appendChild(frag);
-  c.querySelectorAll('#fs-care [onclick*="_casualtyActiveTab"]').forEach(function(h){ var mm = /cur===.(\w)./.exec(h.getAttribute('onclick') || ''); var g = h.parentNode; if (mm && g) g.classList.add('eg', 'xc-' + mm[1]); });
   c.querySelectorAll('button[aria-label]').forEach(function(bt){ if (!bt.textContent.trim() && !bt.querySelector('svg') && /delete|remove|מחק/i.test(bt.getAttribute('aria-label'))) { bt.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; bt.classList.add('del-btn'); } });
   c.dataset.enh = 'form';
   flattenSvg(c); flattenVitals(c);
@@ -148,14 +154,13 @@ W.FormUI = {
     c.addEventListener('scroll', function(){
       if (c.dataset.view !== 'form') return;
       var top = c.getBoundingClientRect().top, cur = 'field';
-      ['field','fs-body','fs-vitals','fs-care','fs-record','fs-now'].forEach(function(id){ var e = document.getElementById(id); if (e && e.getBoundingClientRect().top - top <= 120) cur = id; });
-      if (cur !== W.FormUI.cur){ W.FormUI.cur = cur; c.querySelectorAll('.fnav button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === cur); }); }
+      ['field','fs-body','fs-more'].forEach(function(id){ var e = document.getElementById(id); if (e && e.getBoundingClientRect().top - top <= 120) cur = id; });
+      if (cur !== W.FormUI.cur){ W.FormUI.cur = cur; c.querySelectorAll('.jb button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === cur); }); }
     }, { passive:true });
   },
   enhance: function(c){ enhanceForm(c); },
   jump: function(id){
     var c = document.getElementById('incident-content'), e = document.getElementById(id); if (!c || !e) return;
-    if (id === 'fs-care'){ W.FormUI.open.pri = true; var f = e.querySelector('details[data-k=pri]'); if (f) f.setAttribute('open', ''); }
     if (id === 'fs-now'){ W.FormUI.open.sug = true; e.setAttribute('open', ''); }
     c.scrollTo({ top: c.scrollTop + e.getBoundingClientRect().top - c.getBoundingClientRect().top - 56, behavior: 'smooth' });
   },
