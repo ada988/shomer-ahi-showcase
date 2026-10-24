@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="512" height="512">
+  <defs>
+    <clipPath id="sc-mix"><path d="M60 14 L100 28 L100 62 Q100 88 60 106 Q20 88 20 62 L20 28 Z"/></clipPath>
+  </defs>
+  <rect width="120" height="120" rx="26" fill="#0a0a0c"/>
+  <path d="M60 14 L100 28 L100 62 Q100 88 60 106 Q20 88 20 62 L20 28 Z" fill="#17171a" stroke="#f4f4f8" stroke-width="2"/>
+  <g clip-path="url(#sc-mix)">
+    <circle cx="60" cy="44" r="8" fill="none" stroke="#f4f4f8" stroke-width="2.8"/>
+    <g fill="#e74c3c">
+      <rect x="54" y="58" width="12" height="38" rx="2"/>
+      <rect x="40" y="72" width="40" height="12" rx="2"/>
+    </g>
+  </g>
+</svg>

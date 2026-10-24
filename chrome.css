@@ -1,0 +1,107 @@
+/* COMPACT CHROME — big targets must not eat the screen.
+   One slim top bar (title, BETA DEMO badge, menu) that slides away while reading down the page;
+   a 64px tab bar; the form's section list is ordinary content, not a sticky strip. */
+
+.beta-ribbon{display:none!important}
+
+.appbar{height:72px!important;min-height:72px;gap:8px!important;padding:0 10px!important;margin-top:0;transition:none}
+.appbar.hide{margin-top:-72px}
+.appbar .mark{width:40px!important;height:40px!important;flex:none}
+.appbar .ttl{flex:1;min-width:0}
+.appbar .ttl b{font-size:20px!important;line-height:1.15;font-weight:900;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.appbar .ttl small{font-size:16px!important;font-weight:800;color:var(--t2)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .ttl small:empty{display:none}
+
+/* Early-beta badge lives in the bar: always yellow, always readable, tap for the full notice */
+.beta-pill{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:88px;height:58px;padding:0 10px;border-radius:12px;border:3px solid #000;background:#ffd400;color:#000;line-height:1.05}
+.beta-pill b{font-size:19px;font-weight:900;letter-spacing:.04em}
+.beta-pill span{font-size:14px;font-weight:900;letter-spacing:.02em}
+
+/* Back / Menu: icon over word, compact but still a big target */
+.back-btn,.menu-btn{flex:none;width:68px!important;min-width:68px!important;height:58px!important;min-height:58px!important;padding:0 4px!important;flex-direction:column!important;gap:0!important;justify-content:center;border-radius:12px!important;font-size:14px!important;font-weight:900!important;line-height:1.1}
+.back-btn .ui-i,.menu-btn .ui-i{width:26px!important;height:26px!important}
+.back-btn span,.menu-btn span{font-size:14px;font-weight:900}
+
+.tabbar{padding:6px 8px calc(6px + env(safe-area-inset-bottom))!important;gap:6px!important}
+.tabbar button{min-height:64px!important;gap:2px!important}
+.tabbar .ui-i{width:28px!important;height:28px!important}
+
+/* Form: section list is a plain 3-column block, not sticky */
+.fnav{position:static!important;top:auto!important;margin:0 0 18px!important;padding:0!important;border:0!important;background:transparent!important;backdrop-filter:none!important}
+.fnav button{height:56px!important}
+
+/* Scroll content starts right under the bar, with less dead air */
+#incident-content{padding:12px 14px 24px!important}
+.ov-hero h2{font-size:26px!important}
+.f-h{margin-top:18px!important}
+
+/* Overlays keep the notice visible even when the bar is hidden */
+.bo-top{height:64px!important}
+
+/* The device needs the whole phone width; desktop frame unchanged */
+@media (max-width:900px){.appbar{padding-top:env(safe-area-inset-top)}}
+
+.f-m{grid-template-columns:34px 1fr!important;column-gap:8px!important;padding:8px 8px!important}
+.f-m em{width:34px!important;font-size:30px!important}
+.f-m b{letter-spacing:-.01em}
+
+.fs-bar .bar-back{flex:0 0 auto!important;min-width:88px;padding:0 10px;flex-direction:column;gap:0;font-size:15px}
+.fs-bar .xbtn span{font-size:18px}
+.fs-bar .bar-back span{font-size:15px}
+
+/* ═══ ONE PATIENT (full Form 101) vs MANY CASUALTIES (quick triage) — two clearly different choices ═══ */
+.ov-choose{display:grid;grid-template-columns:1fr;gap:12px}
+.ch{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start;border-radius:16px;border:4px solid #fff;color:#fff}
+.ch.full{background:#1450c8}
+.ch.quick{background:#a34a00}
+.ov-choose .ch{padding:14px 16px;min-height:132px}
+.ch .ch-i{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.2);margin-bottom:4px}
+.ch .ch-i .ui-i{width:34px!important;height:34px!important}
+.ch b{font-size:16px;font-weight:900;letter-spacing:.06em;opacity:.95}
+.ch strong{font-size:27px;font-weight:900;line-height:1.1}
+.ch small{font-size:17px;color:#fff;opacity:.95;margin-top:2px}
+.add-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 14px}
+.add-split .ch{padding:12px;min-height:104px;justify-content:center}
+.add-split .ch b{font-size:17px;letter-spacing:.02em;line-height:1.1}
+.add-split .ch small{font-size:17px;font-weight:800}
+.lvl{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;margin:4px 0 2px;padding:3px 10px;border-radius:8px;border:2px solid #fff;font-size:16px;font-weight:900;line-height:1.2}
+.lvl.full{background:#1450c8;color:#fff}
+.lvl.quick{background:#a34a00;color:#fff}
+.lvl .ui-i{width:24px!important;height:24px!important;min-width:24px;min-height:24px}
+.f-quick{display:grid;grid-template-columns:44px 1fr;grid-template-areas:'i t' 'b b';gap:8px 12px;align-items:center;margin:0 0 16px;padding:14px;border-radius:16px;border:4px solid #fff;background:#a34a00}
+.f-qi{grid-area:i;display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.2)}
+.f-quick>span:nth-child(2){grid-area:t;display:flex;flex-direction:column;gap:2px}
+.f-quick b{font-size:21px;font-weight:900}.f-quick small{font-size:17px;color:#fff}
+.f-quick button{grid-area:b;min-height:64px;border-radius:12px;border:3px solid #fff;background:#1450c8;color:#fff;font-size:20px;font-weight:900}
+
+/* QUICK TRIAGE screen */
+.qt{position:absolute;inset:0;z-index:100030;background:var(--bg);overflow-y:auto}
+.qt-inner{display:flex;flex-direction:column;min-height:100%;padding:12px 14px calc(16px + env(safe-area-inset-bottom))}
+.qt-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.qt-top .xbtn{display:flex;align-items:center;gap:8px;min-height:60px;padding:0 14px;font-size:17px;font-weight:900}
+.qt-title b{display:block;font-size:24px;font-weight:900;color:#ffb066}.qt-title small{font-size:16px;color:var(--t2)}
+.qt-count{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.qt-count span{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:12px;border:3px solid #fff;font-size:26px;font-weight:900}
+.qt-count .t-red{background:var(--t-red)}.qt-count .t-yellow{background:var(--t-yellow);color:#111}.qt-count .t-green{background:var(--t-green);color:#06140d}.qt-count .t-black{background:#000}
+.qt-body{display:flex;flex-direction:column;gap:14px;flex:1}
+.qt-step small{font-size:16px;font-weight:900;color:var(--t3);letter-spacing:.06em}
+.qt-step h2{font-size:30px;line-height:1.2;font-weight:900;margin-top:4px}
+.qt-yn{display:grid;grid-template-columns:1fr;gap:14px}
+.qt-yn button{min-height:104px;border-radius:18px;border:5px solid #fff;font-size:26px;font-weight:900;color:#fff;line-height:1.15;padding:8px 12px}
+.qt-yn .yes{background:#0f6b3a}.qt-yn .no{background:#8f1219}
+.qt-back{width:100%;display:flex;align-items:center;justify-content:center;gap:10px}
+.qt-note{font-size:16px;color:var(--t3);margin:auto 0 0}
+.qt-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:22px 14px;border-radius:20px;border:5px solid #fff}
+.qt-res b{font-size:44px;font-weight:900;letter-spacing:.02em}.qt-res span{font-size:19px;font-weight:700}
+.qt-res.t-red{background:var(--t-red);color:#fff}.qt-res.t-yellow{background:var(--t-yellow);color:#111}.qt-res.t-green{background:var(--t-green);color:#06140d}.qt-res.t-gray{background:var(--t-gray);color:#111}.qt-res.t-black{background:#000;color:#fff}
+.qt-next{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;min-height:76px;font-size:21px}
+.qt-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qt-pick button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;border-radius:14px;border:4px solid #fff;font-size:18px;font-weight:900}
+.qt-pick .t-red{background:var(--t-red);color:#fff}.qt-pick .t-yellow{background:var(--t-yellow);color:#111}.qt-pick .t-green{background:var(--t-green);color:#06140d}.qt-pick .t-gray{background:var(--t-gray);color:#111}.qt-pick .t-black{background:#000;color:#fff}
+@media (min-width:420px){.ov-choose{grid-template-columns:1fr 1fr}}
+
+#incident-content svg.ui-i,.bo svg.ui-i,.sheet svg.ui-i{min-width:24px;min-height:24px}
+
+
+.qt-rep{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:3px solid #fff;font-size:18px;font-weight:800}
+.qt-rep b{font-size:16px;letter-spacing:.06em;color:var(--t2)}

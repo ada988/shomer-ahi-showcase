@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0c0e">
+<title>Shomer Ahi — early beta demo (not for clinical use)</title>
+<meta name="description" content="Digital TCCC casualty card (Form 101), body map, MARCH decision support, mass-casualty triage and QR bracelets. Interactive demo — no login.">
+<link rel="icon" href="shared/logo-shield.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="shared/logo-shield.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="shared/medical-forms.css">
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="form.css">
+<link rel="stylesheet" href="disclaimer.css">
+<link rel="stylesheet" href="stress.css">
+<link rel="stylesheet" href="field.css">
+<link rel="stylesheet" href="chrome.css">
+</head>
+<body>
+<a class="skip-link" href="#incident-content">Skip to content</a>
+<div class="stage">
+
+  <aside class="side" aria-label="About this demo">
+    <div class="brand"><img src="shared/logo-shield.svg" alt=""><span data-en="Shomer Ahi" data-he="שומר אחי">Shomer Ahi</span></div>
+    <h1 data-en="Every casualty. One card. Handed off in seconds." data-he="כל נפגע. כרטיס אחד. מועבר תוך שניות.">Every casualty. One card. Handed off in seconds.</h1>
+    <p class="lede" data-en="A digital TCCC casualty card for field medics: body map, MARCH decision support, mass-casualty triage and QR wristbands that carry the patient’s record. Works offline." data-he="כרטיס נפגע דיגיטלי למטפלים בשטח: מפת גוף, תמיכה בהחלטות לפי MARCH, מיון רב-נפגעים וצמידי QR הנושאים את תיק הנפגע. עובד גם בלי רשת.">A digital TCCC casualty card for field medics: body map, MARCH decision support, mass-casualty triage and QR wristbands that carry the patient’s record. Works offline.</p>
+
+    <h4 data-en="Try it in 60 seconds" data-he="נסו ב-60 שניות">Try it in 60 seconds</h4>
+    <div class="try">
+      <button onclick="Tour.start()"><span class="n">▶</span><div><b data-en="Take the guided tour" data-he="סיור מודרך">Take the guided tour</b><span class="d" data-en="Thirteen short steps, from triage to bracelet scan" data-he="שלושה עשר שלבים קצרים, מהמיון ועד סריקת צמיד">Thirteen short steps, from triage to bracelet scan</span></div></button>
+      <button onclick="Demo.go('casualty')"><span class="n">1</span><div><b data-en="Open a casualty card" data-he="פתחו כרטיס נפגע">Open a casualty card</b><span class="d" data-en="Tap the body map, log vitals, see decision support" data-he="לחצו על מפת הגוף, תעדו מדדים וראו תמיכה בהחלטות">Tap the body map, log vitals, see decision support</span></div></button>
+      <button onclick="Demo.go('mci')"><span class="n">2</span><div><b data-en="See the triage board" data-he="ראו את לוח המיון">See the triage board</b><span class="d" data-en="Six casualties, sorted by priority, with live tourniquet clocks" data-he="שישה נפגעים לפי עדיפות, עם שעוני חוסם עורקים חיים">Six casualties, sorted by priority, with live tourniquet clocks</span></div></button>
+      <button onclick="Demo.go('scan')"><span class="n">3</span><div><b data-en="Scan a wristband" data-he="סרקו צמיד">Scan a wristband</b><span class="d" data-en="Print one, or scan this screen — the QR holds the record" data-he="הדפיסו אחד, או סרקו מהמסך — ה-QR מחזיק את התיק">Print one, or scan this screen — the QR holds the record</span></div></button>
+    </div>
+
+    <ul class="facts" id="facts"></ul>
+
+    <div class="phone-qr" id="phone-qr"></div>
+    <div class="side-warn" role="note"><b data-en="Early beta demo — not for real use" data-he="דמו בטא מוקדמת — לא לשימוש אמיתי">Early beta demo — not for real use</b><p data-en="This showcase uses fictional patients and has not been deployed or validated. It is not a medical device. Every suggestion is produced by software from the values entered and can be wrong; only a qualified medical professional may make medical decisions. Do not use it on real patients." data-he="הדמו משתמש בנפגעים בדויים ולא הופעל ולא תוקף. אינו מכשיר רפואי. כל הצעה מופקת על ידי תוכנה מתוך הערכים שהוזנו ועלולה להיות שגויה; רק איש צוות רפואי מוסמך רשאי לקבל החלטות רפואיות. אין להשתמש בנפגעים אמיתיים.">This showcase uses fictional patients and has not been deployed or validated. It is not a medical device. Every suggestion is produced by software from the values entered and can be wrong; only a qualified medical professional may make medical decisions. Do not use it on real patients.</p><button class="xbtn" onclick="Disclaimer.open()" data-en="Read the full notice" data-he="קראו את ההודעה המלאה">Read the full notice</button></div>
+  </aside>
+
+  <div class="device" id="app">
+    <header class="appbar">
+      <button class="iconbtn back-btn" id="app-back" onclick="Demo.back()" aria-label="Back" hidden></button>
+      <img class="mark" id="app-mark" src="shared/logo-shield.svg" alt="">
+      <div class="ttl"><b id="app-title">Shomer Ahi</b><small id="app-sub">Tactical casualty care</small></div>
+      <button class="beta-pill" id="beta-pill" onclick="Disclaimer.open()" aria-label="Important notice: early beta demo, do not use on real patients"><b data-en="BETA" data-he="בטא">BETA</b><span data-en="DEMO ONLY" data-he="דמו בלבד">DEMO ONLY</span></button>
+      <button class="iconbtn menu-btn" id="menu-btn" onclick="Demo.menu()" aria-label="Menu"></button>
+    </header>
+        <main id="incident-content" tabindex="-1"></main>
+    <nav class="tabbar" id="incident-tabs" role="tablist" aria-label="Sections"></nav>
+    <div class="tst" id="tst" role="status" aria-live="polite"><span id="tst-m"></span><button class="ul" style="display:none"></button></div>
+  </div>
+</div>
+
+<script src="vendor/qrcode.min.js"></script>
+<script src="shared/core.js"></script>
+<script src="shared/icons.js"></script>
+<script src="shared/medical-forms.js"></script>
+<script src="host.ported.js"></script>
+<script src="ui-icons.js"></script>
+<script src="i18n-dict.js"></script>
+<script src="i18n.js"></script>
+<script src="scenario.js"></script>
+<script src="disclaimer.js"></script>
+<script src="bracelet.js"></script>
+<script src="enhance.js"></script>
+<script src="field.js"></script>
+<script src="next.js"></script>
+<script src="quick.js"></script>
+<script src="evac.js"></script>
+<script src="shell.js"></script>
+<script src="polish.js"></script>
+<script src="tour.js"></script>
+<script>window.addEventListener('DOMContentLoaded',function(){Demo.boot();Disclaimer.gate();});
+if('serviceWorker' in navigator&&location.protocol!=='file:'){navigator.serviceWorker.register('sw.js').catch(function(e){ console.warn('Offline mode unavailable:', e && e.message); });}</script>
+</body>
+</html>

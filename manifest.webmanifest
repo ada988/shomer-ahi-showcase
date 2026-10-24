@@ -1,0 +1,10 @@
+{
+  "name": "Shomer Ahi — early beta demo",
+  "short_name": "Shomer Ahi",
+  "description": "Early beta demo with fictional data. Not for clinical use.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0c0e",
+  "theme_color": "#0b0c0e",
+  "icons": [{ "src": "shared/logo-shield.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

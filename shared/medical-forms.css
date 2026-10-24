@@ -1,0 +1,131 @@
+/* ═══════════════════════════════════════════════════════════════
+   shared/medical-forms.css — medical UI styles shared by both
+   shomer-ahi (beta) and magen-ahi (magen). Loaded alongside each
+   app's own app.css. Covers body map, X-CARE form accordion, MCI
+   dashboard, floating tap menu, glassmorphism tokens.
+
+   DO NOT duplicate these in beta/app.css or magen/app.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Glassmorphism design tokens (phase 6) ──────────────────── */
+:root {
+  --glass-bg: rgba(20, 20, 28, 0.62);
+  --glass-bg-strong: rgba(15, 15, 22, 0.78);
+  --glass-blur: blur(24px) saturate(180%);
+  --glass-blur-strong: blur(32px) saturate(200%);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-border-strong: 1px solid rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255,255,255,.05);
+  --glass-radius: 14px;
+}
+
+/* .glass = standard floating panel. .glass-strong = modal / command-bar. */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow);
+}
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  border: var(--glass-border-strong);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Icon helpers — set color/size with CSS. */
+.ic { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ic-16 svg { width:16px; height:16px; }
+.ic-18 svg { width:18px; height:18px; }
+.ic-20 svg { width:20px; height:20px; }
+.ic-22 svg { width:22px; height:22px; }
+
+/* Body Map */
+.body-map-wrap{position:relative;display:flex;flex-direction:column;align-items:center;margin:8px 0}
+.body-map-wrap svg{display:block}
+.body-map-wrap{touch-action:manipulation}
+.body-map-wrap .body-region{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.2);stroke-width:1;cursor:pointer;transition:fill .15s,stroke .15s;touch-action:manipulation}
+.body-map-wrap .body-region:focus{outline:none}
+.body-map-wrap .body-region:focus-visible{stroke:var(--bl);stroke-width:3}
+.body-map-wrap .body-region:active{opacity:.7}
+.body-map-wrap .body-region.selected{stroke:var(--bl);stroke-width:2.5;stroke-dasharray:4 2;fill:rgba(52,152,219,.2)}
+.body-map-wrap .body-region.hemorrhage,.body-map-wrap .body-region.injured{fill:rgba(231,76,60,.45);stroke:#e74c3c;stroke-width:1.8}
+.body-map-wrap .body-region.burn{fill:rgba(230,126,34,.45);stroke:#e67e22;stroke-width:1.8}
+.body-map-wrap .body-region.fracture{fill:rgba(241,196,15,.35);stroke:#f1c40f;stroke-width:1.8}
+.body-map-wrap .body-region.penetrating{fill:rgba(155,89,182,.4);stroke:#9b59b6;stroke-width:1.8}
+.body-region-hit{fill:rgba(0,0,0,0.001);stroke:none;cursor:pointer;touch-action:manipulation}
+/* Tier 10: floating tap menu inside the SVG foreignObject. */
+.body-tap-menu{color:var(--tx);font-family:var(--f);width:100%;box-sizing:border-box}
+.body-tap-menu .btm-label{font-size:15px;font-weight:900;color:var(--bl);text-align:center;margin-bottom:10px;line-height:1.2}
+.body-tap-menu .btm-row{display:flex;gap:6px;align-items:stretch;justify-content:center;flex-wrap:wrap}
+.body-tap-menu .btm-btn{background:var(--c2);border:1.5px solid var(--sep);color:var(--tx);padding:10px 6px;border-radius:10px;cursor:pointer;font-family:var(--f);min-width:56px;min-height:52px;line-height:1;touch-action:manipulation;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1 0 auto}
+.body-tap-menu .btm-btn:active{transform:scale(.92);filter:brightness(1.3)}
+.body-tap-menu .btm-btn .btm-emo{font-size:20px;line-height:1}
+.body-tap-menu .btm-btn .btm-txt{font-size:11px;font-weight:700;line-height:1}
+.body-tap-menu .btm-on{background:var(--re);border-color:var(--re);color:#fff}
+.body-tap-menu .btm-tx{border-color:var(--bl);color:var(--bl)}
+.body-tap-menu .btm-note{border-color:var(--ye);color:var(--ye)}
+.body-tap-menu .btm-close{background:none;border-color:var(--t4);color:var(--t4)}
+.body-tap-menu .btm-hr{height:1px;background:var(--sep);margin:8px 0}
+.body-region-label{fill:rgba(255,255,255,.75);font-size:10px;font-weight:600;font-family:var(--f);pointer-events:none;text-anchor:middle}
+.body-region.injured .body-region-label,.body-region.burn .body-region-label,.body-region.fracture .body-region-label,.body-region.penetrating .body-region-label{fill:#fff}
+.injury-type-menu{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.injury-type-btn{padding:6px 12px;border-radius:10px;border:1.5px solid;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--f);min-height:36px;transition:all .12s}
+.injury-type-btn:active{transform:scale(.95)}
+.injury-type-btn.hemorrhage{border-color:#e74c3c;color:#e74c3c;background:rgba(231,76,60,.08)}
+.injury-type-btn.hemorrhage.on{background:rgba(231,76,60,.25)}
+.injury-type-btn.fracture{border-color:#f1c40f;color:#f1c40f;background:rgba(241,196,15,.08)}
+.injury-type-btn.fracture.on{background:rgba(241,196,15,.25)}
+.injury-type-btn.burn{border-color:#e67e22;color:#e67e22;background:rgba(230,126,34,.08)}
+.injury-type-btn.burn.on{background:rgba(230,126,34,.25)}
+.injury-type-btn.penetrating{border-color:#9b59b6;color:#9b59b6;background:rgba(155,89,182,.08)}
+.injury-type-btn.penetrating.on{background:rgba(155,89,182,.25)}
+.cas-section{background:var(--c2);border-radius:12px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--sep)}
+.cas-section-title{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.5px;margin-bottom:6px}
+.xabcde-btn{min-height:52px;padding:10px 8px;border-radius:10px;border:1.5px solid var(--sep);background:none;color:var(--t2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--f);transition:all .12s;touch-action:manipulation}
+.xabcde-btn:active{transform:scale(.95);opacity:.8}
+/* Triage colored buttons — brightness flash + stronger scale on press so
+   the medic gets unmistakable feedback that their tap landed, even on
+   the already-saturated colored backgrounds. Applied to SALT sort/assess
+   buttons, SABC recommend buttons, MCI evac badges. */
+.trg-btn{transition:transform .09s ease, filter .09s ease, box-shadow .09s ease;touch-action:manipulation}
+.trg-btn:active:not(:disabled){transform:scale(.92);filter:brightness(1.6) saturate(1.4);box-shadow:0 0 0 6px rgba(255,255,255,.12) inset}
+.xabcde-btn.on{background:rgba(46,204,113,.15);border-color:var(--gr);color:var(--gr)}
+.xabcde-entry{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px;color:var(--t2)}
+.xabcde-entry .time{color:var(--t4);font-family:monospace;font-size:9px;min-width:40px}
+.tap-rate-btn{min-height:56px;width:100%;border-radius:14px;border:2px solid var(--bl);background:rgba(52,152,219,.1);color:var(--bl);font-size:14px;font-weight:800;cursor:pointer;font-family:var(--f);transition:all .12s}
+.tap-rate-btn.active{background:rgba(52,152,219,.3);animation:tapPulse .3s ease}
+@keyframes tapPulse{0%{transform:scale(1)}50%{transform:scale(.96)}100%{transform:scale(1)}}
+.crt-btn{min-height:56px;width:100%;border-radius:14px;border:2px solid var(--or);background:rgba(230,126,34,.1);color:var(--or);font-size:14px;font-weight:800;cursor:pointer;font-family:var(--f)}
+.crt-btn.pressing{background:rgba(230,126,34,.3)}
+.tq-timer{font-family:monospace;font-size:12px;color:var(--t2)}
+.tq-timer.alert{color:var(--re);animation:pulse 1s infinite}
+.mci-banner{display:flex;gap:4px;position:sticky;top:0;z-index:10;background:var(--bg);padding:6px 0 8px}
+.mci-banner-btn{flex:1;text-align:center;padding:10px 2px;border-radius:10px;border:1.5px solid;cursor:pointer;transition:all .12s;min-height:60px;touch-action:manipulation}
+.mci-banner-btn.active{transform:scale(.95);box-shadow:0 0 12px rgba(255,255,255,.1) inset}
+.mci-card{position:relative;background:var(--c2);border-radius:12px;padding:12px 44px 12px 14px;margin-bottom:8px;border:1px solid var(--sep);border-top:4px solid var(--t4);cursor:pointer;transition:all .15s;touch-action:manipulation;min-height:72px}
+.mci-card:focus-visible{outline:3px solid var(--bl);outline-offset:2px}
+.mci-card:active{transform:scale(.98);opacity:.9}
+.mci-card.triage-red{border-top-color:#e74c3c;background:rgba(231,76,60,.14)}
+.mci-card.triage-yellow{border-top-color:#f1c40f;background:rgba(241,196,15,.12)}
+.mci-card.triage-green{border-top-color:#2ecc71;background:rgba(46,204,113,.1)}
+.mci-card.triage-black{border-top-color:#9aa0a6;background:rgba(50,50,50,.25)}
+.mci-card.triage-gray{border-top-color:#c0c4ca;background:rgba(120,120,120,.15)}
+.mci-card-alert{animation:mciPulse 1.5s ease-in-out infinite}
+@keyframes mciPulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 16px rgba(231,76,60,.4)}}
+.mci-card-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mci-card-vitals{font-family:monospace;font-size:14px;color:var(--tx);font-weight:700}
+.mci-card-vitals .abnormal{color:#ff6b5e;font-weight:900;background:rgba(231,76,60,.22);padding:2px 6px;border-radius:4px;font-size:16px}
+.mci-card-expand{padding:8px 0 0;border-top:1px solid var(--sep);margin-top:8px}
+.mci-fab{position:fixed;bottom:100px;inset-inline-end:20px;width:64px;height:64px;border-radius:50%;background:#e74c3c;color:#fff;border:none;font-size:32px;font-weight:900;cursor:pointer;z-index:60;box-shadow:0 4px 16px rgba(231,76,60,.5);display:flex;align-items:center;justify-content:center;transition:transform .12s;touch-action:manipulation}
+.mci-fab:active{transform:scale(.9)}
+.mci-section-header{display:flex;align-items:center;gap:8px;padding:12px;background:var(--c2);border-radius:10px;margin-bottom:4px;cursor:pointer;border:1px solid var(--sep);min-height:48px}
+.mci-tq-timer{font-family:monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(231,76,60,.15);color:#ff6b5e}
+.mci-tq-timer.overdue{background:rgba(231,76,60,.35);color:#fff;animation:pulse 1s infinite}
+.mci-evac-badge{font-size:11px;padding:6px 12px;border-radius:8px;font-weight:700;cursor:pointer;border:none;font-family:var(--f);min-height:44px;touch-action:manipulation}
+.mci-undo-toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--c3);border-radius:20px;padding:8px 16px;font-size:12px;color:var(--tx);z-index:300;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;animation:toast-in .22s cubic-bezier(.22,1,.36,1)}
+

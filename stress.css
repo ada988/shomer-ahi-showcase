@@ -1,0 +1,240 @@
+/* STRESS-PROOF DESIGN SYSTEM — loaded last.
+   Rule (product owner): nothing small. Built for a gloved, adrenalised medic with blurry vision in a moving vehicle.
+   • Every tappable >= 56px (primary 64px+), >= 12px between neighbours
+   • Text >= 16px (tab labels 14px bold); numbers that matter are 28–40px
+   • Triage = SHAPE + WORD + COLOUR, never a single letter
+   • Contrast >= 7:1 for text; 2px borders; no hairlines; no hover-only, no hidden horizontal scroll */
+
+:root{
+  --bg:#0b0c0e; --c1:#13151a; --c2:#171a20; --c3:#20242c; --c4:#2b303a;
+  --sep:#4a505c; --line:#5a606c;
+  --tx:#ffffff; --t2:#e1e5ec; --t3:#c3c9d4; --t4:#aab1bf; --t5:#8b93a3;
+  --accent:#1a56db; --accent-edge:#9bbcff; --accent-ink:#fff;
+  --danger:#b3141c; --danger-edge:#ff9a9d; --warn:#8a4b00; --ok:#0f6b3a;
+  --re:#ff6b70; --re-hi:#ff9a9d; --or:#ffb03b; --ye:#ffd23f; --gr:#3dd68c; --bl:#8db6ff; --pu:#c7a8ff;
+  --fs-body:17px; --fs-label:16px; --fs-btn:18px;
+}
+html{font-size:17px}
+body{font-size:17px!important;line-height:1.45}
+body, button, input, select, textarea{font-family:var(--f)}
+
+/* ── Buttons & targets ─────────────────────────────────────── */
+button,[role=button],summary,select,input:not([type=checkbox]):not([type=radio]),a.xbtn{min-height:56px}
+button,[role=button],summary{touch-action:manipulation}
+button:active,[role=button]:active,summary:active{filter:brightness(1.35);transform:scale(.985)}
+:focus-visible{outline:4px solid #ffd23f!important;outline-offset:2px!important;border-radius:10px}
+.xbtn{min-height:56px;font-size:18px;font-weight:700;padding:0 20px;border:2px solid var(--line);background:var(--c3);color:#fff;border-radius:14px}
+.xbtn:hover{background:var(--c4)}
+.xbtn-primary{background:var(--accent)!important;border:2px solid var(--accent-edge)!important;color:#fff!important;min-height:64px;font-size:19px;font-weight:800}
+.xbtn-primary:hover{background:#2b66ee!important}
+.xbtn-lg{min-height:64px;font-size:19px}
+.xbtn-danger{background:var(--danger);border-color:var(--danger-edge);color:#fff;font-weight:800}
+.btn-row{display:flex;gap:12px}.btn-row>*{flex:1}
+
+/* ── App chrome ────────────────────────────────────────────── */
+.appbar{height:68px!important;gap:12px!important;padding:0 12px!important;border-bottom:2px solid var(--sep)!important}
+.appbar .mark{width:40px!important;height:40px!important;border-radius:10px}
+.appbar .ttl b{font-size:20px!important;font-weight:800}
+.appbar .ttl small{font-size:15px!important;color:var(--t3)!important}
+.iconbtn{width:56px!important;height:56px!important;min-width:56px;border-radius:14px!important;border:2px solid var(--line)!important;background:var(--c2)!important;color:#fff!important;display:grid;place-items:center}
+.iconbtn .ui-i{width:28px!important;height:28px!important}
+.appbar .menu-btn{width:auto;padding:0 16px;display:flex;gap:8px;align-items:center;font-size:17px;font-weight:700}
+.beta-ribbon{min-height:52px!important;font-size:14px!important;font-weight:800;padding:8px 14px!important}
+.beta-ribbon b{font-size:15px!important;padding:10px 14px!important;border-radius:10px!important;min-height:44px;display:grid;place-items:center}
+
+.tabbar{gap:8px!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom))!important;border-top:2px solid var(--sep)!important}
+.tabbar button{min-height:72px!important;font-size:14px!important;font-weight:800!important;gap:4px!important;border-radius:14px!important;color:var(--t3)!important;border:2px solid transparent}
+.tabbar button.on{color:#fff!important;background:var(--c3)!important;border-color:var(--accent-edge)!important}
+.tabbar button.on .ui-i{color:#fff!important}
+.tabbar .ui-i{width:30px!important;height:30px!important}
+.tabbar .badge{min-width:26px!important;height:26px!important;font-size:15px!important;top:2px!important;background:var(--danger)!important;border:2px solid #fff}
+body.in-form .tabbar{display:none!important}
+
+/* ── Type floor and icon floor ─────────────────────────────── */
+.ui-i{width:24px;height:24px}
+.ei .ui-i{width:24px!important;height:24px!important}
+.sdot,.sq{width:20px!important;height:20px!important;border-radius:50%}
+.sq{border-radius:5px}
+#incident-content{padding:14px 14px 28px!important;font-size:17px}
+
+/* ── Home ──────────────────────────────────────────────────── */
+.ov-alert{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;padding:12px 16px;border-radius:14px;border:2px solid var(--danger-edge);background:var(--danger);color:#fff;text-align:start;margin-bottom:14px}
+.ov-alert .ui-i{width:32px!important;height:32px!important;flex:none}
+.ov-alert b{display:block;font-size:19px;font-weight:800;line-height:1.2}.ov-alert small{display:block;font-size:16px;opacity:1;margin-top:2px}
+.ov-hero .eyebrow{font-size:15px!important;color:var(--t3)!important;letter-spacing:.04em!important}
+.ov-hero h2{font-size:28px!important;line-height:1.15}.ov-hero p{font-size:17px!important;color:var(--t2)!important}
+.ov-tiles{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+.ov-tile{display:flex;align-items:center;gap:12px;min-height:72px;padding:10px 14px!important;border:2px solid var(--line)!important;background:var(--c2)!important;color:#fff;text-align:start;border-radius:14px}
+.ov-tile b{font-size:34px!important;min-width:34px}
+.ov-tile span{font-size:17px!important;font-weight:800;color:#fff!important;margin:0!important}
+.sec-label{font-size:15px!important;color:var(--t3)!important;letter-spacing:.05em!important;margin:22px 2px 10px!important}
+.go{min-height:76px;padding:12px 16px!important;border:2px solid var(--line)!important;background:var(--c2)!important;gap:14px!important;border-radius:14px!important}
+.go .gi{width:48px!important;height:48px!important;border-radius:12px!important;background:var(--c4)!important}
+.go .gi .ui-i{width:28px!important;height:28px!important}
+.go b{font-size:19px!important;font-weight:800}.go small{font-size:16px!important;color:var(--t2)!important}
+.go .chev .ui-i{width:28px!important;height:28px!important}
+.go.primary{background:var(--accent)!important;border-color:var(--accent-edge)!important}.go.primary small,.go.primary b{color:#fff!important}
+.kv{border:2px solid var(--line)!important;background:var(--c2)!important}.kv div{font-size:17px!important}.kv dt{color:var(--t3)!important}
+
+/* ── Casualty list ─────────────────────────────────────────── */
+.pl-head h2{font-size:28px!important}.pl-head p{font-size:16px!important;color:var(--t2)!important}
+.seg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.seg-tabs button{min-height:60px;border:2px solid var(--line);background:var(--c2);color:var(--t2);font-size:18px;font-weight:800;border-radius:14px}
+.seg-tabs button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+.pl{gap:12px!important}
+.pl-card{min-height:96px;padding:14px!important;gap:14px!important;border:2px solid var(--line)!important;background:var(--c2)!important;border-radius:14px!important;align-items:flex-start!important}
+.pl-main b{font-size:20px!important;white-space:normal!important}
+.pl-sub{font-size:16px!important;color:var(--t2)!important;white-space:normal!important}
+.pl-vit{font-size:17px!important;gap:6px 16px!important;margin-top:6px!important;color:var(--t2)!important}
+.pl-vit i{font-size:22px!important;font-weight:800;color:#fff!important}
+.pl-vit .warn,.pl-vit .warn i{color:#ff9a9d!important}
+.pl-card .chev .ui-i{width:28px!important;height:28px!important}
+
+/* Triage chip = shape + word + colour */
+.tchip{--fg:#fff;display:inline-flex!important;align-items:center;justify-content:center;gap:8px;width:auto!important;min-width:0!important;height:auto!important;min-height:44px;padding:6px 12px!important;border-radius:10px!important;background:var(--tg)!important;color:var(--fg)!important;font-size:17px!important;font-weight:900!important;letter-spacing:.02em;border:3px solid #fff;white-space:nowrap}
+.tchip.lg{min-height:52px;font-size:18px!important}
+.tchip[style*="#f5b82e"],.tchip[style*="#9aa0a6"],.tchip[style*="#30a46c"]{--fg:#111}
+.tchip .ui-i{width:22px!important;height:22px!important}
+.pl-card .tchip{flex:none;flex-direction:column;gap:2px;min-width:104px!important;padding:8px 8px!important;font-size:15px!important}
+.pl-card .tchip .ui-i{width:26px!important;height:26px!important}
+
+/* ── Board cards ───────────────────────────────────────────── */
+.mci-card{display:block!important;min-height:96px!important;padding:14px 14px 14px 14px!important;border:2px solid var(--line)!important;margin-bottom:12px!important}
+.mci-card .mci-triage-letter{position:static!important;display:inline-flex!important;width:auto!important;min-width:104px!important;height:auto!important;min-height:44px!important;padding:6px 12px!important;border-radius:10px!important;font-size:16px!important;font-weight:900!important;border:3px solid #fff!important;margin-bottom:8px;gap:8px;letter-spacing:.02em;color:#fff}
+.mci-card.triage-yellow .mci-triage-letter,.mci-card.triage-green .mci-triage-letter,.mci-card.triage-gray .mci-triage-letter{color:#111!important}
+.mci-card [style*="flex"]{flex-wrap:wrap!important;gap:10px!important}
+.mci-card [style*="text-overflow"],.mci-card b{white-space:normal!important;overflow:visible!important;max-width:none!important}
+.mci-card button,.mci-card [role=button]{min-height:56px!important;min-width:56px!important;margin:6px 0!important}
+.mci-card-vitals{font-size:22px!important}
+html[dir=rtl] .mci-card{padding:14px!important}
+.b-kpis,.mci-banner{gap:12px!important}
+.b-kpis>*,.mci-banner>*{min-height:72px;border:2px solid var(--line)!important}
+.b-alert{font-size:18px!important;font-weight:800!important;background:var(--danger)!important;color:#fff!important;border:2px solid var(--danger-edge)!important;padding:14px!important;min-height:64px}
+.b-alert *{color:#fff!important}
+.b-modes>*{min-height:60px!important;font-size:18px!important}
+.b-modes{gap:10px!important}
+.b-stats{font-size:17px!important;color:var(--t2)!important}
+.b-kpis>*{color:#fff!important}.b-kpis>* *{color:var(--t2)!important;font-size:16px!important}.b-kpis>*>*:first-child{font-size:30px!important;color:#fff!important}
+.mci-banner>*>*:last-child{font-size:16px!important;color:var(--t2)!important}.mci-banner>*>*:first-child{font-size:30px!important}
+.mci-banner>*::before{width:18px!important;height:18px!important;top:8px!important}
+#incident-content button[style*="position:fixed"]{display:none!important}
+
+/* ── Casualty form ─────────────────────────────────────────── */
+.fnav{display:grid!important;grid-template-columns:repeat(3,1fr);gap:10px!important;overflow:visible!important;margin:-14px -14px 14px!important;padding:10px 12px!important;border-bottom:2px solid var(--sep)!important}
+.fnav button{height:56px!important;min-height:56px!important;font-size:17px!important;font-weight:800!important;padding:0 6px!important;border:2px solid var(--line)!important;border-radius:12px!important;color:#fff!important}
+.fnav button.on{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+.fs-h{font-size:24px!important}.fs-h small{font-size:16px!important;color:var(--t3)!important}
+.fs-bar{gap:12px!important;padding:12px 12px calc(12px + env(safe-area-inset-bottom))!important;border-top:2px solid var(--sep)!important}
+.fs-bar .xbtn{min-height:64px!important;font-size:19px!important;font-weight:800!important}
+.fs-bar .xbtn-primary{flex:2}.fs-bar .xbtn:not(.xbtn-primary){flex:1}
+.fs-foot{margin-bottom:150px!important}
+.cas-section{border:2px solid var(--line)!important}
+#incident-content button,#incident-content [role=button],#incident-content summary{min-height:56px!important;padding-inline:14px}
+#incident-content input:not([type=checkbox]):not([type=radio]),#incident-content select,#incident-content textarea{min-height:56px!important;font-size:18px!important;border:2px solid #7a8190!important}
+#incident-content [style*="overflow-x:auto"],#incident-content [style*="overflow-x:scroll"]{overflow:visible!important;flex-wrap:wrap!important}
+#incident-content [style*="white-space:nowrap"]{white-space:normal!important}
+#incident-content details>summary{min-height:64px!important;font-size:18px!important;font-weight:800!important;display:flex;align-items:center}
+.fs-tools>summary::after,.fs-fold>summary::after{font-size:28px;width:48px;text-align:center}
+#incident-content [style*="monospace"]{font-size:18px!important}
+#incident-content [aria-label^="Delete"],#incident-content [aria-label^="Remove"],#incident-content [title^="Delete"]{min-width:56px!important;min-height:56px!important;margin-inline-start:16px!important;border:2px solid #ff9a9d!important}
+
+/* ── Sheets, overlays, toasts, tour ───────────────────────── */
+.sheet-row{min-height:72px;border:2px solid var(--line)!important;gap:14px!important}
+.sheet-row .gi{width:48px!important;height:48px!important}.sheet-row .gi .ui-i{width:28px!important;height:28px!important}
+.sheet-row b{font-size:19px!important}.sheet-row small{font-size:16px!important;color:var(--t2)!important}
+.sheet h3{font-size:22px!important}
+.mist{font-size:17px!important;color:#fff!important;border:2px solid var(--line)!important;line-height:1.6}
+.bo-top{height:68px!important;border-bottom:2px solid var(--sep)!important}
+.bo-x{width:56px!important;height:56px!important;border:2px solid var(--line)!important;border-radius:14px!important;color:#fff!important}
+.bo-title{font-size:21px!important;font-weight:800}
+.bo-hint{font-size:17px!important;color:var(--t2)!important}
+.bo-actions{gap:12px!important}.bo-actions .xbtn{min-height:60px;font-size:18px}
+.bs-sample{min-height:64px!important;border:2px solid var(--line)!important;gap:12px!important}.bs-sample span{font-size:18px!important}.bs-sample code{font-size:16px!important;color:var(--t2)!important}
+.bs-manual input{height:60px!important;font-size:20px!important}
+.bs-or{font-size:17px!important;color:var(--t2)!important}
+.tst{font-size:18px!important;padding:16px 20px!important;max-width:calc(100% - 24px);border:2px solid var(--line)!important}
+.tour-card{border:2px solid var(--line)!important}.tour-card h5{font-size:21px!important}.tour-card p{font-size:17px!important;color:var(--t2)!important}
+.tour-step{font-size:15px!important;color:var(--t3)!important}
+.tour-nav .xbtn{min-height:60px}.tour-nav .skip{font-size:17px!important;min-height:56px;color:var(--t2)!important;text-decoration:underline;padding:0 12px}
+.tour-prog i{height:6px!important}
+
+/* ── Bracelets & scan card ────────────────────────────────── */
+.bt-hero h2{font-size:28px!important}.bt-hero p{font-size:17px!important;color:var(--t2)!important}
+.bt-cta{gap:12px!important}.bt-cta .xbtn{min-height:64px!important}
+.bt-steps li{font-size:16px!important;border:2px solid var(--line)!important;color:var(--t2)!important}
+.bt-name{font-size:19px!important}.bt-sub{font-size:16px!important;color:var(--t2)!important}
+.bt-btns .xbtn{min-height:56px!important;min-width:56px}
+.brc-brand,.brc-foot{font-size:12px!important}.brc-name{font-size:16px!important}.brc-write{font-size:14px!important}
+.cc-tri{font-size:30px!important}.cc-sub{font-size:17px!important}.cc-serial{font-size:16px!important}
+.cc-name{font-size:24px!important}.cc-meta{font-size:17px!important;color:var(--t2)!important}
+.cc-alert-t{font-size:20px!important}.cc-alert-d{font-size:18px!important;color:#fff!important}.cc-alert-d b{font-size:22px!important}
+.cc-sec h3{font-size:15px!important;color:var(--t3)!important}
+.cc-vl{font-size:15px!important;color:var(--t3)!important}.cc-vv{font-size:32px!important}.cc-vv small{font-size:16px!important}
+.cc-list li,.cc-care li{font-size:18px!important;min-height:56px}.cc-care time{font-size:17px!important;color:var(--t2)!important}.cc-care .cc-m{width:32px!important;height:32px!important;font-size:16px!important}
+.cc-line{font-size:17px!important}.cc-note{font-size:15px!important;color:var(--t2)!important}
+.cc-demo{font-size:15px!important}
+
+/* ── Side panel (desktop story) keeps the same floors ───────── */
+.side .lede,.facts li,.try span.d{font-size:16px}
+.try button{min-height:72px;border:2px solid var(--line)}
+.try b{font-size:17px}
+
+/* ── Hebrew: keep numbers and units readable ───────────────── */
+html[dir=rtl] .tabnum,html[dir=rtl] [style*="monospace"],html[dir=rtl] time,html[dir=rtl] .cc-vv,html[dir=rtl] .pl-vit i,html[dir=rtl] .ov-tile b{unicode-bidi:isolate;direction:ltr;display:inline-block}
+
+/* ── Tablet: scale everything up ──────────────────────────── */
+@media (min-width:600px) and (max-width:900px){
+  .device{zoom:1.18}
+}
+@media (prefers-contrast:more){:root{--line:#fff;--sep:#fff;--t3:#fff;--t4:#fff}}
+
+/* ── BOLD: saturated solid colour carries meaning; heavy type; no stripes/gradients/glows ── */
+:root{
+  --t-red:#e5242b; --t-yellow:#ffd400; --t-green:#19c37d; --t-gray:#b4bbc8; --t-black:#000;
+  --accent:#1f6bff; --accent-edge:#b8d0ff;
+}
+body{font-weight:500}
+h1,h2,h3,.fs-h,.pl-head h2,.ov-hero h2,.bt-hero h2{font-weight:900!important;letter-spacing:-.02em}
+.go b,.pl-main b,.bt-name,.sheet-row b,.bo-title,.cc-name,.tour-card h5{font-weight:900!important}
+
+/* Triage = solid slab of colour + shape + word (inline background from the app is overridden here) */
+.tchip{background:var(--tg)!important;border:3px solid #fff!important;box-shadow:none}
+.tchip[style*="#e5484d"]{background:var(--t-red)!important;--fg:#fff}
+.tchip[style*="#f5b82e"]{background:var(--t-yellow)!important;--fg:#111}
+.tchip[style*="#30a46c"]{background:var(--t-green)!important;--fg:#06140d}
+.tchip[style*="#9aa0a6"]{background:var(--t-gray)!important;--fg:#111}
+.tchip[style*="#4b4f56"]{background:var(--t-black)!important;--fg:#fff}
+.mci-card.triage-red .mci-triage-letter{background:var(--t-red)!important;color:#fff!important}
+.mci-card.triage-yellow .mci-triage-letter{background:var(--t-yellow)!important;color:#111!important}
+.mci-card.triage-green .mci-triage-letter{background:var(--t-green)!important;color:#06140d!important}
+.mci-card.triage-gray .mci-triage-letter{background:var(--t-gray)!important;color:#111!important}
+.mci-card.triage-black .mci-triage-letter{background:var(--t-black)!important;color:#fff!important}
+.sdot[style*="#e5484d"]{background:var(--t-red)!important}.sdot[style*="#f5b82e"]{background:var(--t-yellow)!important}.sdot[style*="#30a46c"]{background:var(--t-green)!important}.sdot[style*="#4b4f56"]{background:#000!important;outline:3px solid #fff;outline-offset:-3px}
+
+/* Home triage counters become solid colour blocks */
+.ov-tile{border:3px solid #fff!important;color:#fff}
+.ov-tile.t-red{background:var(--t-red)!important}.ov-tile.t-yellow{background:var(--t-yellow)!important;color:#111}.ov-tile.t-green{background:var(--t-green)!important;color:#06140d}.ov-tile.t-black{background:#000!important}
+.ov-tile.t-yellow span,.ov-tile.t-yellow b{color:#111!important}.ov-tile.t-green span,.ov-tile.t-green b{color:#06140d!important}
+.ov-tile b{font-size:40px!important;font-weight:900}.ov-tile span{font-size:18px!important}
+.ov-tile .ui-i{width:30px!important;height:30px!important;flex:none}
+
+/* Primary action: bold electric blue slab; alerts: solid red with white 900 text */
+.xbtn-primary,.go.primary{background:var(--accent)!important;border:3px solid var(--accent-edge)!important;font-weight:900!important}
+.ov-alert,.b-alert{background:var(--t-red)!important;border:3px solid #fff!important}
+.ov-alert b,.b-alert{font-weight:900!important}
+
+/* Selected states are unmistakable: solid white slab with black text */
+.seg-tabs button.on,.fnav button.on,.b-modes>*[style*="var(--c4)"]{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+.tabbar button.on{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+.tabbar button.on .ui-i{color:#0b0c0e!important}
+.tabbar .badge{background:var(--t-red)!important}
+
+/* Beta ribbon stays loud */
+.beta-ribbon{background:#ffd400!important;color:#000!important;font-weight:900!important;border-bottom:3px solid #000!important}
+.beta-ribbon b{background:#000!important;color:#ffd400!important}
+
+.iconbtn[hidden],.mark[hidden]{display:none!important}
+.ov-tile{flex-wrap:wrap;align-content:center;min-height:96px}
+.ov-tile span{flex-basis:100%;font-size:18px!important}
+.ov-tile b{font-size:44px!important;line-height:1}
+.appbar .ttl{min-width:0}.appbar .ttl b,.appbar .ttl small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
