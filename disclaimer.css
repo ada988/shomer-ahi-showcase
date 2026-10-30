@@ -8,25 +8,32 @@
 .side-warn b{display:block;color:#f5b82e;font-size:15px;margin-bottom:6px}
 .side-warn p{color:var(--t2);font-size:13.5px;line-height:1.5;margin-bottom:12px}
 
+/* full notice: calm and serious. One amber mark, a clear headline, a hairline list; nothing flashing. */
 .dn{position:absolute;inset:0;z-index:100100;background:var(--bg);display:flex;flex-direction:column}
-.dn-top{flex:none;padding:18px 18px 14px;border-bottom:1px solid var(--sep);background:#f5b82e;color:#14110a}
-.dn-badge{display:inline-flex;align-items:center;gap:10px;background:#14110a;color:#f5b82e;border-radius:10px;padding:8px 14px;font-weight:800;font-size:16px;letter-spacing:.06em}
-.dn-top h2{font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.02em;margin:12px 0 4px}
-.dn-sub{font-size:16px;font-weight:600}
-.dn-body{flex:1;overflow-y:auto;padding:16px 16px 8px}
-.dn-list{list-style:none;padding:0;margin:0;display:grid;gap:12px}
-.dn-list li{display:flex;gap:14px;background:var(--c2);border:1px solid var(--sep);border-radius:14px;padding:14px}
-.dn-i{flex:none;width:44px;height:44px;border-radius:12px;background:rgba(245,184,46,.14);color:#f5b82e;display:grid;place-items:center}
-.dn-list b{display:block;font-size:17px;font-weight:700;margin-bottom:3px}
-.dn-list p{font-size:15.5px;line-height:1.5;color:var(--t2)}
+.dn-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--sep)}
+.dn-x{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 16px;border-radius:12px;border:0;background:var(--c3);color:#fff;font:700 17px var(--f)}
+.dn-scroll{flex:1;min-height:0;overflow-y:auto}
+.dn-top{padding:28px 20px 8px}
+.dn-mark{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;border:2px solid #f5b82e;color:#f5b82e;margin-bottom:16px}
+.dn-badge{display:block;font-size:16px;font-weight:700;color:#f5b82e;margin-bottom:6px}
+.dn-top h2{font-size:28px;line-height:1.15;font-weight:800;letter-spacing:-.02em;margin:0 0 8px;color:#fff}
+[dir=rtl] .dn-top h2{letter-spacing:0}
+.dn-sub{font-size:17px;color:var(--t2)}
+.dn-body{padding:8px 20px 20px}
+.dn-list{list-style:none;padding:0;margin:0}
+.dn-list li{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--sep)}
+.dn-list li:last-child{border-bottom:0}
+.dn-i{flex:none;width:28px;padding-top:1px;color:#f5b82e}
+.dn-list b{display:block;font-size:18px;font-weight:700;margin-bottom:4px;color:#fff}
+.dn-list p{font-size:16px;line-height:1.55;color:var(--t2)}
 .dn-foot{flex:none;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--sep);background:var(--bg)}
-.dn-ok{width:100%;min-height:64px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:700 18px var(--f)}
+.dn-ok{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:60px;border:0;border-radius:14px;background:var(--accent);color:#fff;font:700 18px var(--f)}
 .dn-ok:focus-visible{outline:3px solid #fff;outline-offset:3px}
 
 .cc-demo{background:rgba(245,184,46,.14);border:1.5px solid #f5b82e;color:#f5b82e;border-radius:10px;padding:9px 12px;font-weight:800;font-size:13.5px;text-align:center;margin-bottom:10px;letter-spacing:.02em}
 .overlay-warn{position:fixed;left:0;right:0;bottom:0;padding:10px 14px;background:#f5b82e;color:#14110a;font:800 13px/1.3 var(--f);text-align:center;z-index:2}
 .mist-warn{margin-top:10px;padding:10px;border:2px solid #f5b82e;border-radius:10px;color:#f5b82e;font-weight:700;font-size:15px;text-align:center}
 
-.dn-lang{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.dn-lang button{min-height:56px;border-radius:12px;border:3px solid var(--line);background:var(--c2);color:#fff;font-size:20px;font-weight:900}
-.dn-lang button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+.dn-lang{display:flex;background:var(--c2);border:1px solid var(--sep);border-radius:12px;padding:3px}
+.dn-lang button{display:inline-flex;align-items:center;gap:6px;min-height:46px;padding:0 14px;border-radius:9px;border:0;background:transparent;color:var(--t2);font:700 16px var(--f)}
+.dn-lang button.on{background:var(--c4);color:#fff}

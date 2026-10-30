@@ -2,7 +2,7 @@
    Rules kept: targets ≥48px (primary 56–64), text ≥16px, every icon has a word, colour never alone. */
 
 /* ── Banner: urgent casualties still on scene + the one action ── */
-#incident-content .amb-banner{margin:0 0 18px;padding:14px;border-radius:16px;background:var(--c2,#171a20);border:2px solid rgba(255,255,255,.14);border-inline-start:8px solid var(--t-red,#d01a20)}
+#incident-content .amb-banner{margin:0 0 18px;padding:14px;border-radius:16px;background:var(--c2,#171a20);border:0}
 .amb-banner>p{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0}
 .amb-banner>p>b{font-size:20px;font-weight:800;line-height:1.25;color:#fff}
 .amb-banner .tchip{flex:none}
@@ -14,7 +14,7 @@
 
 /* ── Ambulance card ── */
 #incident-content section.amb{margin:0 0 18px;padding:14px;border-radius:16px;border:2px solid rgba(255,255,255,.14);background:var(--c2,#171a20)}
-#incident-content section.amb.ev-road{border-color:rgba(255,255,255,.14);border-inline-start:8px solid var(--accent,#1f6bff);background:var(--c2,#171a20)}
+
 #incident-content section.amb.done{opacity:1;display:block}
 .amb-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .amb-h>b{font-size:23px;font-weight:900;line-height:1.15;flex:1 1 auto;min-width:0}
@@ -57,12 +57,127 @@
 .qt-title b svg{flex:none}
 .qt-count span{border:2px solid rgba(0,0,0,.35)!important}
 .qt-count span em{font-size:16px!important}
-.qt-yn button,#qt .qt-yn .yes,#qt .qt-yn .no{display:flex;align-items:center;justify-content:center;gap:14px;border:2px solid rgba(255,255,255,.22)!important;background:var(--c3,#20242c)!important}
-.qt-yn button svg{flex:none}
-.qt-yn button:active,#qt .qt-yn .yes:active,#qt .qt-yn .no:active{background:var(--c4,#2b303a)!important}
+
+.qt-yn button{display:flex;align-items:center;justify-content:center}.qt-yn button svg{flex:none}
+
 .qt-res{border:0!important;box-shadow:0 0 0 2px rgba(255,255,255,.22) inset}
 .qt-pick button{border:2px solid rgba(255,255,255,.22)!important}
 .qt-pick button.on,.qt-pick button:focus-visible{outline:4px solid #fff;outline-offset:2px}
 .qt-rep{border:2px solid rgba(255,255,255,.14)!important;background:var(--c2,#171a20)}
 .qt-rep b{font-size:16px!important}
 .qt-step small{color:#bcd2ff!important}
+
+/* ── round 5: Evacuate, read at a glance. No side stripes: status is a filled band with icon + word. ── */
+.ev-title{margin:2px 0 10px;font-size:28px;font-weight:900;letter-spacing:-.01em}
+.ev-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}
+.ev-flow span{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:14px;background:var(--s1,#15171c);font-size:16px;font-weight:800;color:#cfd3da;text-align:center;line-height:1.15}
+.ev-flow span svg{color:#cfd3da}
+.ev-flow b{font-size:30px;font-weight:900;color:#fff;line-height:1.05;font-variant-numeric:tabular-nums}
+
+/* next out */
+#incident-content .amb-banner.next-out{padding:0;overflow:hidden;background:var(--s1,#15171c);border:0;border-radius:18px;box-shadow:none}
+.no-head{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 16px;background:#d01a20;color:#fff;font-size:21px;font-weight:900}
+.no-head svg{flex:none}
+.no-head em{margin-inline-start:auto;font-style:normal;font-size:16px;font-weight:800;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.28)}
+.no-route{display:grid;gap:2px;padding:10px 16px 4px}
+.no-route>div{display:flex;align-items:center;gap:14px;min-height:52px;color:#fff}
+.no-route>div svg{flex:none;color:#aab0bb}
+.no-route>div b{font-size:22px;font-weight:900;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+.no-route>div i{margin-inline-start:auto;flex:none;font-style:normal;font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;color:#fff}
+.no-route>div+div{border-top:2px solid rgba(255,255,255,.06)}
+.no-none svg{color:#ffb020!important}
+#incident-content .amb-banner.next-out .ev-rush{width:auto;margin:10px 16px 16px;justify-content:center;min-height:68px;border:0!important;box-shadow:none;border-radius:14px}
+#incident-content .amb-banner.next-out .ev-rush b{font-size:23px}
+
+/* ambulance card */
+#incident-content section.amb{padding:0 14px 14px;overflow:hidden;border:0!important;border-radius:18px;background:var(--s1,#15171c)!important;box-shadow:none!important}
+.amb-band{display:flex;align-items:center;gap:10px;min-height:56px;margin:0 -14px 12px;padding:8px 16px;background:#2b303a;color:#fff;font-size:18px;font-weight:900}
+.amb-band svg{flex:none}
+.amb-band b{margin-inline-start:auto;font-size:20px;font-weight:900;white-space:nowrap}
+.amb.st-evacuating .amb-band{background:var(--accent,#1f6bff)}
+.amb.st-arrived .amb-band{background:#0e5a3a}
+.amb.st-athospital .amb-band{background:#2b303a}
+.amb-eta2{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0 10px}
+.amb-eta2 b{font-size:60px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.amb-eta2 span{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:800;color:#e8eaee;text-align:center}
+.amb-eta2.soon b{color:#ffd23f}.amb-eta2.now b{color:#ff9a9d}
+.amb-load{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+.amb-slot{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:12px;background:var(--s2,#1d2028);font-size:16px;font-weight:800;color:#cfd3da}
+.amb-slot b{font-size:22px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums}
+.amb-slot.full{background:#2b1f05;color:#ffcf70}.amb-slot.full b{color:#ffcf70}
+#incident-content .amb .ev-pts{display:grid;gap:8px}
+#incident-content .amb .ev-pt{border:0!important;background:var(--s2,#1d2028)!important;border-radius:12px}
+.amb-manage{border:0!important;background:var(--s2,#1d2028)!important}
+.amb-done{margin:0!important}
+.ev-more{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ev-more .xbtn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:60px!important;margin:0!important;border:0!important;background:var(--s2,#1d2028)!important;font-size:18px!important;text-transform:none!important;white-space:normal;line-height:1.15}
+@media (max-width:340px){.ev-more{grid-template-columns:1fr}.amb-eta2 b{font-size:52px}}
+#incident-content .amb-banner.next-out .ev-rush{width:calc(100% - 32px)!important}
+#incident-content .amb .xbtn-primary{border:0!important;box-shadow:none!important}
+#incident-content .amb .tchip,#incident-content .tp .tchip{border:0!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18)!important}
+#incident-content .amb .ev-pt{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#incident-content .amb .ev-pt>span{flex:1 1 auto}
+/* transport screen: fills, not white rings */
+#incident-content .tp-eta{border:0!important;border-radius:20px}
+#incident-content .tp-step button{border:0!important;background:rgba(255,255,255,.16)}
+#incident-content .tp-top .xbtn{border:0!important;background:var(--s2,#1d2028)}
+#incident-content .tp-top .xbtn.on{background:#fff}
+#incident-content .tp-pt{flex-direction:column;align-items:flex-start;border:0!important;background:var(--s1,#15171c)}
+#incident-content .tp-pn{width:100%}
+#incident-content .tp-v{display:flex;flex-wrap:wrap;gap:4px 16px}
+#incident-content .tp-driver div,#incident-content .tp-siren{border:0!important}
+#incident-content .tp .ev-hosp button{border:0!important;background:var(--s1,#15171c)}
+#incident-content .tp .ev-hosp button.on{background:#0b2a63;outline:4px solid #fff;outline-offset:2px}
+#incident-content .tp-actions .xbtn{border:0!important}
+#incident-content .tp-actions .xbtn:not(.xbtn-primary){background:var(--s2,#1d2028)}
+#incident-content .tp .ev-hosp button.on,#incident-content .tp .ev-hosp button.on *{color:#fff!important}#incident-content .tp .ev-hosp button.on .rdy{color:#0b0c0e!important}
+
+/* ── SHELL2 ── */
+/* quick triage: progress as a thin bar plus words; YES / NO sit low, at thumb height */
+.qt-bar{display:flex;gap:4px;height:8px}
+.qt-bar i{flex:1;border-radius:4px;background:#2a2e37}
+.qt-bar i.done{background:var(--sc);opacity:.45}
+.qt-bar i.now{background:var(--sc)}
+.qt-kind{text-transform:none!important;letter-spacing:0!important;font-size:18px!important}
+.qt-kind em{font-style:normal;color:#c9cdd4;font-weight:800}
+#qt .qt-yn{margin-top:auto}
+#qt .qt-yn small{opacity:1!important;color:#fff!important}
+#qt .qt-yn .yes{background:#1a5fe6!important}
+/* evacuate: the countdown is labelled; "Next out" is a heading with a triage chip, not a full-width alarm bar */
+.amb-eta2 small{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#cfd3da}
+.amb-eta2 small svg{flex:none}
+.no-head{background:transparent!important;color:#fff!important;padding:14px 16px 6px!important;font-size:24px!important;gap:12px!important}
+.no-tag{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:10px;background:var(--t-red,#d01a20);color:#fff;font-size:16px;font-weight:900;letter-spacing:.02em}
+.no-tag svg{flex:none}
+.no-head em{background:#2a2e37!important}
+/* countdown in minutes (never a clock-looking 08:57) */
+.amb-eta2 b small{font-size:28px;font-weight:800;margin-inline-start:4px}
+.amb-eta2 em{font-style:normal;font-size:17px;font-weight:700;color:#aab0bb}
+/* Load-and-go confirm */
+#ev-rush-sheet h3{font-size:24px;font-weight:900;margin:0 0 12px}
+.rs-who{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 0 4px}
+.rs-who b{font-size:26px;font-weight:900}
+.rs-route{padding:4px 0 14px!important}
+.rs-go{width:100%;min-height:72px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:21px!important;font-weight:900;border:0!important}
+.rs-other{width:100%;min-height:60px;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;border:0!important;background:var(--s2,#1d2028)!important;font-size:18px!important}
+/* quick triage: tourniquet site, descriptors, wristband */
+.qt-tq{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:auto}
+.qt-tq button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:96px;border:0;border-radius:18px;background:#ff6b8b;color:#0b0c0e;font-size:22px;font-weight:900}
+.qt-tq button svg{flex:none}
+.qt-tq .qt-notq{grid-column:1 / -1;min-height:72px;flex-direction:row;flex-wrap:wrap;gap:4px 10px;background:#4a505d;color:#fff}
+.qt-tq .qt-notq small{flex-basis:100%;text-align:center;font-size:16px;font-weight:700}
+.qt-tqline{display:flex;align-items:center;gap:10px;margin:0;padding:12px 14px;border-radius:14px;background:#2a1d22;color:#ffc2cf;font-size:18px;font-weight:800}
+.qt-tqline svg{flex:none}
+.qt-desc{display:flex;flex-direction:column;gap:8px}
+.qt-desc>div{display:flex;gap:8px}
+.qt-desc button{flex:1;min-height:52px;display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;background:var(--s2,#1d2028);color:#e8eaee;font-size:17px;font-weight:800;padding:0 6px}
+.qt-desc button.on{background:#fff;color:#0b0c0e}
+.qt-body .btn-row .qt-band{background:#fff!important;color:#0b0c0e!important}
+/* result: compact enough that "Save · next casualty" stays on screen with the descriptors */
+#qt .qt-res{flex-direction:row!important;flex-wrap:wrap;justify-content:center;gap:6px 14px!important;padding:16px 14px!important}
+#qt .qt-res svg{width:56px!important;height:56px!important}
+#qt .qt-res b{font-size:42px!important}
+#qt .qt-res span{flex-basis:100%;font-size:16px!important}
+.qt-desc button{min-height:48px}
+.amb-eta2 b{display:flex;align-items:baseline;justify-content:center}
+.amb-eta2 b{display:flex;align-items:baseline;justify-content:center}

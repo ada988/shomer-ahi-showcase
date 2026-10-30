@@ -1,0 +1,18 @@
+/* Recommendation alert: drops in under the app bar (the undo toast owns the bottom). Icon + few words; colour backs up the words. */
+.rec-alert{position:absolute;left:10px;right:10px;top:calc(var(--abv,72px) + 8px);z-index:100040;display:flex;gap:8px;padding:8px;border-radius:18px;background:#1d2028;border:3px solid #fff;box-shadow:0 12px 32px rgba(0,0,0,.55)}
+.rec-alert[hidden]{display:none!important}
+.rec-alert.crit{background:#b3141b}
+.rec-alert.urgent{background:#6b4a00;border-color:#ffd23f}
+.rec-alert.in{animation:rec-in .22s ease-out}
+@keyframes rec-in{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.rec-alert.in{animation:none}}
+.rec-go{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:64px;padding:4px 6px;border:0;border-radius:12px;background:transparent;color:#fff;text-align:start;font:inherit;cursor:pointer}
+.rec-i{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.18)}
+.rec-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rec-t b{font-size:19px;font-weight:900;line-height:1.2;overflow-wrap:anywhere}
+.rec-t small{font-size:16px;font-weight:700;opacity:.92}
+.rec-x{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:64px;min-height:64px;padding:0 6px;border-radius:12px;border:2px solid rgba(255,255,255,.6);background:rgba(0,0,0,.22);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+/* the full recommendation flashes when reached from the alert */
+.f-n.rec-flash{animation:rec-flash 2.4s ease-out}
+@keyframes rec-flash{0%,30%{outline:5px solid #fff;outline-offset:3px}100%{outline:5px solid transparent;outline-offset:3px}}
+@media (prefers-reduced-motion:reduce){.f-n.rec-flash{animation:none;outline:5px solid #fff;outline-offset:3px}}

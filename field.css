@@ -246,3 +246,5 @@ svg.ui-i{min-width:24px;min-height:24px}
 .overlay-warn,.bs-msg,.bo-bigqr p{font-size:16px!important;line-height:1.3}
 .bs-samples{grid-template-columns:minmax(0,1fr)}.bs-sample{min-width:0;max-width:100%}
 .bs-manual{min-width:0}.bs-manual input{min-width:0;width:100%}.bs-manual .xbtn{flex:none}
+/* SHELL2: in quick triage the answer buttons sit at the bottom, so the undo toast docks at the top there */
+#app:has(#qt) .undo-toast{top:calc(10px + env(safe-area-inset-top));bottom:auto!important}

@@ -16,10 +16,10 @@ function hm(t){ var d = new Date(t); return isNaN(d) ? '--:--' : String(d.getHou
 
 // category -> [letter, css class, EN word, HE word]
 var CAT = {
-  x:['X','xc-x','BLEEDING','דימום'], c:['C','xc-c','CIRCULATION','מחזור דם'], a:['A','xc-a','AIRWAY','נתיב אוויר'],
-  b:['R','xc-r','BREATHING','נשימה'], d:['C','xc-c','CONSCIOUSNESS','הכרה'], e:['E','xc-e','CARE','טיפול'],
-  injury:['!','tl-inj','INJURY','פציעה'], triage:['T','tl-tri','TRIAGE','מיון'], vitals:['V','tl-vit','VITALS','מדדים'],
-  treatment:['+','xc-e','TREATMENT','טיפול'], exam:['?','tl-vit','EXAM','בדיקה'], note:['N','tl-note','NOTE','הערה'], drug:['Rx','tl-drug','DRUG','תרופה']
+  x:['X','xc-x','Bleeding','דימום'], c:['C','xc-c','Circulation','מחזור דם'], a:['A','xc-a','Airway','נתיב אוויר'],
+  b:['R','xc-r','Breathing','נשימה'], d:['C','xc-c','Consciousness','הכרה'], e:['E','xc-e','Care','טיפול'],
+  injury:['!','tl-inj','Injury','פציעה'], triage:['T','tl-tri','Triage','מיון'], vitals:['V','tl-vit','Vitals','מדדים'],
+  treatment:['+','xc-e','Treatment','טיפול'], exam:['?','tl-vit','Exam','בדיקה'], note:['N','tl-note','Note','הערה'], drug:['Rx','tl-drug','Drug','תרופה']
 };
 // Entry text for display only (the stored record is unchanged).
 function disp(a){
@@ -36,8 +36,8 @@ function list(){
 }
 Field.timelineHtml = function(){
   var all = list(), show = Field._tlAll ? all : all.slice(0, 8), now = Date.now();
-  var h = '<section class="fs tl" id="fs-time"><h2 class="fs-h">' + L('Timeline','ציר זמן') + '<small>' + L(all.length + (all.length === 1 ? ' entry' : ' entries') + ' · newest first · every time is recorded','' + all.length + ' רשומות · החדש למעלה · כל זמן נרשם') + '</small></h2>'
-    + '<button class="xbtn tl-add" onclick="Field.tlNote()">' + ico('plus', 26) + L('ADD A NOTE','הוספת הערה') + '</button>';
+  var h = '<section class="fs tl" id="fs-time"><h2 class="fs-h">' + L('Timeline','ציר זמן') + '<small>' + L(all.length + (all.length === 1 ? ' entry' : ' entries') + ' · newest first','' + all.length + ' רשומות · החדש למעלה') + '</small></h2>'
+    + '<button class="xbtn tl-add" onclick="Field.tlNote()">' + ico('plus', 26) + L('Add a note','הוספת הערה') + '</button>';
   if (!all.length) return h + '<p class="tl-empty">' + L('Nothing recorded yet. Every action you take appears here with its time.','עדיין לא נרשם דבר. כל פעולה מופיעה כאן עם השעה.') + '</p></section>';
   h += '<ol class="tl-list">';
   show.forEach(function(r){
@@ -46,12 +46,12 @@ Field.timelineHtml = function(){
     var note = e.category === 'note', text = note ? String(e.action || '') : disp(e.action), det = e.details ? (IDS[e.details] ? L(IDS[e.details][0], IDS[e.details][1]) : T(String(e.details))) : '';
     var ago = mins == null ? '' : mins < 1 ? L('now','עכשיו') : mins < 60 ? L(mins + ' min ago','לפני ' + mins + ' דק׳') : L(Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min ago','לפני ' + Math.floor(mins / 60) + ' ש׳ ' + (mins % 60) + ' דק׳');
     h += '<li class="tl-i"><button class="tl-row" onclick="Field.tlOpen(' + r.i + ')" aria-label="' + esc(L('Entry at ' + hm(e.time) + ': open to edit or delete','רשומה ב-' + hm(e.time) + ': פתיחה לעריכה או מחיקה')) + '">'
-      + '<span class="tl-when"><b dir="ltr">' + hm(e.time) + '</b><small>' + ago + '</small></span>'
+      + '<span class="tl-when"><b dir="ltr">' + hm(e.time) + '</b><small>' + (e.editedFrom ? L('edited, was ','נערך, היה ') + '<bdi dir="ltr">' + hm(e.editedFrom) + '</bdi>' : ago) + '</small></span>'
       + '<span class="tl-what"><span class="tl-chip ' + c[1] + '"><b>' + c[0] + '</b>' + L(c[2], c[3]) + '</span><span class="tl-txt' + (note ? ' no-tr" dir="auto' : '') + '">' + esc(text) + (det ? '<small>' + esc(det) + '</small>' : '') + '</span></span>'
       + '<span class="tl-go" aria-hidden="true">' + ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 26) + '</span></button></li>';
   });
   h += '</ol>';
-  if (all.length > 8) h += '<button class="xbtn tl-more" onclick="Field.tlAll()">' + (Field._tlAll ? L('SHOW LESS','הצג פחות') : L('SHOW ALL ' + all.length,'הצג את כל ' + all.length)) + '</button>';
+  if (all.length > 8) h += '<button class="xbtn tl-more" onclick="Field.tlAll()">' + ico(Field._tlAll ? 'chevron-down' : 'chevrons-down', 24) + (Field._tlAll ? L('Show less','הצג פחות') : L('Show all ' + all.length,'הצג את כל ' + all.length)) + '</button>';
   return h + '</section>';
 };
 // Tap a row: a sheet with the entry and its actions (edit a note, delete). Delete is undoable.
@@ -62,12 +62,71 @@ Field.tlOpen = function(i){
   var el = document.createElement('div'); el.id = 'tl-row-sheet'; el.className = 'sheet-wrap no-polish';
   el.innerHTML = '<div class="sheet-dim" onclick="Field.tlRowClose()"></div><div class="sheet tl-sheet tl-rs" role="dialog" aria-label="' + L('Timeline entry','רשומה בציר הזמן') + '"><div class="sheet-grab"></div>'
     + '<p class="tl-rs-t"><b dir="ltr">' + hm(e.time) + '</b></p><p class="tl-rs-x' + (note ? ' no-tr" dir="auto' : '') + '">' + esc(text) + '</p>'
-    + '<div class="tl-rs-b">' + (note ? '<button class="xbtn" onclick="Field.tlEdit(' + i + ')">' + ico('file-text', 24) + L('EDIT NOTE','עריכת הערה') + '</button>' : '')
-    + '<button class="xbtn tl-rs-del" onclick="Field.tlRowClose();Field.tlDel(' + i + ')">' + ico('x', 24) + L('DELETE ENTRY','מחיקת הרשומה') + '</button>'
-    + '<button class="xbtn" onclick="Field.tlRowClose()">' + L('CLOSE','סגור') + '</button></div>'
+    + (e.audit && e.audit.length ? '<p class="tl-rs-n">' + e.audit.map(function(a){ return esc(a); }).join('<br>') + '</p>' : '')
+    + '<div class="tl-rs-b"><button class="xbtn" onclick="Field.tlTime(' + i + ')">' + ico('clock', 24) + L('Edit time','עריכת שעה') + '</button>' + (note ? '<button class="xbtn" onclick="Field.tlEdit(' + i + ')">' + ico('file-text', 24) + L('Edit note','עריכת הערה') + '</button>' : '')
+    + '<button class="xbtn tl-rs-del" onclick="Field.tlRowClose();Field.tlDel(' + i + ')">' + ico('x', 24) + L('Delete entry','מחיקת הרשומה') + '</button>'
+    + '<button class="xbtn" onclick="Field.tlRowClose()">' + ico('x', 24) + L('Close','סגור') + '</button></div>'
     + (note ? '' : '<p class="tl-rs-n">' + L('Deleting also removes its record (drug, fluid, tourniquet or wound mark). UNDO brings it back.','מחיקה מסירה גם את הרשומה הקשורה (תרופה, נוזל, חוסם או סימון פציעה). ביטול מחזיר אותה.') + '</p>')
     + '</div>';
   (document.getElementById('app') || document.body).appendChild(el);
+};
+// ── Edit the time of an entry. The linked record moves with it (drug, fluid, tourniquet, IV, airway, injury time), so every
+// clock that reads it (tourniquet minutes, repeat-dose timers, 24 h totals, TXA window, order of this list) follows.
+function hmT(t){ var d = new Date(t); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+Field.tlTime = function(i, t){
+  var e = (W._casualtyTimeline || [])[i]; if (!e) return;
+  var orig = Date.parse(e.time); Field._tt = { i:i, t: t != null ? t : orig, orig:orig, warned:false };
+  Field.tlRowClose(); Field._ttDraw();
+};
+Field._ttDraw = function(msg, bad){
+  var T0 = Field._tt; if (!T0) return; var old = document.getElementById('tl-time'); if (old) old.remove();
+  var step = function(m, lbl){ return '<button class="xbtn" onclick="Field.tlTimeStep(' + m + ')">' + ico(m < 0 ? 'minus' : 'plus', 22) + '<b dir="ltr">' + Math.abs(m) + '</b>' + L('min','דק׳') + '</button>'; };
+  var el = document.createElement('div'); el.id = 'tl-time'; el.className = 'sheet-wrap no-polish';
+  el.innerHTML = '<div class="sheet-dim" onclick="Field.tlTimeClose()"></div><div class="sheet tl-sheet tl-tt" role="dialog" aria-modal="true" aria-labelledby="tl-tt-t"><div class="sheet-grab"></div>'
+    + '<h3 id="tl-tt-t">' + ico('clock', 26) + L('Edit time','עריכת שעה') + '</h3>'
+    + '<p class="tl-tt-big"><b dir="ltr">' + hmT(T0.t) + '</b>' + (T0.t !== T0.orig ? '<small>' + L('was ','היה ') + '<bdi dir="ltr">' + hmT(T0.orig) + '</bdi></small>' : '') + '</p>'
+    + '<div class="tl-tt-steps" dir="ltr">' + step(-5) + step(-1) + step(1) + step(5) + '</div>'
+    + '<div class="tl-tt-row"><button class="xbtn" onclick="Field.tlTimeNow()">' + ico('timer-reset', 22) + L('Now','עכשיו') + '</button>'
+    + '<label class="tl-tt-ex">' + ico('keyboard', 22) + '<span>' + L('Exact time','שעה מדויקת') + '</span><input type="time" value="' + hmT(T0.t) + '" onchange="Field.tlTimeExact(this.value)"></label></div>'
+    + (msg ? '<p class="tl-tt-msg' + (bad ? ' bad' : '') + '" role="alert">' + ico('triangle-alert', 22) + '<span>' + msg + '</span></p>' : '')
+    + '<div class="tl-rs-b"><button class="xbtn" onclick="Field.tlTimeClose()">' + ico('x', 24) + L('Cancel','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.tlTimeSave()">' + ico('check', 26) + (T0.warned ? L('Save anyway','לשמור בכל זאת') : L('Save time','שמירת השעה')) + '</button></div></div>';
+  (document.getElementById('app') || document.body).appendChild(el);
+};
+Field.tlTimeClose = function(){ var s = document.getElementById('tl-time'); if (s) s.remove(); Field._tt = null; };
+Field.tlTimeStep = function(m){ var T0 = Field._tt; if (!T0) return; T0.t += m * 60000; T0.warned = false; Field._ttDraw(); };
+Field.tlTimeNow = function(){ var T0 = Field._tt; if (!T0) return; var d = new Date(); d.setSeconds(0, 0); T0.t = d.getTime(); T0.warned = false; Field._ttDraw(); };
+Field.tlTimeExact = function(v){
+  var T0 = Field._tt, m = /^(\d{1,2}):(\d{2})$/.exec(v || ''); if (!T0 || !m) return;
+  var d = new Date(T0.t); d.setHours(+m[1], +m[2], 0, 0); if (d.getTime() > Date.now() + 60000) d.setDate(d.getDate() - 1);
+  T0.t = d.getTime(); T0.warned = false; Field._ttDraw();
+};
+Field.tlTimeSave = function(){
+  var T0 = Field._tt; if (!T0) return; var tl = W._casualtyTimeline || [], e = tl[T0.i]; if (!e) return Field.tlTimeClose();
+  if (T0.t > Date.now() + 60000) return Field._ttDraw(L('That is in the future. Pick a time up to now.','זו שעה עתידית. בחרו שעה עד עכשיו.'), true);
+  var X = W._casualtyXABCDE || {}, inj = Date.parse((X.e || {}).timeOfInjury), act = String(e.action || ''), isInj = /^שעת פציעה /.test(act);
+  if (!isInj && !isNaN(inj) && T0.t < inj && !T0.warned){ T0.warned = true; return Field._ttDraw(L('This is before the injury time (' + hmT(inj) + '). Check it.','זה לפני שעת הפציעה (' + hmT(inj) + '). בדקו.'), false); }
+  if (T0.t === T0.orig) return Field.tlTimeClose();
+  var iso = new Date(T0.t).toISOString(), near = function(r){ return r && Math.abs(Date.parse(r.time) - T0.orig) < 90000; }, moved = '';
+  if (W.pushMedHistory) W.pushMedHistory();
+  W._medPushLock = true;
+  try {
+    var move = function(arr, test){ var r = (arr || []).filter(function(x){ return near(x) && (!test || test(x)); })[0]; if (r){ r.time = iso; return true; } return false; };
+    var meds = (X.e || {}).medications || [];
+    if (move(meds, function(m){ var nm = String(m.drug || m.name || ''); return nm && act.indexOf(nm) >= 0; })) moved = 'drug';
+    else if (move((X.c || {}).fluids, function(f){ return f.type && act.indexOf(f.type) >= 0; })) moved = 'fluid';
+    else if (/ח"ע|חוסם/.test(act) && move((X.x || {}).tourniquets)){ moved = 'tq'; (W._casualtyTreatments || []).forEach(function(b){ if (b.type === 'tourniquet' && near(b)) b.time = iso; }); }
+    else if (/גישה ורידית|IO/.test(act) && move((X.c || {}).ivAccess)) moved = 'iv';
+    else if (e.category === 'a' && move((X.a || {}).interventions)) moved = 'airway';
+    else if (isInj && X.e){ X.e.timeOfInjury = iso; e.action = 'שעת פציעה ' + hmT(T0.t); moved = 'injury'; }
+    else if (move((X.e || {}).procedures)) moved = 'proc';
+    if (!e.editedFrom) e.editedFrom = new Date(T0.orig).toISOString();
+    e.audit = (e.audit || []).concat([L('Time edited ','השעה שונתה ') + hmT(T0.orig) + ' → ' + hmT(T0.t)]);
+    e.time = new Date(T0.t);
+  } finally { Promise.resolve().then(function(){ W._medPushLock = false; }); }
+  Field.tlTimeClose();
+  if (W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave();
+  W.MedHost.renderIncidentPage();
+  if (Field.toast) Field.toast(L('Time changed ','השעה שונתה ') + '<bdi dir="ltr">' + hmT(T0.orig) + ' → ' + hmT(T0.t) + '</bdi>', function(){ W.medUndo(); W.MedHost.renderIncidentPage(); });
 };
 Field.tlRowClose = function(){ var s = document.getElementById('tl-row-sheet'); if (s) s.remove(); };
 Field.tlEdit = function(i){
@@ -101,7 +160,7 @@ Field.tlNote = function(editIdx){
   var el = document.createElement('div'); el.id = 'tl-sheet'; el.className = 'sheet-wrap no-polish';
   el.innerHTML = '<div class="sheet-dim" onclick="Field.tlNoteClose()"></div><div class="sheet tl-sheet" role="dialog" aria-label="' + L('Add a note','הוספת הערה') + '"><div class="sheet-grab"></div><h3>' + (Field._tlEditIdx != null ? L('Edit note','עריכת הערה') : L('Add a note to the timeline','הערה לציר הזמן')) + '</h3>'
     + '<textarea id="tl-note" class="no-tr" dir="auto" maxlength="300" rows="4" placeholder="' + L('What happened, what you did, what you saw','מה קרה, מה עשיתם, מה ראיתם') + '"></textarea>'
-    + '<div class="btn-row"><button class="xbtn" onclick="Field.tlNoteClose()">' + L('CANCEL','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.tlNoteSave()">' + L('SAVE NOTE','שמירת הערה') + '</button></div></div>';
+    + '<div class="btn-row"><button class="xbtn" onclick="Field.tlNoteClose()">' + L('Cancel','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.tlNoteSave()">' + L('Save note','שמירת הערה') + '</button></div></div>';
   (document.getElementById('app') || document.body).appendChild(el);
   var ed = Field._tlEditIdx != null ? (W._casualtyTimeline || [])[Field._tlEditIdx] : null; if (ed){ var ta0 = el.querySelector('#tl-note'); ta0.value = String(ed.action || ''); }
   setTimeout(function(){ var ta = document.getElementById('tl-note'); if (ta) ta.focus(); }, 60);

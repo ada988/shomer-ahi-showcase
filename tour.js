@@ -13,21 +13,21 @@ var STEPS = [
     en:['A live mass-casualty scene','Casualties from a bus-stop attack. Each block is a triage group: shape, word and colour.'],
     he:['זירת אר״ן חיה','נפגעי פיגוע בתחנת אוטובוס. כל בלוק הוא קבוצת מיון: צורה, מילה וצבע.'] },
   { pre: function(){ return W.Demo.tab('status').then(function(){ W.Quick.open(); }); }, target:'.qt-yn', pos:'top',
-    en:['Quick triage in seconds','Many casualties: a few yes / no questions from the IDF protocol give each one a colour. Bleeding, breathing, airway, chest, shock.'],
-    he:['מיון מהיר תוך שניות','נפגעים רבים: כמה שאלות כן / לא לפי פרוטוקול צה״ל נותנות לכל אחד צבע. דימום, נשימה, נתיב אוויר, חזה, הלם.'] },
+    en:['Quick triage in seconds','Big YES and NO buttons, one question at a time. A colour in seconds.'],
+    he:['מיון מהיר תוך שניות','כפתורי כן ולא גדולים, שאלה אחת בכל פעם. צבע תוך שניות.'] },
   { pre: function(){ if (W.Quick) W.Quick.close(); return W.Demo.go('casualty'); }, target:'.f-id', pos:'bottom', scroll:'start',
-    en:['One patient: the full Form 101','Casualty A is in shock. Triage, wristband number and identity on one strip.'],
-    he:['נפגע אחד: טופס 101 מלא','נפגע א׳ בהלם. מיון, מספר צמיד וזהות בשורה אחת.'] },
+    en:['One patient: the full Form 101','Casualty 1 is in shock. Their number, triage and wristband on one strip.'],
+    he:['נפגע אחד: טופס 101 מלא','נפגע 1 בהלם. המספר, המיון והצמיד בשורה אחת.'] },
   { pre: ensureForm, target:'.xc-tabs', pos:'bottom', scroll:'center',
     en:['X-CARE, step by step','The IDF 2026 protocol as big rows. Tap a row to tick it, tap the button to act: tourniquet, blood, TXA. Every time is recorded.'],
     he:['X-CARE שלב אחר שלב','פרוטוקול צה״ל 2026 כשורות גדולות. לוחצים על שורה לסימון, ועל הכפתור לביצוע: חוסם עורקים, דם, TXA. כל זמן נרשם.'] },
   { pre: ensureForm, target:'[data-tour=handoff]', pos:'top', scroll:'center',
     en:['Hand off in one tap','A short report with the time-critical items first, a radio script, or a printable Form 101.'],
     he:['העברה בלחיצה','דוח קצר עם הפריטים הקריטיים קודם, תסריט רדיו או טופס 101 להדפסה.'] },
-  { pre: function(){ W.Evac.close(); return W.Demo.tab('evac'); }, target:'.ev-rush, .ev-road', pos:'bottom',
-    en:['Load and go','One tap puts the most urgent casualty still on scene on the free ambulance, picks the nearest trauma centre and starts the countdown.'],
-    he:['העמסה ויציאה','לחיצה אחת שמה את הנפגע הדחוף ביותר שעדיין בזירה על האמבולנס הפנוי, בוחרת את מרכז הטראומה הקרוב ומתחילה ספירה לאחור.'] },
-  { pre: function(){ W.Evac && W.Evac.close(); return W.Demo.tab('bracelets'); }, target:'.bt-item .brc2', pos:'bottom',
+  { pre: function(){ W.Evac.close(); return W.Demo.tab('evac'); }, target:'.next-out, .ev-road', pos:'bottom',
+    en:['Load and go','Who goes next, on which ambulance, where, how long. One tap.'],
+    he:['העמסה ויציאה','מי יוצא, באיזה אמבולנס, לאן, תוך כמה זמן. לחיצה אחת.'] },
+  { pre: function(){ W.Evac && W.Evac.close(); return W.Demo.tab('bracelets'); }, target:'.bt-band .brc2, .bt-band', pos:'bottom',
     en:['A wristband for every casualty','The QR code carries the record. Print it and fasten it to the casualty.'],
     he:['צמיד לכל נפגע','קוד ה-QR נושא את התיק. מדפיסים וחוברים לנפגע.'] },
   { pre: function(){ W.Bracelet.viewCard('demo_c1'); }, target:'.cc-banner', pos:'bottom',
@@ -86,9 +86,9 @@ function draw(t, s){
   var last = i === STEPS.length - 1;
   card.innerHTML = '<div class="tour-step">' + L('Step ','שלב ') + (i + 1) + ' / ' + STEPS.length + '</div><h5>' + txt[0] + '</h5><p>' + txt[1] + '</p>'
     + '<div class="tour-prog">' + STEPS.map(function(_, k){ return '<i class="' + (k <= i ? 'on' : '') + '"></i>'; }).join('') + '</div>'
-    + '<div class="tour-nav"><button class="skip" onclick="Tour.stop()">' + L('Skip tour','דלג') + '</button>'
-    + (i > 0 ? '<button class="xbtn" onclick="Tour.go(' + (i - 1) + ')">' + L('Back','הקודם') + '</button>' : '')
-    + '<button class="xbtn xbtn-primary" onclick="' + (last ? 'Tour.finish()' : 'Tour.go(' + (i + 1) + ')') + '">' + (last ? L('Try it yourself','נסו בעצמכם') : L('Next','הבא')) + '</button></div>';
+    + '<div class="tour-nav"><button class="skip" onclick="Tour.stop()">' + W.Icon('x', 22) + L('Skip tour','דלג') + '</button>'
+    + (i > 0 ? '<button class="xbtn" onclick="Tour.go(' + (i - 1) + ')">' + W.Icon(document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left', 22) + L('Back','הקודם') + '</button>' : '')
+    + '<button class="xbtn xbtn-primary" onclick="' + (last ? 'Tour.finish()' : 'Tour.go(' + (i + 1) + ')') + '">' + (last ? W.Icon('check', 22) + L('Try it yourself','נסו בעצמכם') : L('Next','הבא') + W.Icon(document.documentElement.dir === 'rtl' ? 'arrow-left' : 'arrow-right', 22)) + '</button></div>';
   // A tall target must not run underneath the card: trim the highlight to the part that stays visible.
   if (t && spot.style.display !== 'none'){
     var a = app().getBoundingClientRect(), cr = card.getBoundingClientRect(), cTop = cr.top - a.top, cBot = cr.bottom - a.top, sTop = parseFloat(spot.style.top), sH = parseFloat(spot.style.height);

@@ -1,0 +1,136 @@
+/* Desktop landing (≥ 901px): a short, quiet dark page next to a phone that keeps real phone proportions at any window size
+   (it is drawn at 410×880 and scaled as a whole by landing.js). Hairlines and type carry the layout; one white primary action. */
+.ph-sb,.ph-home{display:none}
+@media (max-width:900px){.phone-slot,.phone{display:contents}}
+
+@media (min-width:901px){
+  :root{--pg:#09090b;--pg1:#111113;--pg2:#18181b;--hl:#232327;--hl2:#2e2e33;--tx1:#f4f4f5;--tx2:#a1a1aa;--tx3:#71717a}
+  html,body{background:var(--pg)!important}
+  body{overflow:visible!important}
+  .stage{display:grid!important;grid-template-columns:minmax(0,600px) auto;justify-content:center;align-items:start;gap:clamp(48px,7vw,112px)!important;max-width:1240px;margin:0 auto;padding:0 clamp(24px,4vw,56px)!important;min-height:100vh}
+
+  /* ── the phone: fixed 410×880, scaled as one object ── */
+  .phone-slot{position:sticky;top:24px;margin:24px 0;width:calc(410px * var(--ph-s,1));height:calc(880px * var(--ph-s,1))}
+  .phone{position:absolute;top:0;left:0;width:410px;height:880px;transform:scale(var(--ph-s,1));transform-origin:0 0;padding:11px;border-radius:64px;color:var(--tx);
+    background:#1c1c1f;box-shadow:inset 0 0 0 1px #3f3f46,inset 0 0 0 5px #0b0b0d,0 0 0 1px #000,0 40px 80px -24px rgba(0,0,0,.8);display:flex;flex-direction:column}
+  .phone::before,.phone::after{content:'';position:absolute;width:3px;border-radius:2px;background:#2a2a2f}
+  .phone::before{left:-3px;top:170px;height:60px;box-shadow:0 80px 0 #2a2a2f}
+  .phone::after{right:-3px;top:220px;height:92px}
+  .ph-sb{display:flex;flex:none;align-items:center;justify-content:space-between;position:relative;height:50px;padding:0 32px 0 36px;background:var(--bg);border-radius:53px 53px 0 0;color:#fff;font:600 16px/1 var(--f);font-variant-numeric:tabular-nums;direction:ltr}
+  .ph-island{position:absolute;left:50%;top:12px;width:112px;height:32px;margin-left:-56px;border-radius:20px;background:#000}
+  .ph-ic{display:flex;gap:6px;align-items:center}.ph-ic svg{fill:#fff;color:#fff}
+  .phone .device{position:relative!important;flex:1;width:100%!important;height:auto!important;min-height:0;border:0!important;border-radius:0 0 53px 53px!important;box-shadow:none!important}
+  .phone .tabbar{padding-bottom:26px!important}
+  .phone .ov-tour{display:none!important}   /* the page's own tour button starts it on desktop */
+  .ph-home{display:block;position:absolute;left:50%;bottom:19px;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:rgba(255,255,255,.8);pointer-events:none;z-index:50}
+
+  /* ── page ── */
+  .side.lp{position:static!important;width:auto!important;max-height:none!important;overflow:visible!important;padding:0 0 64px!important;color:var(--tx1)}
+  .lp b{font-weight:600}
+  .lp p{margin:0}
+  .lp button{font-family:var(--f);cursor:pointer}
+  .lp :focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+  .lp-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;height:80px;border-bottom:1px solid var(--hl)}
+  .lp-brand{display:flex;align-items:center;gap:10px;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
+  .lp-brand img{width:22px;height:22px}
+  .lp-nav-r{display:flex;align-items:center;gap:16px}
+  .lp-beta{font-size:14px;color:var(--tx3);white-space:nowrap}
+  .lp-lang.lang-seg{display:flex;background:var(--pg1);border:1px solid var(--hl);border-radius:9px;padding:2px}
+  .lp-lang.lang-seg button{min-width:44px;min-height:34px;border:0;border-radius:7px;background:none;color:var(--tx3);font:500 14px/1 var(--f);padding:0 10px}
+  .lp-lang.lang-seg button.on{background:var(--hl2);color:var(--tx1)}
+
+  .lp-hero{padding:clamp(56px,9vh,104px) 0 64px}
+  .lp h1{font-size:clamp(40px,4.4vw,60px);line-height:1.04;letter-spacing:-.035em;font-weight:600;margin:0 0 24px;color:var(--tx1);text-wrap:balance}
+  [dir=rtl] .lp h1{letter-spacing:-.01em;line-height:1.12}
+  .lp-lede{font-size:18px;line-height:1.6;color:var(--tx2);max-width:34em}
+  .lp-cta{margin-top:36px;display:flex;align-items:center;gap:20px}
+  .lp-btn{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 20px;border:0;border-radius:10px;background:var(--tx1);color:#09090b;font-size:16px;font-weight:600;transition:background .15s}
+  .lp-btn:hover{background:#fff}
+  .lp-btn .ui-i{color:#09090b}
+
+  .lp-ba{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--hl);border-radius:14px;overflow:hidden}
+  .lp-ba>div{padding:22px 24px 24px}
+  .lp-ba>div+div{border-inline-start:1px solid var(--hl);background:var(--pg1)}
+  .lp-lbl{display:block;font-size:14px;font-weight:500;color:var(--tx3);margin-bottom:10px}
+  .lp-ba>div+div .lp-lbl{color:var(--tx1)}
+  .lp-ba p{font-size:16px;line-height:1.55;color:var(--tx2)}
+  .lp-ba>div+div p{color:var(--tx1)}
+
+  .lp h2{font-size:22px;line-height:1.25;letter-spacing:-.02em;font-weight:600;margin:0 0 18px;color:var(--tx1)}
+  [dir=rtl] .lp h2{letter-spacing:0}
+  .lp-idx{padding-top:72px}
+  .lp-idx ol{list-style:none;margin:0;padding:0;border-top:1px solid var(--hl)}
+  .lp-row{display:grid;grid-template-columns:40px 128px 1fr 24px;align-items:center;gap:8px;width:100%;min-height:64px;padding:0 12px;border:0;border-bottom:1px solid var(--hl);border-radius:0;background:none;color:var(--tx1);text-align:start;transition:background .12s}
+  .lp-row:hover{background:var(--pg1)}
+  .lp-n{font-size:14px;color:var(--tx3);font-variant-numeric:tabular-nums}
+  .lp-row b{font-size:17px}
+  .lp-d{font-size:16px;color:var(--tx2)}
+  .lp-row .ui-i{color:var(--tx3);transition:transform .15s,color .15s}
+  .lp-row:hover .ui-i{transform:translateX(3px);color:var(--tx1)}
+  [dir=rtl] .lp-row:hover .ui-i{transform:translateX(-3px)}
+  .lp-row.on{background:var(--pg2)}
+  .lp-row.on .lp-n,.lp-row.on .ui-i{color:var(--tx1)}
+
+  .lp-scan{display:grid;grid-template-columns:132px 1fr;gap:28px;align-items:center;margin-top:72px;padding:24px;border:1px solid var(--hl);border-radius:14px}
+  .lp-scan h2{margin-bottom:8px}
+  .lp-scan p{font-size:16px;line-height:1.55;color:var(--tx2)}
+  .lp-qr.phone-qr,.lp-qr2{display:block;padding:0;background:none;border:0}
+  .lp-qr.phone-qr .qr,.lp-qr2 .qr{display:block;width:132px!important;height:132px!important;border-radius:8px}
+  .lp-qr.phone-qr p{display:none}
+  .lp-try{background:var(--pg1)}
+  .lp-url{display:inline-block;margin-top:10px;font-size:14px;color:var(--tx1);font-variant-numeric:tabular-nums;direction:ltr}
+
+  .lp-nums{display:grid;grid-template-columns:repeat(4,1fr);margin:72px 0 0;border-top:1px solid var(--hl)}
+  .lp-nums>div{padding:22px 16px 0 0}
+  .lp-nums>div+div{padding-inline-start:16px;border-inline-start:1px solid var(--hl)}
+  [dir=rtl] .lp-nums>div{padding:22px 0 0 16px}
+  .lp-nums dt{font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:8px;color:var(--tx1)}
+  .lp-nums dd{margin:0;font-size:14px;line-height:1.4;color:var(--tx3)}
+
+  .lp-note{margin-top:72px;padding:20px 22px;border:1px solid rgba(234,179,8,.35);border-radius:14px;background:rgba(234,179,8,.05)}
+  .lp-note b{display:block;font-size:15px;margin-bottom:6px;color:#facc15}
+  .lp-note p{font-size:14px;line-height:1.6;color:var(--tx2)}
+  .lp-link{margin-top:10px;min-height:40px;padding:0;border:0;background:none;color:var(--tx1);font-size:14px;font-weight:500;text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--tx3)}
+
+  .lp-foot{display:flex;justify-content:space-between;gap:16px;margin-top:48px;padding-top:18px;border-top:1px solid var(--hl);font-size:14px;color:var(--tx3)}
+}
+@media (min-width:901px) and (max-width:1100px){
+  .stage{grid-template-columns:minmax(0,1fr) auto}
+  .lp-row{grid-template-columns:32px 104px 1fr 20px}
+  .lp-ba{grid-template-columns:1fr}
+  .lp-ba>div+div{border-inline-start:0;border-top:1px solid var(--hl)}
+}
+
+/* No coloured side stripes anywhere (engine markup sets them inline): status is carried by chips, icons and words instead. */
+#app [style*="border-right:3px solid"],#app [style*="border-right:4px solid"],#app [style*="border-left:3px solid"],#app [style*="border-left:4px solid"],
+#app [style*="border-inline-start:3px"],#app [style*="border-inline-start:4px"],#app [style*="border-right: 3px"],#app [style*="border-left: 3px"]{border-left-width:0!important;border-right-width:0!important}
+
+/* kicker + conditions (desktop only) */
+@media (min-width:901px){
+  .lp-kick{font-size:15px;font-weight:500;color:var(--tx2);margin-bottom:20px!important}
+  .lp-cond{padding-top:72px}
+  .lp-cond-g{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--hl)}
+  .lp-cond-g>div{padding:22px 20px 0 0}
+  .lp-cond-g>div+div{padding-inline-start:20px;border-inline-start:1px solid var(--hl)}
+  [dir=rtl] .lp-cond-g>div{padding:22px 0 0 20px}
+  .lp-cond-g .ui-i{color:var(--tx1);display:block;margin-bottom:14px}
+  .lp-cond-g b{display:block;font-size:17px;margin-bottom:6px}
+  .lp-cond-g p{font-size:15px;line-height:1.55;color:var(--tx2)}
+}
+@media (min-width:901px) and (max-width:1100px){.lp-cond-g{grid-template-columns:1fr}.lp-cond-g>div+div{border-inline-start:0;padding-inline-start:0}}
+/* the desktop phone is a 390px screen inside a wide window: apply the app's narrow-phone rules here too */
+@media (min-width:901px){.phone .beta-pill span{display:none}}
+
+/* feature list (desktop only) */
+@media (min-width:901px){
+  .lp-feat{padding-top:72px}
+  .lp-fg{margin-top:28px}
+  .lp-fg h3{font-size:14px;font-weight:500;color:var(--tx3);margin:0 0 4px;padding-bottom:12px;border-bottom:1px solid var(--hl)}
+  .lp-fg ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
+  .lp-fg li{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--hl)}
+  .lp-fg li .ui-i{flex:none;color:var(--tx1);margin-top:1px}
+  .lp-fg b{display:block;font-size:16px;margin-bottom:3px}
+  .lp-fg p{font-size:14.5px;line-height:1.5;color:var(--tx2)}
+}
+@media (min-width:901px) and (max-width:1100px){.lp-fg ul{grid-template-columns:1fr}}

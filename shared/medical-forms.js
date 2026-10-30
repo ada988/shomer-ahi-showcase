@@ -341,7 +341,7 @@ function _hv(x){return x!==null&&x!==undefined&&x!==''&&!(typeof x==='number'&&i
 function _bpOut(v){if(!v)return null;if(_hv(v.bpSys))return v.bpSys+'/'+(_hv(v.bpDia)?v.bpDia:'—');return(_hv(v.bp)&&v.bp!=='-'&&v.bp!=='—/—')?String(v.bp):null;}
 function airwayLabelOut(s){return({clear:'פתוח',compromised:'בסיכון',obstructed:'חסום'})[s]||s||'';}
 function hypoLabelOut(m){return({HPMK:'HPMK — ערכת מניעת היפותרמיה',blanket:'שמיכה'})[m]||m||'';}
-function triageOutName(c){return({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[c]||'לא נקבע';}
+function triageOutName(c){return({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ממתין'})[c]||'לא נקבע';}
 // NATO evacuation categories: Urgent ≤1h, Priority ≤4h, Routine ≤24h.
 function evacOutName(p){return({immediate:'דחוף (עד שעה)',urgent:'בעדיפות (עד 4 שעות)',routine:'שגרתי (עד 24 שעות)',expectant:'ממתין'})[p]||'';}
 function vitalsOutText(v){
@@ -461,7 +461,7 @@ function generateMISTPlusReport(){
   const moiObj=MOI_TYPES.find(m=>m.id===(typeof _casualtyMOI!=='undefined'?_casualtyMOI:null));
   const moiText=S(moiObj?moiObj.label:'לא ידוע');
   const injArr=(typeof _casualtyInjuries!=='undefined')?_casualtyInjuries:[];
-  const injuries=S(injArr.map(i=>bodyLabelOut(i.region)+' ('+({hemorrhage:'דימום',fracture:'שבר',burn:'כוויה',penetrating:'חודר'}[i.type]||'')+')').join(', ')||'לא סומנו');
+  const injuries=S(injArr.map(i=>bodyLabelOut(i.region)+' ('+({hemorrhage:'דימום',fracture:'שבר',burn:'כוויה',penetrating:'חודר'}[i.type]||'פציעה')+')'+(i.pins&&i.pins.length?' · '+i.pins.length+' '+(i.pins.length===1?'נקודה מסומנת':'נקודות מסומנות'):'')).join(', ')||'לא סומנו');
   const vArr=(typeof _casualtyVitals!=='undefined')?_casualtyVitals:[];
   const lastVitals=vArr.length?vArr[vArr.length-1]:null;
   const firstVitals=vArr.length?vArr[0]:null;
@@ -482,7 +482,7 @@ function generateMISTPlusReport(){
   const L=['\u2068MIST+\u2069 — '+name+(who?' | '+who:''),
     'שעה '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' | טריאז׳: '+triageOutName(triageCol)+(evac?' | פינוי: '+evac:'')];
   const iso=t=>String(t).split(' · ').map(x=>'\u2068'+x+'\u2069').join(' · ');
-  try{const cx=buildCasualtyContext();if(cx.deepShock&&triageCol!=='black')L.push('הלם עמוק');else if(cx.shock&&triageCol!=='black')L.push('סימני הלם');}catch(_e){}
+  try{const cx=buildCasualtyContext();if(cx.deepShock&&triageCol!=='black')L.push('חשד להלם עמוק');else if(cx.shock&&triageCol!=='black')L.push('סימני הלם');}catch(_e){}
   tqL.forEach(l=>L.push('\u2068'+S(l)+'\u2069'));
   if(medL)L.push('תרופות: '+iso(S(medL)));
   if(flL)L.push('דם/נוזלים: '+iso(S(flL)));
@@ -933,14 +933,46 @@ var BODY_BACK=(typeof BODY_BACK!=='undefined')?BODY_BACK:[
 // Front and back share one outline (viewBox 200 × 400): head + body with arms and legs
 var BODY_SILHOUETTE='M100,3 C110,3 117,12 117,24 C117,36 110,46 100,46 C90,46 83,36 83,24 C83,12 90,3 100,3Z M94.0,40.0 C91.8,42.2 95.3,50.2 93.0,53.0 C90.7,55.8 84.8,55.8 80.0,57.0 C75.2,58.2 69.0,58.8 64.0,60.0 C59.0,61.2 53.8,61.8 50.0,64.0 C46.2,66.2 43.2,67.7 41.0,73.0 C38.8,78.3 38.2,87.2 37.0,96.0 C35.8,104.8 35.3,116.2 34.0,126.0 C32.7,135.8 30.3,146.5 29.0,155.0 C27.7,163.5 27.3,171.2 26.0,177.0 C24.7,182.8 21.5,186.0 21.0,190.0 C20.5,194.0 21.3,198.5 23.0,201.0 C24.7,203.5 28.0,204.8 31.0,205.0 C34.0,205.2 38.3,204.5 41.0,202.0 C43.7,199.5 45.5,194.2 47.0,190.0 C48.5,185.8 49.0,183.3 50.0,177.0 C51.0,170.7 52.0,160.2 53.0,152.0 C54.0,143.8 55.0,136.2 56.0,128.0 C57.0,119.8 58.0,108.0 59.0,103.0 C60.0,98.0 61.3,94.8 62.0,98.0 C62.7,101.2 62.8,114.2 63.0,122.0 C63.2,129.8 62.7,137.8 63.0,145.0 C63.3,152.2 64.3,157.5 65.0,165.0 C65.7,172.5 66.2,177.5 67.0,190.0 C67.8,202.5 69.0,225.0 70.0,240.0 C71.0,255.0 72.5,267.0 73.0,280.0 C73.5,293.0 72.7,306.3 73.0,318.0 C73.3,329.7 75.7,341.7 75.0,350.0 C74.3,358.3 69.8,363.2 69.0,368.0 C68.2,372.8 67.5,376.8 70.0,379.0 C72.5,381.2 79.8,381.2 84.0,381.0 C88.2,380.8 93.7,382.8 95.0,378.0 C96.3,373.2 92.2,362.5 92.0,352.0 C91.8,341.5 93.5,327.0 94.0,315.0 C94.5,303.0 94.5,294.2 95.0,280.0 C95.5,265.8 96.3,244.0 97.0,230.0 C97.7,216.0 98.5,202.3 99.0,196.0 C99.5,189.7 99.7,192.0 100.0,192.0 C100.3,192.0 100.5,189.7 101.0,196.0 C101.5,202.3 102.3,216.0 103.0,230.0 C103.7,244.0 104.5,265.8 105.0,280.0 C105.5,294.2 105.5,303.0 106.0,315.0 C106.5,327.0 108.2,341.5 108.0,352.0 C107.8,362.5 103.7,373.2 105.0,378.0 C106.3,382.8 111.8,380.8 116.0,381.0 C120.2,381.2 127.5,381.2 130.0,379.0 C132.5,376.8 131.8,372.8 131.0,368.0 C130.2,363.2 125.7,358.3 125.0,350.0 C124.3,341.7 126.7,329.7 127.0,318.0 C127.3,306.3 126.5,293.0 127.0,280.0 C127.5,267.0 129.0,255.0 130.0,240.0 C131.0,225.0 132.2,202.5 133.0,190.0 C133.8,177.5 134.3,172.5 135.0,165.0 C135.7,157.5 136.7,152.2 137.0,145.0 C137.3,137.8 136.8,129.8 137.0,122.0 C137.2,114.2 137.3,101.2 138.0,98.0 C138.7,94.8 140.0,98.0 141.0,103.0 C142.0,108.0 143.0,119.8 144.0,128.0 C145.0,136.2 146.0,143.8 147.0,152.0 C148.0,160.2 149.0,170.7 150.0,177.0 C151.0,183.3 151.5,185.8 153.0,190.0 C154.5,194.2 156.3,199.5 159.0,202.0 C161.7,204.5 166.0,205.2 169.0,205.0 C172.0,204.8 175.3,203.5 177.0,201.0 C178.7,198.5 179.5,194.0 179.0,190.0 C178.5,186.0 175.3,182.8 174.0,177.0 C172.7,171.2 172.3,163.5 171.0,155.0 C169.7,146.5 167.3,135.8 166.0,126.0 C164.7,116.2 164.2,104.8 163.0,96.0 C161.8,87.2 161.2,78.3 159.0,73.0 C156.8,67.7 153.8,66.2 150.0,64.0 C146.2,61.8 141.0,61.2 136.0,60.0 C131.0,58.8 124.8,58.2 120.0,57.0 C115.2,55.8 109.3,55.8 107.0,53.0 C104.7,50.2 108.2,42.2 106.0,40.0 C103.8,37.8 96.2,37.8 94.0,40.0Z';
 
+// Display-only zones that tile the outline: each is a band clipped to the silhouette, so a marked
+// region fills the real body shape (outer edge = body outline, inner edges = clean anatomical cuts).
+// Tap targets, labels and marker positions still come from the region list above.
+var BODY_ZONES=(function(){
+  function R(x1,y1,x2,y2){return 'M'+x1+','+y1+' L'+x2+','+y1+' L'+x2+','+y2+' L'+x1+','+y2+'Z';}
+  var z={head:R(60,0,140,44),neck:R(60,44,140,57),
+    chest_r:R(61,57,100,117),chest_l:R(100,57,139,117),abdomen_r:R(61,117,100,164),abdomen_l:R(100,117,139,164),pelvis:R(61,164,139,193),
+    r_upper_arm:R(0,50,61,130),r_forearm:R(0,130,61,180),r_hand:R(0,180,61,215),
+    l_upper_arm:R(139,50,200,130),l_forearm:R(139,130,200,180),l_hand:R(139,180,200,215),
+    r_thigh:R(61,193,100,280),r_shin:R(61,280,100,352),r_foot:R(61,352,100,400),
+    l_thigh:R(100,193,139,280),l_shin:R(100,280,139,352),l_foot:R(100,352,139,400),
+    back_head:R(60,0,140,44),back_neck:R(60,44,140,57),
+    upper_back_r:R(61,57,96,117),upper_back_l:R(104,57,139,117),spine:R(96,57,104,164),
+    lower_back_r:R(61,117,96,164),lower_back_l:R(104,117,139,164),r_buttock:R(61,164,100,200),l_buttock:R(100,164,139,200),
+    back_r_upper_arm:R(0,50,61,130),back_l_upper_arm:R(139,50,200,130),back_r_forearm:R(0,130,61,180),back_l_forearm:R(139,130,200,180),
+    back_r_hand:R(0,180,61,215),back_l_hand:R(139,180,200,215),back_r_thigh:R(61,200,100,280),back_l_thigh:R(100,200,139,280),
+    back_r_shin:R(61,280,100,352),back_l_shin:R(100,280,139,352)};
+  return z;
+})();
+
+// Bounding box of a region's display zone (pins on an injury are stored relative to it: x,y in 0..1)
+function bodyZoneBox(id){
+  const n=String(BODY_ZONES[id]||'').match(/[\d.]+/g); if(!n) return null;
+  const xs=n.filter((_,i)=>i%2===0).map(Number), ys=n.filter((_,i)=>i%2===1).map(Number);
+  const x=Math.min(...xs), y=Math.min(...ys);
+  return {x, y, w:Math.max(...xs)-x, h:Math.max(...ys)-y};
+}
 var _bodyMenuStep=(typeof _bodyMenuStep!=='undefined')?_bodyMenuStep:0;
 
+// Short marker codes on the body map, per display language (the legend spells each one out)
+const _BM_CODE={en:{tourniquet:'TQ',pressureDressing:'PD',hemostatic:'HG',woundPacking:'WP',bandage:'D',splint:'S',pelvicBinder:'PB',tubeThora:'CT',custom:'+',hemorrhage:'B',fracture:'F',burn:'BU',penetrating:'P',other:'+'},
+  he:{tourniquet:'ח״ע',pressureDressing:'ת״ל',hemostatic:'המ',woundPacking:'אר',bandage:'חב',splint:'קב',pelvicBinder:'אג',tubeThora:'נק',custom:'+',hemorrhage:'ד',fracture:'ש',burn:'כו',penetrating:'חד',other:'+'}};
+const _BM_WORD={tourniquet:'חוסם עורקים',pressureDressing:'תחבושת לחץ',hemostatic:'גזה המוסטטית',woundPacking:'אריזת פצע',bandage:'חבישה',splint:'קיבוע',pelvicBinder:'מקבע אגן',tubeThora:'נקז חזה'};
+function _bmCode(k){const he=window.ShowcaseI18n&&window.ShowcaseI18n.lang==='he';return (he?_BM_CODE.he:_BM_CODE.en)[k]||'+';}
 function renderBodyMap(){
   const _esc=(typeof escapeHtml==='function')?escapeHtml:(s=>String(s??''));
   const regions=_casualtyView==='front'?BODY_FRONT:BODY_BACK;
   const side=_casualtyView;
   let _bmMarks='';
-  let svg=`<svg viewBox="0 0 200 400" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block;margin:0 auto;max-width:360px" role="img" aria-label="מפת גוף — ${side==='front'?'קדמי':'אחורי'}">`;
+  let svg=`<svg viewBox="0 0 200 400" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block;margin:0 auto;max-width:360px" role="group" aria-label="מפת גוף — ${side==='front'?'קדמי':'אחורי'}">`;
   svg+=`<rect x="0" y="0" width="200" height="400" fill="none"/>`;
   // Smooth human silhouette; the tap regions are clipped to it so marked regions follow the body outline
   svg+=`<defs><clipPath id="bm-clip-${side}"><path d="${BODY_SILHOUETTE}"/></clipPath></defs><path class="bm-sil" d="${BODY_SILHOUETTE}"/><g clip-path="url(#bm-clip-${side})">`;
@@ -950,34 +982,40 @@ function renderBodyMap(){
     const isSelected=_selectedRegion===r.id;
     const cls='body-region'+(injury?' '+injury.type:'')+(isSelected?' selected':'');
     const ariaLabel=r.label+(injury?' — פציעה: '+injury.type:'')+(treatment?' — טיפול: '+treatment.type:'');
-    svg+=`<path d="${r.d}" class="${cls}" onclick="handleRegionTap('${r.id}')" style="cursor:pointer"><title>${_esc(ariaLabel)}</title></path>`;
+    svg+=`<path d="${BODY_ZONES[r.id]||r.d}" class="${cls}" onclick="handleRegionTap('${r.id}')" style="cursor:pointer"><title>${_esc(ariaLabel)}</title></path>`;
     const c=getPathCenter(r.d);
     if(treatment){
-      _bmMarks+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="#0b0c0e" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${({tourniquet:'TQ',pressureDressing:'PD',hemostatic:'HG',woundPacking:'WP',bandage:'D',splint:'S',pelvicBinder:'PB',tubeThora:'CT',custom:'+'})[treatment.type]||'+'}</text>`;
+      _bmMarks+=`<circle cx="${c.x}" cy="${c.y}" r="13" fill="#0b0c0e" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+4.2}" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" style="pointer-events:none">${_bmCode(treatment.type)}</text>`;
       if(injury){
         const dotCol={hemorrhage:'#e74c3c',fracture:'#f1c40f',burn:'#e67e22',penetrating:'#9b59b6',other:'#3498db'}[injury.type]||'#3498db';
         _bmMarks+=`<circle cx="${c.x+9}" cy="${c.y-6}" r="3" fill="${dotCol}" style="pointer-events:none"/>`;
       }
-    } else if(injury){
-      const ic={hemorrhage:'B',fracture:'F',burn:'BU',penetrating:'P',other:'+'}[injury.type]||'+';
+    } else if(injury&&!(injury.pins&&injury.pins.length)){
+      const ic=_bmCode(injury.type);
       const icc={hemorrhage:'#d01a20',fracture:'#c08a00',burn:'#b8420a',penetrating:'#6d3fc0',other:'#3b4656'}[injury.type]||'#3b4656';
-      _bmMarks+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="${icc}" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${ic}</text>`;
+      _bmMarks+=`<circle cx="${c.x}" cy="${c.y}" r="13" fill="${icc}" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+4.2}" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" style="pointer-events:none">${ic}</text>`;
     }
   });
   svg+=`</g><path class="bm-out" d="${BODY_SILHOUETTE}"/>`;
   svg+=_bmMarks;
+  // exact wound points placed in the zoomed view, numbered per region
+  _casualtyInjuries.filter(i=>i.side===side&&i.pins&&i.pins.length).forEach(i=>{
+    const b=bodyZoneBox(i.region); if(!b) return;
+    i.pins.forEach((p,k)=>{ const x=+(b.x+p.x*b.w).toFixed(1), y=+(b.y+p.y*b.h).toFixed(1);
+      svg+=`<g class="bm-pin" style="pointer-events:none"><circle cx="${x}" cy="${y}" r="7" fill="#fff" stroke="#0b0c0e" stroke-width="2"/><text x="${x}" y="${y+3.2}" text-anchor="middle" font-size="9" font-weight="900" fill="#0b0c0e">${k+1}</text></g>`; });
+  });
   regions.forEach(r=>{
     const injury=_casualtyInjuries.find(i=>i.region===r.id && i.side===side);
     const treatment=_casualtyTreatments.find(t=>t.region===r.id && t.side===side);
     const c=getPathCenter(r.d);
     const ariaLabel=r.label+(injury?' — פציעה: '+injury.type:'')+(treatment?' — טיפול: '+treatment.type:'');
-    svg+=`<circle cx="${c.x}" cy="${c.y}" r="18" class="body-region-hit" role="button" tabindex="0" aria-label="${_esc(ariaLabel)}" ontouchstart="event.stopPropagation()" onclick="handleRegionTap('${r.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();handleRegionTap('${r.id}');}"/>`;
+    svg+=`<circle cx="${c.x}" cy="${c.y}" r="20" class="body-region-hit" role="button" tabindex="0" aria-label="${_esc(ariaLabel)}" ontouchstart="event.stopPropagation()" onclick="handleRegionTap('${r.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();handleRegionTap('${r.id}');}"/>`;
   });
   svg+=`</svg>`;
   if(_selectedRegion){
     const r=regions.find(x=>x.id===_selectedRegion);
     if(r){
-      svg+=`<div id="body-tap-overlay" onclick="if(event.target===this){_selectedRegion=null;MedHost.renderIncidentPage();}" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:20px">`;
+      svg+=`<div id="body-tap-overlay" role="dialog" aria-modal="true" aria-label="${(typeof bodyLabelOut==='function'?bodyLabelOut(_selectedRegion):_selectedRegion)}" onclick="if(event.target===this){_selectedRegion=null;MedHost.renderIncidentPage();}" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:20px">`;
       svg+=`<div class="body-tap-menu" dir="rtl" style="background:var(--c1);border:1.5px solid var(--sep);border-radius:14px;padding:14px;min-width:260px;max-width:340px;box-shadow:0 12px 40px rgba(0,0,0,.6)" onclick="event.stopPropagation()">`;
       svg+=renderFloatingRegionMenu(_selectedRegion);
       svg+=`<button onclick="_selectedRegion=null;MedHost.renderIncidentPage()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid var(--sep);background:var(--c2);color:var(--t2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f);min-height:40px">✕ סגור</button>`;
@@ -992,11 +1030,11 @@ function renderBodyMap(){
   if(usedTreatments.size||usedInjuries.size){
     svg+=`<div class="bm-legend">`;
     const lg=(code,col,txt)=>`<span><i style="background:${col}">${code}</i>${txt}</span>`;
-    if(usedInjuries.has('hemorrhage'))svg+=lg('B','#d01a20','דימום');
-    if(usedInjuries.has('fracture'))svg+=lg('F','#c08a00','שבר');
-    if(usedInjuries.has('burn'))svg+=lg('BU','#b8420a','כוויה');
-    if(usedInjuries.has('penetrating'))svg+=lg('P','#6d3fc0','חודר');
-    usedTreatments.forEach(t=>{svg+=lg(({tourniquet:'TQ',pressureDressing:'PD',hemostatic:'HG',woundPacking:'WP',bandage:'D',splint:'S',pelvicBinder:'PB',tubeThora:'CT',custom:'+'})[t]||'+','#0b0c0e',_txHe(t));});
+    if(usedInjuries.has('hemorrhage'))svg+=lg(_bmCode('hemorrhage'),'#d01a20','דימום');
+    if(usedInjuries.has('fracture'))svg+=lg(_bmCode('fracture'),'#c08a00','שבר');
+    if(usedInjuries.has('burn'))svg+=lg(_bmCode('burn'),'#b8420a','כוויה');
+    if(usedInjuries.has('penetrating'))svg+=lg(_bmCode('penetrating'),'#6d3fc0','חודר');
+    usedTreatments.forEach(t=>{svg+=lg(_bmCode(t),'#0b0c0e',_BM_WORD[t]||_txHe(t));});
     svg+=`</div>`;
   }
   return svg;
@@ -1022,7 +1060,7 @@ function renderFloatingRegionMenu(regionId){
   else if(headRegions.includes(regionId))txOpts=[{t:'bandage',e:'🩹',l:'חבישה'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'hemostatic',e:'🟧',l:'המוסטטי'}];
   else txOpts=[{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'woundPacking',e:'🟫',l:'אריזת פצע'},{t:'hemostatic',e:'🟧',l:'המוסטטי'}];
   const steps=['סוג פציעה','טיפול','הערות'];
-  let h=`<div class="btm-label">${_esc(BODY_LABELS[regionId]||regionId)}</div>`;
+  let h=`<div class="btm-label">${_esc(bodyLabelOut(regionId))}</div>`;
   h+=`<div style="display:flex;gap:4px;justify-content:center;margin-bottom:10px">`;
   steps.forEach((s,i)=>{
     const active=_bodyMenuStep===i;
@@ -1445,7 +1483,7 @@ function renderTabHints(tabKey){
   const hints=[];
   const sysStr=ctx.sys!=null?`SBP ${ctx.sys}mmHg`:'SBP לא נמדד';
   if(tabKey==='x'){
-    if(ctx.deepShock)hints.push({ic:'🩸',obs:`נמדד הלם עמוק (${sysStr})`,rec:'מומלץ: עצירת דימום מיידית'});
+    if(ctx.deepShock)hints.push({ic:'🩸',obs:`חשד להלם עמוק (${sysStr})`,rec:'מומלץ: עצירת דימום מיידית'});
     if(ctx.tqOverdue){
       const tqs=_casualtyXABCDE?.x?.tourniquets||[];
       const oldest=tqs.reduce((o,t)=>(!o||new Date(t.time)<new Date(o.time))?t:o,null);
@@ -1457,12 +1495,12 @@ function renderTabHints(tabKey){
       if(left>0)hints.push({ic:'💉',obs:`סיכון להלם דימומי — חלפו ${ctx.minSinceInjury} דק׳, נותרו ${left} דק׳`,rec:'מומלץ: TXA 1g IV בהקדם, רצוי תוך שעה'});
     }
   } else if(tabKey==='c'){
-    if(ctx.deepShock)hints.push({ic:'🩸',obs:`נמדד הלם עמוק (${sysStr})`,rec:'מומלץ: דם מלא / RDCR ביחס 1:1:1'});
+    if(ctx.deepShock)hints.push({ic:'🩸',obs:`חשד להלם עמוק (${sysStr})`,rec:'מומלץ: דם מלא / RDCR ביחס 1:1:1'});
     else if(ctx.shock)hints.push({ic:'🩸',obs:`סימני הלם (${sysStr})`,rec:'מומלץ: דם מלא / פלזמה, TXA, חימום'});
     if(ctx.crushSuspect)hints.push({ic:'🪨',obs:'MOI מסומן: מעיכה',rec:'מומלץ: NaCl 0.9% ב-1L/שעה לפני חילוץ'});
     if(ctx.hasTBI&&ctx.tbiBpLow)hints.push({ic:'🧠',obs:`TBI + נמדד SBP ${ctx.sys}mmHg`,rec:'מומלץ: שמירה על SBP ≥100–110 (לפי נוהל TBI)'});
   } else if(tabKey==='a'){
-    if(ctx.deepShock)hints.push({ic:'⚠',obs:`נמדד הלם עמוק (${sysStr})`,rec:'מומלץ: הימנעות מאינטובציה/RSI אם אפשר'});
+    if(ctx.deepShock)hints.push({ic:'⚠',obs:`חשד להלם עמוק (${sysStr})`,rec:'מומלץ: הימנעות מאינטובציה/RSI אם אפשר'});
     if(ctx.pediatric)hints.push({ic:'🚫',obs:`נרשם גיל ${ctx.age} שנים`,rec:'אסור: קריקותירואידוטומיה מתחת לגיל 12'});
     if(ctx.hasTBI&&ctx.tbiHypoxia)hints.push({ic:'🧠',obs:`TBI + נמדד SpO₂ ${ctx.lastVitals.spo2}%`,rec:'מומלץ: חמצן 100% + אבטחת נתיב אוויר'});
   } else if(tabKey==='b'){
@@ -1509,7 +1547,7 @@ function renderClinicalPriorities(){
     if(ctx.sys!=null)parts.push(`SBP ${ctx.sys}mmHg`);
     if(rp)parts.push(`רדיאלי ${rpLabel}`);
     if(avpu&&avpu!=='—'&&['P','U'].includes(avpu))parts.push(`AVPU=${avpu}`);
-    items.push({k:'shock',ic:'🩸',cl:'#e74c3c',obs:`נמדד הלם עמוק (${parts.join(' · ')||'SBP נמוך'})`,rec:'מומלץ: דם מלא ראשון; הימנעות מאינטובציה ואופיואידים'});
+    items.push({k:'shock',ic:'🩸',cl:'#e74c3c',obs:`חשד להלם עמוק (${parts.join(' · ')||'SBP נמוך'})`,rec:'מומלץ: דם מלא ראשון; הימנעות מאינטובציה ואופיואידים'});
   } else if(ctx.shock){
     const parts=[];
     if(ctx.sys!=null)parts.push(`SBP ${ctx.sys}mmHg`);
@@ -1764,7 +1802,7 @@ function renderMedPrepSheet(){
   if(p.concentration)h+=`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">ריכוז סופי</div><div style="font-size:13px;color:var(--tx);margin-bottom:10px;font-family:monospace">${escapeHtml(p.concentration)}</div>`;
   if(p.warnings&&p.warnings.length){
     h+=`<div style="font-size:11px;color:var(--re-hi);margin-bottom:4px;font-weight:700">אזהרות</div><div style="margin-bottom:10px">`;
-    p.warnings.forEach(w=>{h+=`<div style="font-size:12px;color:var(--tx);padding:5px 8px;background:rgba(231,76,60,.08);border-inline-start:3px solid var(--re-hi);margin-bottom:4px;border-radius:4px">${escapeHtml(w)}</div>`;});
+    p.warnings.forEach(w=>{h+=`<div style="font-size:12px;color:var(--tx);padding:5px 8px;background:rgba(231,76,60,.08);border:1px solid var(--re-hi);margin-bottom:4px;border-radius:4px">${escapeHtml(w)}</div>`;});
     h+=`</div>`;
   }
   const meta=[];
@@ -2228,7 +2266,7 @@ function runClinicalAlerts(pulse,rr,spo2,bpSys,temp,etco2,radialPulse){
   const _pp=_ped?'ילד: ':'';
   // --- IDF 2026 deep-shock criterion ---
   if(_isDeepShock()){
-    alerts.push({level:'🔴',msg:'הלם עמוק (קריטריון 2026) — דם מלא ראשון; הימנע מאינטובציה ואופיואידים'});
+    alerts.push({level:'🔴',msg:'חשד להלם עמוק (קריטריון 2026) — דם מלא ראשון; הימנע מאינטובציה ואופיואידים'});
   } else if(_inTccShock()){
     alerts.push({level:'🔴',msg:_pp+'הלם — דם מלא / פלזמה, TXA, חימום'});
   }
@@ -2945,7 +2983,7 @@ function renderATab(){
   }
   // Tier 28: deep-shock airway warning (IDF 2026)
   if(_isDeepShock()){
-    h+='<div style="padding:8px 10px;border-radius:8px;background:rgba(231,76,60,.12);border:1.5px solid var(--re);margin:6px 0;font-size:11px;color:var(--re);font-weight:700">⚠ הלם עמוק — הימנע מאינטובציה (RSI) אם אפשר. שקול NPA/OPA + BMV + פינוי דחוף.</div>';
+    h+='<div style="padding:8px 10px;border-radius:8px;background:rgba(231,76,60,.12);border:1.5px solid var(--re);margin:6px 0;font-size:11px;color:var(--re);font-weight:700">⚠ חשד להלם עמוק — הימנע מאינטובציה (RSI) אם אפשר. שקול NPA/OPA + BMV + פינוי דחוף.</div>';
   }
   // Tier 17: pass subKey+field so each row gets a 🗑 delete button.
   h+=renderEntryList(a.interventions,e=>e.type,'a','interventions');
@@ -3195,7 +3233,7 @@ function renderCTab(){
   // Shock-driven blood highlight
   const deepShockNow=_isDeepShock();
   h+='<div style="font-size:11px;font-weight:700;color:#e74c3c;margin:8px 0 4px">🩸 דם ומוצרי דם</div>';
-  if(deepShockNow){h+=`<div style="padding:6px 8px;border-radius:6px;background:rgba(231,76,60,.12);border-right:2px solid var(--re);margin-bottom:6px;font-size:10px;color:var(--re);font-weight:700">הלם עמוק — מומלץ: דם מלא ראשון</div>`;}
+  if(deepShockNow){h+=`<div style="padding:6px 8px;border-radius:6px;background:rgba(231,76,60,.12);border-right:2px solid var(--re);margin-bottom:6px;font-size:10px;color:var(--re);font-weight:700">חשד להלם עמוק — מומלץ: דם מלא ראשון</div>`;}
   h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">';
   [{t:'דם מלא',v:500},{t:'פלזמה/FFP',v:250},{t:'כדוריות',v:250},{t:'טרומבוציטים',v:250}].forEach(f=>{
     h+=`<button class="xabcde-btn" style="flex:0 0 auto;padding:6px 10px;font-size:10px;min-height:36px;border-color:#e74c3c;color:#e74c3c" onclick="addFluidEntry('${f.t}',${f.v})">${f.t} ${f.v}ml</button>`;
@@ -3473,7 +3511,7 @@ function renderETab(){
       warnings.forEach(w=>{
         const bg=w.lvl==='🔴'?'rgba(231,76,60,.15)':w.lvl==='⚠️'?'rgba(230,126,34,.15)':w.lvl==='⏱'?'rgba(52,152,219,.12)':'rgba(155,89,182,.1)';
         const bc=w.lvl==='🔴'?'var(--re-hi)':w.lvl==='⚠️'?'#e67e22':w.lvl==='⏱'?'var(--bl)':'#9b59b6';
-        h+=`<div style="background:${bg};border:1px solid ${bc};border-inline-start:3px solid ${bc};border-radius:6px;padding:6px 8px;margin-bottom:3px;font-size:11px;color:var(--tx);line-height:1.4">${w.lvl} ${escapeHtml(w.t)}</div>`;
+        h+=`<div style="background:${bg};border:1px solid ${bc};border-radius:6px;padding:6px 8px;margin-bottom:3px;font-size:11px;color:var(--tx);line-height:1.4">${w.lvl} ${escapeHtml(w.t)}</div>`;
       });
       h+=`</div>`;
     }
@@ -3669,7 +3707,7 @@ function triageAnswer(yes){
 
 function renderTriageBar(){
   if(!_casualtyTriageColor)return`<button onclick="startTriageWizard()" style="width:100%;padding:12px;border-radius:12px;border:2px dashed var(--sep);background:none;color:var(--t3);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f);margin-bottom:8px;min-height:48px">🏷 הפעל טריאז' START</button>`;
-  const labels={red:'🔴 דחוף — IMMEDIATE',yellow:'🟡 עדיפות שנייה — DELAYED',green:'🟢 לא דחוף — MINIMAL',gray:'🔘 ממתין — EXPECTANT',black:'⬛ ללא סימני חיים — NO SIGNS OF LIFE'};
+  const labels={red:'🔴 דחוף — IMMEDIATE',yellow:'🟡 עדיפות שנייה — DELAYED',green:'🟢 לא דחוף — MINIMAL',gray:'🔘 ממתין — EXPECTANT',black:'⬛ ממתין — EXPECTANT'};
   const txtColor=_casualtyTriageColor==='yellow'?'#000':'#fff';
   return`<div style="width:100%;padding:14px;border-radius:12px;background:${TRIAGE_COLORS[_casualtyTriageColor]};color:${txtColor};font-size:14px;font-weight:900;text-align:center;margin-bottom:8px;letter-spacing:.5px">${labels[_casualtyTriageColor]}<button onclick="startTriageWizard()" style="display:block;margin:4px auto 0;background:${txtColor}30;border:none;border-radius:6px;color:${txtColor};font-size:9px;padding:3px 10px;cursor:pointer;font-family:var(--f)">שנה טריאז'</button></div>`;
 }
@@ -3746,8 +3784,9 @@ function renderCasualtyForm(){
   h+=`</div>`;
   // Identity
   h+='<div style="display:flex;gap:6px;margin-bottom:8px">';
-  h+=`<input class="fi" id="cas-name" placeholder="שם הנפגע" autocomplete="off" value="${escapeHtml(_casualtyName)}" oninput="_casualtyName=this.value;MedHost.triggerAutoSave()" style="font-size:14px;flex:2;min-height:44px">`;
-  h+=`<input class="fi" id="cas-id" placeholder="מ.א / ת.ז" autocomplete="off" value="${escapeHtml(_casualtyIdNumber)}" oninput="_casualtyIdNumber=this.value;MedHost.triggerAutoSave()" style="font-size:12px;flex:1;min-height:44px">`;
+  // Identity is the casualty number (no name field). The ID number is for the hospital, later.
+  h+=`<input type="hidden" id="cas-name" value="${escapeHtml(_casualtyName)}">`;
+  h+=`<input class="fi" id="cas-id" placeholder="מספר זיהוי (בהמשך)" aria-label="מספר זיהוי (בהמשך)" autocomplete="off" value="${escapeHtml(_casualtyIdNumber)}" oninput="_casualtyIdNumber=this.value;MedHost.triggerAutoSave()" style="font-size:12px;flex:1;min-height:44px">`;
   h+='</div>';
   // MOI
   h+='<div class="cas-section" style="padding:8px 10px"><div class="cas-section-title">מנגנון פציעה</div>';
@@ -3778,10 +3817,12 @@ function renderCasualtyForm(){
   h+='<div class="cas-section"><div class="cas-section-title">פגיעות מסומנות</div>'+renderInjurySummary()+'</div>';
   // Treatment placement on body
   h+='<div class="cas-section"><div class="cas-section-title">טיפולים על הגוף</div>';
-  h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">';
-  [{t:'tourniquet',l:'🔴 חסם עורקי'},{t:'pressureDressing',l:'⬜ תחבושת לחץ'},{t:'tubeThora',l:'🩻 נקז חזה'},{t:'hemostatic',l:'🟧 המוסטטי'},{t:'bandage',l:'🩹 חבישה'}].forEach(it=>{
+  // One full-width row per treatment: icon + short word, the chosen one filled with a check (display only)
+  const _ic=(n)=>(window.Icon?window.Icon(n,26):'');
+  h+='<div class="tx-pal" role="group" aria-label="טיפולים על הגוף">';
+  [{t:'tourniquet',i:'timer',l:'חוסם עורקים'},{t:'pressureDressing',i:'bandage',l:'תחבושת לחץ'},{t:'tubeThora',i:'wind',l:'נקז חזה'},{t:'hemostatic',i:'droplet',l:'גזה המוסטטית'},{t:'bandage',i:'bandage',l:'חבישה'}].forEach(it=>{
     const on=_pendingTreatmentType===it.t;
-    h+=`<button onclick="startTreatmentPlacement('${it.t}')" style="padding:5px 8px;border-radius:7px;border:1.5px solid ${on?'var(--bl)':'var(--sep)'};background:${on?'rgba(52,152,219,.15)':'none'};font-size:9px;cursor:pointer;font-family:var(--f);color:${on?'var(--bl)':'var(--t3)'}">${it.l}</button>`;
+    h+=`<button class="tx-b${on?' on':''}" aria-pressed="${on}" onclick="startTreatmentPlacement('${it.t}')">${_ic(it.i)}<span>${it.l}</span>${on?_ic('check'):''}</button>`;
   });
   h+='</div>';
   if(_casualtyTreatments.length){
@@ -3799,7 +3840,7 @@ function renderCasualtyForm(){
       </div>`;
     });
   } else {
-    h+='<div style="font-size:10px;color:var(--t4);text-align:center;padding:4px 0">בחר טיפול ולחץ על הגוף למיקום</div>';
+    h+='<div class="tx-hint">'+(_pendingTreatmentType?'עכשיו לחצו על הגוף':'בחרו טיפול, ואז לחצו על הגוף')+'</div>';
   }
   h+='</div>';
   // SABC
@@ -4554,7 +4595,7 @@ function openEvacuatedArchive(){
       const meds=(c.xabcde?.e?.medications||[]).length;
       h+=`<div class="cas-section" style="padding:12px;margin-bottom:8px;border-right:4px solid ${col};background:var(--c2)">`;
       h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">`;
-      h+=`<span style="background:${col};color:#fff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:900">${({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[tc]||tc}</span>`;
+      h+=`<span style="background:${col};color:#fff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:900">${({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ממתין'})[tc]||tc}</span>`;
       h+=`<span style="font-size:14px;font-weight:800;color:var(--tx);flex:1">${escapeHtml(c.name||'ללא שם')}</span>`;
       h+=`<span style="font-size:11px;color:var(--t3);font-family:monospace">${escapeHtml(evTime)}</span>`;
       h+=`</div>`;

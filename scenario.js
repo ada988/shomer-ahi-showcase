@@ -110,7 +110,7 @@
   f.d.pupils = { left:{ size:6, reactive:false }, right:{ size:6, reactive:false } };
 
   var list = [
-    { _docId:'demo_c1', id:'demo_c1', name:'נפגע א׳ — גבר, כבן 30', idNumber:'', triageColor:'red', moi:'gsw',
+    { _docId:'demo_c1', id:'demo_c1', name:'נפגע 1', num:1, desc:'גבר, כבן 30', idNumber:'', triageColor:'red', moi:'gsw',
       injuredRegions:['r_thigh','chest_r','pelvis'],
       injuries:[{region:'r_thigh',side:'front',type:'hemorrhage',severity:'severe',notes:''},
                 {region:'chest_r',side:'front',type:'penetrating',severity:'severe',notes:''},
@@ -133,7 +133,7 @@
                 tl(5,'e','קטמין 25mg IV','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(16) },
 
-    { _docId:'demo_c2', id:'demo_c2', name:'נפגע ב׳ — אישה, כבת 45', idNumber:'', triageColor:'red', moi:'gsw',
+    { _docId:'demo_c2', id:'demo_c2', name:'נפגע 2', num:2, desc:'אישה, כבת 45', idNumber:'', triageColor:'red', moi:'gsw',
       injuredRegions:['head'],
       injuries:[{region:'head',side:'front',type:'penetrating',severity:'severe',notes:''}],
       treatments:[], xabcde:b, evacPriority:'immediate', painScore:null, avpu:'P', pulse:96, spo2:98, rr:20, bpSys:128, bpDia:84, temp:36.1,
@@ -150,7 +150,7 @@
                 tl(2,'b','EtCO₂ ירד מ-48 ל-38 mmHg (הנשמה 20/דק׳)','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(12) },
 
-    { _docId:'demo_c3', id:'demo_c3', name:'נפגע ג׳ — גבר, כבן 22', idNumber:'', triageColor:'yellow', moi:'gsw',
+    { _docId:'demo_c3', id:'demo_c3', name:'נפגע 3', num:3, desc:'גבר, כבן 22', idNumber:'', triageColor:'yellow', moi:'gsw',
       injuredRegions:['l_forearm','abdomen_l'],
       injuries:[{region:'l_forearm',side:'front',type:'hemorrhage',severity:'moderate',notes:''},
                 {region:'abdomen_l',side:'front',type:'penetrating',severity:'moderate',notes:''}],
@@ -167,7 +167,7 @@
                 tl(6,'e','קטמין 25mg IV','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(16) },
 
-    { _docId:'demo_c4', id:'demo_c4', name:'נפגע ד׳ — גבר, כבן 60', idNumber:'', triageColor:'yellow', moi:'vehicle',
+    { _docId:'demo_c4', id:'demo_c4', name:'נפגע 4', num:4, desc:'גבר, כבן 60', idNumber:'', triageColor:'yellow', moi:'vehicle',
       injuredRegions:['r_shin'],
       injuries:[{region:'r_shin',side:'front',type:'fracture',severity:'moderate',notes:'סגור'}],
       treatments:[{region:'r_shin',side:'front',type:'splint',time:hhmm(6)}], xabcde:d, evacPriority:'urgent', painScore:5, avpu:'A', pulse:92, spo2:98, rr:18, bpSys:142, bpDia:90, temp:36.8,
@@ -178,7 +178,7 @@
                 tl(6,'treatment','קיבוע שוק R בסד · דופק דיסטלי נמשש · תחושה תקינה','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(10) },
 
-    { _docId:'demo_c5', id:'demo_c5', formLevel:'quick', name:'נפגע ה׳ — אישה, כבת 17', idNumber:'', triageColor:'green', moi:'blunt',
+    { _docId:'demo_c5', id:'demo_c5', formLevel:'quick', name:'נפגע 5', num:5, desc:'אישה, כבת 17', idNumber:'', triageColor:'green', moi:'blunt',
       injuredRegions:['l_hand'],
       injuries:[{region:'l_hand',side:'front',type:'hemorrhage',severity:'mild',notes:''}],
       treatments:[{region:'l_hand',side:'front',type:'bandage',time:hhmm(5)}],
@@ -189,7 +189,7 @@
                 tl(1,'e','קטינה (17) — לידע הורה/אפוטרופוס; לבדוק חיסון טטנוס','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(8) },
 
-    { _docId:'demo_c6', id:'demo_c6', formLevel:'quick', name:'נפגע ו׳ — גבר, גיל לא ידוע', idNumber:'', triageColor:'black', moi:'vehicle',
+    { _docId:'demo_c6', id:'demo_c6', formLevel:'quick', name:'נפגע 6', num:6, desc:'גבר, גיל לא ידוע', idNumber:'', triageColor:'black', moi:'vehicle',
       injuredRegions:['head','chest_l'],
       injuries:[{region:'head',side:'front',type:'hemorrhage',severity:'severe',notes:''},
                 {region:'chest_l',side:'front',type:'fracture',severity:'severe',notes:''}],
@@ -211,4 +211,16 @@
     },
     casualties: list
   };
+
+  // ── Casualty identity = a number. At a mass-casualty scene names are not used: they confuse and add emotion.
+  // name keeps the label ("נפגע 3") so every engine display still works; desc holds sex / age, shown small.
+  var NUM = /(?:נפגע|Casualty)\s*#?(\d+)/, high = 0;
+  window.casNum = function(c){ if (!c) return null; if (c.num) return +c.num; var m = NUM.exec(String(c.name || (c === window ? '' : ''))); return m ? +m[1] : null; };
+  window.casLabel = function(c){ var n = window.casNum(c), he = window.ShowcaseI18n && window.ShowcaseI18n.lang === 'he'; return (he ? 'נפגע' : 'Casualty') + (n ? ' ' + n : ''); };
+  window.nextCasNum = function(){   // unique per incident and never reused (a high-water mark, not a count)
+    (window._incidentCasualties || []).forEach(function(c){ var n = window.casNum(c); if (n > high) high = n; });
+    return ++high;
+  };
+  window.casBadge = function(c, big){ var n = typeof c === 'number' ? c : window.casNum(c); return n ? '<span class="cnum' + (big ? ' lg' : '') + '" aria-hidden="true">' + n + '</span>' : ''; };
+  window.casDesc = function(c){ var d = c && (c.desc || String(c.name || '').split(' — ').slice(1).join(' — ')); return d ? (window.ShowcaseI18n ? window.ShowcaseI18n.tr(d) : d) : ''; };
 })();

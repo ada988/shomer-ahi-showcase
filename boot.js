@@ -35,6 +35,9 @@
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('Offline mode unavailable:', e && e.message); });
+    // when a new version takes over, reload once so nobody keeps looking at the previous build
+    var hadCtrl = !!navigator.serviceWorker.controller, reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (hadCtrl && !reloaded) { reloaded = true; location.reload(); } });
   }
 })();
 

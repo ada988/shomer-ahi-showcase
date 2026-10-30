@@ -23,9 +23,9 @@ button,[role=button],summary,select,input:not([type=checkbox]):not([type=radio])
 button,[role=button],summary{touch-action:manipulation}
 button:active,[role=button]:active,summary:active{filter:brightness(1.35);transform:scale(.985)}
 :focus-visible{outline:4px solid #ffd23f!important;outline-offset:2px!important;border-radius:10px}
-.xbtn{min-height:56px;font-size:18px;font-weight:700;padding:0 20px;border:2px solid var(--line);background:var(--c3);color:#fff;border-radius:14px}
+.xbtn{min-height:56px;font-size:18px;font-weight:700;padding:0 20px;border:2px solid transparent;background:var(--c3);color:#fff;border-radius:14px}
 .xbtn:hover{background:var(--c4)}
-.xbtn-primary{background:var(--accent)!important;border:2px solid var(--accent-edge)!important;color:#fff!important;min-height:64px;font-size:19px;font-weight:800}
+.xbtn-primary{background:var(--accent)!important;border:2px solid transparent!important;color:#fff!important;min-height:64px;font-size:19px;font-weight:800}
 .xbtn-primary:hover{background:#2b66ee!important}
 .xbtn-lg{min-height:64px;font-size:19px}
 .xbtn-danger{background:var(--danger);border-color:var(--danger-edge);color:#fff;font-weight:800}
@@ -43,7 +43,7 @@ button:active,[role=button]:active,summary:active{filter:brightness(1.35);transf
 .beta-ribbon b{font-size:15px!important;padding:10px 14px!important;border-radius:10px!important;min-height:44px;display:grid;place-items:center}
 
 .tabbar{gap:8px!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom))!important;border-top:2px solid var(--sep)!important}
-.tabbar button{min-height:72px!important;font-size:14px!important;font-weight:800!important;gap:4px!important;border-radius:14px!important;color:var(--t3)!important;border:2px solid transparent}
+.tabbar button{min-height:72px!important;font-size:16px!important;font-weight:800!important;gap:4px!important;border-radius:14px!important;color:var(--t3)!important;border:2px solid transparent}
 .tabbar button.on{color:#fff!important;background:var(--c3)!important;border-color:var(--accent-edge)!important}
 .tabbar button.on .ui-i{color:#fff!important}
 .tabbar .ui-i{width:30px!important;height:30px!important}
@@ -220,7 +220,7 @@ h1,h2,h3,.fs-h,.pl-head h2,.ov-hero h2,.bt-hero h2{font-weight:900!important;let
 .ov-tile .ui-i{width:30px!important;height:30px!important;flex:none}
 
 /* Primary action: bold electric blue slab; alerts: solid red with white 900 text */
-.xbtn-primary,.go.primary{background:var(--accent)!important;border:3px solid var(--accent-edge)!important;font-weight:900!important}
+.xbtn-primary,.go.primary{background:var(--accent)!important;border:3px solid transparent!important;font-weight:900!important}
 .ov-alert,.b-alert{background:var(--t-red)!important;border:3px solid #fff!important}
 .ov-alert b,.b-alert{font-weight:900!important}
 

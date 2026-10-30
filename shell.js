@@ -77,10 +77,10 @@ var TG = {
   yellow: { c:'#ffd400', en:'DELAYED',   he:'עדיפות שנייה',   shape:'tri' },
   green:  { c:'#19c37d', en:'NOT URGENT', he:'לא דחוף',     shape:'circ' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', shape:'hex' },
-  black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים',   shape:'sqx' }
+  black:  { c:'#000000', en:'WAITING', he:'ממתין',   shape:'sqx' }
 };
 var NONE = { c:'#6b7078', en:'NOT TRIAGED', he:'טרם סווג', shape:'circ' };
-function tg(color){ return TG[color] || NONE; }
+function tg(color){ return TG[color === 'gray' ? 'black' : color] || NONE; }
 function tgWord(color){ var t = tg(color); return L(t.en, t.he); }
 function shapeSvg(shape, size){
   var s = size || 24, p = {
@@ -93,29 +93,56 @@ function shapeSvg(shape, size){
   return '<svg class="tshape" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:' + s + 'px;height:' + s + 'px">' + p + '</svg>';
 }
 function chip(color, big){
+  if (color === 'gray') color = 'black';
   var t = tg(color), key = (color && TG[color]) ? color : 'none';
   return '<span class="tchip t-' + key + (big ? ' lg' : '') + '" role="img" aria-label="' + esc(tgWord(color)) + '">' + shapeSvg(t.shape, big ? 26 : 22) + '<span>' + esc(tgWord(color)) + '</span></span>';
 }
+// One category, named "Waiting" (clinical owner): black colour, square shape. A record still marked gray is shown and counted as black.
+delete TG.gray;
+if (!w.normTriage) w.normTriage = function(c){ var t = c && c.triageColor; return t === 'gray' ? 'black' : t; };
+function normAll(){ (w._incidentCasualties || []).forEach(function(c){ if (c && c.triageColor === 'gray') c.triageColor = 'black'; }); }
 w.TriageUI = { tg: tg, chip: chip, shapeSvg: shapeSvg, word: tgWord, TG: TG };
 
 // ── Tabs ───────────────────────────────────────────────────────
 var TABS = [
   { id:'status',     icon:'layout-dashboard', en:'Home',       he:'בית' },
-  { id:'casualties', icon:'users',            en:'Casualties', he:'נפגעים' },
+  { id:'casualties', icon:'users',            en:'Patients',   he:'נפגעים' },
   { id:'evac',       icon:'ambulance',        en:'Evacuate',   he:'פינוי' },
-  { id:'bracelets',  icon:'qr-code',          en:'Wristbands', he:'צמידים' }
+  { id:'bracelets',  icon:'qr-code',          en:'Wristbands', he:'צמידים', short:['Bands','צמידים'] }
 ];
 function activeTab(){ return w._casualtyEditMode ? 'casualties' : w._incidentTab; }
 function renderTabbar(){
   var bar = document.getElementById('incident-tabs'); if (!bar) return;
   var n = (w._incidentCasualties || []).length, a = activeTab();
-  bar.setAttribute('role', 'tablist');
+  bar.removeAttribute('role');   // a plain nav landmark: these buttons switch screens, they are not an ARIA tab set
   bar.innerHTML = TABS.map(function(t){
     var on = a === t.id;
-    return '<button role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-tab="' + t.id + '" onclick="Demo.tab(\'' + t.id + '\')">'
-      + ico(t.icon, 30) + '<span>' + L(t.en, t.he) + '</span>' + (t.id === 'casualties' && n ? '<i class="badge" style="display:flex">' + n + '</i>' : '') + '</button>';
+    return '<button aria-label="' + L(t.en, t.he) + '"' + (on ? ' aria-current="page"' : '') + ' class="' + (on ? 'on' : '') + '" data-tab="' + t.id + '" onclick="Demo.tab(\'' + t.id + '\')">'
+      + ico(t.icon, 30) + (t.short ? '<span class="tl">' + L(t.en, t.he) + '</span><span class="ts" aria-hidden="true">' + L(t.short[0], t.short[1]) + '</span>' : '<span>' + L(t.en, t.he) + '</span>') + (t.id === 'casualties' && n ? '<i class="badge" style="display:flex">' + n + '</i>' : '') + '</button>';
   }).join('');
 }
+
+// ── Due now: across every casualty, what needs a hand right now. Facts from the record, phrased as checks, never as a diagnosis. ──
+function minsSince(iso){ var t = Date.parse(iso); return isNaN(t) ? null : Math.floor((Date.now() - t) / 60000); }
+function dueItems(){
+  var out = [];
+  (w._incidentCasualties || []).forEach(function(c){
+    if (c.triageColor === 'black' || (w.findVehicleForCasualty && (w.findVehicleForCasualty(c) || {}).status === 'athospital')) return;
+    var x = (c.xabcde || {}).x || {}, e = (c.xabcde || {}).e || {}, nm = String(T(c.name)).split(' — ')[0];
+    (x.tourniquets || []).forEach(function(t){ var m = minsSince(t.time); if (m != null && m >= 120) out.push({ c:c, nm:nm, icon:'timer', w:L('Tourniquet ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min','חוסם עורקים ' + Math.floor(m / 60) + ' ש׳ ' + (m % 60) + ' ד׳'), lvl:2 }); });
+    var k = (e.medications || []).filter(function(d){ return /קטמין|ketamine/i.test(d.drug || d.name || ''); }).pop();
+    if (k){ var km = minsSince(k.time); if (km != null && km >= 45) out.push({ c:c, nm:nm, icon:'syringe', w:L('Ketamine ' + km + ' min ago · reassess pain','קטמין לפני ' + km + ' ד׳ · הערכת כאב'), lvl:1 }); }
+    if (c.triageColor === 'red' && !(c.vitalsHistory || []).length) out.push({ c:c, nm:nm, icon:'activity', w:L('No vitals recorded','לא נמדדו מדדים'), lvl:1 });
+  });
+  return out.sort(function(a, b){ return b.lvl - a.lvl; });
+}
+function dueStrip(){
+  var d = dueItems(); if (!d.length) return '';
+  return '<div class="sec-label">' + L('Due now','לטיפול עכשיו') + '</div><div class="due">' + d.slice(0, 4).map(function(i){
+    return '<button class="due-i' + (i.lvl > 1 ? ' hi' : '') + '" onclick="Demo.openCasualty(\'' + esc(i.c._docId) + '\')">' + ico(i.icon, 26) + '<span><b>' + (w.casBadge ? w.casBadge(i.c) + ' ' : '') + esc(i.nm) + '</b><small>' + i.w + '</small></span>' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 24) + '</button>';
+  }).join('') + (d.length > 4 ? '<p class="due-more">' + L('+' + (d.length - 4) + ' more','+' + (d.length - 4) + ' נוספים') + '</p>' : '') + '</div>';
+}
+w.dueItems = dueItems;
 
 // ── Home ───────────────────────────────────────────────────────
 function unassigned(c){ return !w.isCasualtyAssignedToVehicle(c); }
@@ -125,10 +152,10 @@ function renderOverview(){
   var waitingReds = list.filter(function(x){ return x.triageColor === 'red' && unassigned(x); });
   var alertHtml = waitingReds.length
     ? '<button class="ov-alert" onclick="Demo.openCasualty(\'' + esc(waitingReds[0]._docId) + '\')">' + ico('triangle-alert', 32)
-      + '<span><b>' + (waitingReds.length === 1 ? L('1 urgent casualty waiting for evacuation','נפגע דחוף אחד ממתין לפינוי') : L(waitingReds.length + ' urgent casualties waiting for evacuation', waitingReds.length + ' נפגעים דחופים ממתינים לפינוי')) + '</b><small>' + (waitingReds.length === 1 ? L('Tap to open their Form 101','לחצו לפתיחת טופס 101 שלו') : L('Tap to open the first one','לחצו לפתיחת הראשון')) + '</small></span>' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</button>'
+      + '<span><b>' + (waitingReds.length === 1 ? (w.casBadge ? w.casBadge(waitingReds[0]) + ' ' : '') + L((w.casLabel ? w.casLabel(waitingReds[0]) : 'Casualty') + ' · urgent, waiting for evacuation', (w.casLabel ? w.casLabel(waitingReds[0]) : 'נפגע') + ' · דחוף, ממתין לפינוי') : L(waitingReds.length + ' urgent casualties waiting for evacuation', waitingReds.length + ' נפגעים דחופים ממתינים לפינוי')) + '</b><small>' + (waitingReds.length === 1 ? L('Open Form 101','פתיחת טופס 101') : L('Tap to open the first one','לחצו לפתיחת הראשון')) + '</small></span>' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</button>'
     : '';
   var prev = w._ovCounts || {}; w._ovCounts = {};
-  var tiles = ['red','yellow','green','gray','black'].map(function(c){
+  var tiles = ['red','yellow','green','black'].map(function(c){
     var t = tg(c), n = count(c), bump = prev[c] != null && prev[c] !== n; w._ovCounts[c] = n;
     return '<button class="ov-tile t-' + c + (bump ? ' bump' : '') + '" onclick="Demo.filter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>';
   }).join('');
@@ -136,20 +163,21 @@ function renderOverview(){
     return '<button class="go' + (primary ? ' primary' : '') + '" onclick="' + fn + '"><span class="gi">' + ico(icon, 28) + '</span><span><b>' + title + '</b><small>' + sub + '</small></span><span class="chev">' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</span></button>';
   };
   var mins = a.timestamp && a.timestamp.toDate ? Math.max(1, Math.round((Date.now() - a.timestamp.toDate().getTime()) / 60000)) : 18;
-  return '<div class="ov-hero"><div class="eyebrow">' + L('LIVE SCENARIO','תרחיש חי') + '</div>'
-    + '<h2>' + L('Bus-stop attack · ' + list.length + ' casualties','פיגוע בתחנת אוטובוס · ' + list.length + ' נפגעים') + '</h2>'
-    + '<p>' + L('You are the first medic on scene, ' + mins + ' minutes in. Everyone is triaged.','אתם החובש הראשון בזירה, ' + mins + ' דקות מתחילת האירוע. כולם מוינו.') + '</p></div>'
-    + '<button class="ov-tour" onclick="Tour.start()">' + ico('play', 28) + '<span><b>' + L('Start the 60-second tour','התחילו סיור של 60 שניות') + '</b><small>' + L('8 steps through the whole app','8 שלבים בכל האפליקציה') + '</small></span></button>'
-    + alertHtml
-    + '<div class="ov-tiles">' + tiles + '</div>'
-    + '<div class="sec-label">' + L('HOW MANY PATIENTS?','כמה נפגעים?') + '</div>'
+  return '<div class="ov-hero"><div class="eyebrow"><i class="live-dot" aria-hidden="true"></i>' + L('Live · ' + mins + ' min','חי · ' + mins + ' דק׳') + '</div>'
+    + '<h2>' + L('Bus-stop attack · ' + list.length + ' casualties','פיגוע בתחנת אוטובוס · ' + list.length + ' נפגעים') + '</h2></div>'
+    + '<button class="ov-demo" onclick="Disclaimer.open()">' + ico('triangle-alert', 24) + '<span>' + L('Demo · fictional patients · not for real use','דמו · נפגעים בדויים · לא לשימוש אמיתי') + '</span></button>'
+    + '<div class="sec-label">' + L('New casualty','נפגע חדש') + '</div>'
     + '<div class="ov-choose">'
-    +   '<button class="ch full" onclick="Demo.newFull()"><span class="ch-i">' + ico('file-text', 34) + '</span><b>' + L('ONE PATIENT','נפגע אחד') + '</b><strong>' + L('Full Form 101','טופס 101 מלא') + '</strong><small>' + L('The complete care record: body map, vitals, every drug and time.','תיק הטיפול המלא: מפת גוף, מדדים, כל תרופה וזמן.') + '</small></button>'
-    +   '<button class="ch quick" onclick="Quick.open()"><span class="ch-i">' + ico('zap', 34) + '</span><b>' + L('MANY CASUALTIES','נפגעים רבים') + '</b><strong>' + L('Quick triage','מיון מהיר') + '</strong><small>' + L('A colour for each casualty in seconds. Open the full form 101 later.','צבע לכל נפגע תוך שניות. את טופס 101 המלא פותחים אחר כך.') + '</small></button>'
+    +   '<button class="ch full" onclick="Demo.newFull()"><span class="ch-i">' + ico('file-text', 34) + '</span><b>' + L('One patient','נפגע אחד') + '</b><strong>' + L('Full Form 101','טופס 101 מלא') + '</strong><small>' + L('Body map, vitals, drugs, times','מפת גוף, מדדים, תרופות, זמנים') + '</small></button>'
+    +   '<button class="ch quick" onclick="Quick.open()"><span class="ch-i">' + ico('zap', 34) + '</span><b>' + L('Many casualties','נפגעים רבים') + '</b><strong>' + L('Quick triage','מיון מהיר') + '</strong><small>' + L('A colour in seconds','צבע תוך שניות') + '</small></button>'
     + '</div>'
-    + '<div class="sec-label">' + L('WRISTBANDS','צמידים') + '</div>'
-    + go('scan-line', L('Scan a wristband','סריקת צמיד'), L('The QR code carries the casualty’s record','קוד ה-QR נושא את תיק הנפגע'), "Demo.go('scan')")
-    + '<div class="sec-label">' + L('INCIDENT','אירוע') + '</div>'
+    + alertHtml
+    + dueStrip()
+    + '<div class="sec-label">' + L('On scene now','בזירה עכשיו') + '</div>'
+    + '<div class="ov-tiles">' + tiles + '</div>'
+    + '<div class="sec-label">' + L('Wristbands','צמידים') + '</div>'
+    + go('scan-line', L('Scan a wristband','סריקת צמיד'), L('Read any casualty’s record','קריאת תיק של כל נפגע'), "Demo.go('scan')")
+    + '<div class="sec-label">' + L('Incident','אירוע') + '</div>'
     + '<dl class="kv">'
     +   '<div><dt>' + L('Location','מיקום') + '</dt><dd>' + esc(T(a.location || '')) + '</dd></div>'
     +   '<div><dt>' + L('What happened','נסיבות') + '</dt><dd>' + esc(T(a.circumstances || '')) + '</dd></div>'
@@ -158,21 +186,21 @@ function renderOverview(){
     + '</dl>';
 }
 
-function lvl(c){ return c.formLevel === 'quick' ? '<span class="lvl quick">' + ico('zap', 20) + L('QUICK TRIAGE — tap to complete the full form','מיון מהיר — לחצו להשלמת הטופס המלא') + '</span>' : '<span class="lvl full">' + ico('file-text', 20) + L('FULL FORM 101','טופס 101 מלא') + '</span>'; }
+function lvl(c){ return c.formLevel === 'quick' ? '<span class="lvl quick">' + ico('zap', 20) + L('QUICK TRIAGE — tap to complete the full form','מיון מהיר — לחצו להשלמת הטופס המלא') + '</span>' : '<span class="lvl full">' + ico('file-text', 20) + L('Full Form 101','טופס 101 מלא') + '</span>'; }
 w.levelOf = function(c){ return c && c.formLevel === 'quick' ? 'quick' : 'full'; };
 // ── Casualty list (+ command board) ────────────────────────────
 function flag(label, bad){ return bad ? ' <u class="flag">' + label + '</u>' : ''; }
 function renderPatients(){
   var order = { red:0, yellow:1, green:2, gray:3, black:4 };
   var all = (w._incidentCasualties || []).slice().sort(function(a, b){
-    return (order[a.triageColor] != null ? order[a.triageColor] : 9) - (order[b.triageColor] != null ? order[b.triageColor] : 9);
+    return (order[a.triageColor] != null ? order[a.triageColor] : 9) - (order[b.triageColor] != null ? order[b.triageColor] : 9) || ((w.casNum && w.casNum(a)) || 0) - ((w.casNum && w.casNum(b)) || 0);
   });
   var f = w._plFilter, list = f ? all.filter(function(c){ return c.triageColor === f; }) : all;
-  var h = '<div class="seg-tabs" role="tablist"><button class="on" role="tab" onclick="Demo.casView(\'list\')">' + L('List','רשימה') + '</button>'
-    + '<button role="tab" onclick="Demo.casView(\'board\')">' + L('Command board','לוח פיקוד') + '</button></div>';
-  h += '<div class="pl-head"><div><h2>' + L('Casualties','נפגעים') + '</h2><p>' + L('Most urgent first. Tap one to open the card.','הדחוף ביותר ראשון. לחצו לפתיחת הכרטיס.') + '</p></div></div>';
-  if (f) h += '<button class="filter-bar" onclick="Demo.filter(null)">' + chip(f) + '<span>' + L('Showing only these','מוצגים רק אלה') + '</span><b>' + L('SHOW ALL','הצג הכל') + '</b></button>';
-  h += '<div class="add-split"><button class="ch full" onclick="Demo.newFull()">' + ico('file-text', 30) + '<b>' + L('ONE PATIENT','נפגע אחד') + '</b><small>' + L('Full Form 101','טופס 101 מלא') + '</small></button><button class="ch quick" onclick="Quick.open()">' + ico('zap', 30) + '<b>' + L('MANY CASUALTIES','נפגעים רבים') + '</b><small>' + L('Quick triage','מיון מהיר') + '</small></button></div><div class="pl">';
+  var h = '<div class="seg-tabs" role="tablist"><button class="on" role="tab" onclick="Demo.casView(\'list\')">' + ico('list-checks', 22) + L('List','רשימה') + '</button>'
+    + '<button role="tab" onclick="Demo.casView(\'board\')">' + ico('layout-dashboard', 22) + L('Board','לוח פיקוד') + '</button></div>';
+  h += '<div class="pl-head"><div><h2>' + L('Patients','נפגעים') + '</h2><p>' + L('Most urgent first','הדחוף ביותר ראשון') + '</p></div></div>';
+  if (f) h += '<button class="filter-bar" onclick="Demo.filter(null)">' + chip(f) + '<span>' + L('Showing only these','מוצגים רק אלה') + '</span><b>' + L('Show all','הצג הכל') + '</b></button>';
+  h += '<div class="add-split"><button class="ch full" onclick="Demo.newFull()">' + ico('file-text', 30) + '<b>' + L('One patient','נפגע אחד') + '</b><small>' + L('Full Form 101','טופס 101 מלא') + '</small></button><button class="ch quick" onclick="Quick.open()">' + ico('zap', 30) + '<b>' + L('Many casualties','נפגעים רבים') + '</b><small>' + L('Quick triage','מיון מהיר') + '</small></button></div><div class="pl">';
   list.forEach(function(c){
     var x = c.xabcde || {}, v = (c.vitalsHistory || []).slice(-1)[0] || {};
     var tq = (x.x && x.x.tourniquets || [])[0];
@@ -180,14 +208,14 @@ function renderPatients(){
     var inj = (c.injuries || []).slice(0, 3).map(function(i){ return esc(T(w.bodyLabelOut ? w.bodyLabelOut(i.region) : ((w.BODY_LABELS || {})[i.region] || i.region))); }).join(' · ');
     var onVeh = !unassigned(c);
     h += '<button class="pl-card" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">' + chip(c.triageColor, true)
-      + '<span class="pl-main"><b>' + esc(T(c.name)) + '</b>' + lvl(c)
+      + '<span class="pl-main"><b>' + (w.casBadge ? w.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + (w.casDesc && w.casDesc(c) ? ' <small class="cdesc">' + esc(w.casDesc(c)) + '</small>' : '') + '</b>' + lvl(c)
       + '<span class="pl-sub">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="pl-vit">'
-      + (v.pulse === 0 ? '<em><i>' + L('NO PULSE','אין דופק') + '</i></em>' : v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('HIGH','גבוה'), v.pulse > 120) + '</em>' : '')
+      + (v.pulse === 0 ? '<em><i>' + L('No pulse','אין דופק') + '</i></em>' : v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('High','גבוה'), v.pulse > 120) + '</em>' : '')
       + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('LOW','נמוך'), v.bpSys < 90) + '</em>' : '')
       + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('LOW','נמוך'), v.spo2 < 92) + '</em>' : '')
-      + (tqMin != null ? '<em class="warn">' + ico('timer', 22) + L('TOURNIQUET ','חוסם עורקים ') + '<i>' + tqMin + L(' MIN',' ד׳') + '</i></em>' : '')
-      + (onVeh ? '<em class="ok">' + ico('ambulance', 22) + ((w.findVehicleForCasualty(c) || {}).status === 'athospital' ? L('AT HOSPITAL','בבית חולים') : L('ON AMBULANCE','באמבולנס')) + '</em>' : '')
+      + (tqMin != null ? '<em class="warn">' + ico('timer', 22) + L('Tourniquet ','חוסם עורקים ') + '<i>' + tqMin + L(' min',' ד׳') + '</i></em>' : '')
+      + (onVeh ? '<em class="ok">' + ico('ambulance', 22) + ((w.findVehicleForCasualty(c) || {}).status === 'athospital' ? L('At hospital','בבית חולים') : L('On ambulance','באמבולנס')) + '</em>' : '')
       + '</span></span><span class="chev">' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</span></button>';
   });
   if (!list.length) h += '<p class="empty">' + L('No casualties in this group.','אין נפגעים בקבוצה זו.') + '</p>';
@@ -203,15 +231,15 @@ function lastVit(c){ var v = (c.vitalsHistory || []).slice(-1)[0] || {}; return 
 function openTq(c){ var t = (((c.xabcde || {}).x || {}).tourniquets || []).filter(function(q){ return !q.released && !q.removed; })[0]; return t ? Math.max(0, Math.round((Date.now() - Date.parse(t.time)) / 60000)) : null; }
 function renderBoard(){
   var order = { red:0, yellow:1, green:2, gray:3, black:4 };
-  var all = (w._incidentCasualties || []).slice().sort(function(a, b){ return (order[a.triageColor] != null ? order[a.triageColor] : 9) - (order[b.triageColor] != null ? order[b.triageColor] : 9); });
+  var all = (w._incidentCasualties || []).slice().sort(function(a, b){ return (order[a.triageColor] != null ? order[a.triageColor] : 9) - (order[b.triageColor] != null ? order[b.triageColor] : 9) || ((w.casNum && w.casNum(a)) || 0) - ((w.casNum && w.casNum(b)) || 0); });
   var f = w._bdFilter, q = String(w._bdQuery || '').trim().toLowerCase();
   var serial = function(c){ return w.Bracelet && w.Bracelet.serialFor ? w.Bracelet.serialFor(c) : ''; };
-  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (String(T(c.name)) + ' ' + c.name + ' ' + serial(c)).toLowerCase().indexOf(q) >= 0); });
-  var h = '<div class="seg-tabs" role="tablist"><button role="tab" aria-selected="false" onclick="Demo.casView(\'list\')">' + L('List','רשימה') + '</button><button class="on" role="tab" aria-selected="true" onclick="Demo.casView(\'board\')">' + L('Command board','לוח פיקוד') + '</button></div>';
-  h += '<div class="bd-head"><h2>' + L('Command board','לוח פיקוד') + '</h2><p>' + L('Who needs what, right now.','מי צריך מה, עכשיו.') + '</p></div>';
+  var qn = /^#?\s*(\d+)$/.exec(q);
+  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (qn ? (w.casNum && w.casNum(c) === +qn[1]) : (String(T(c.name)) + ' ' + c.name + ' ' + serial(c)).toLowerCase().indexOf(q) >= 0)); });
+  var h = '<div class="seg-tabs" role="tablist"><button role="tab" aria-selected="false" onclick="Demo.casView(\'list\')">' + ico('list-checks', 22) + L('List','רשימה') + '</button><button class="on" role="tab" aria-selected="true" onclick="Demo.casView(\'board\')">' + ico('layout-dashboard', 22) + L('Board','לוח פיקוד') + '</button></div>';
   // next action
   var next = all.filter(function(c){ return (c.triageColor === 'red' || c.triageColor === 'yellow') && unassigned(c); })[0];
-  if (next) h += '<button class="bd-next" onclick="Demo.tab(\'evac\')">' + chip(next.triageColor, true) + '<span><small>' + L('Next action','הפעולה הבאה') + '</small><b>' + esc(String(T(next.name)).split(' — ')[0]) + L(' is waiting for an ambulance',' ממתין לאמבולנס') + '</b></span><em>' + ico('ambulance', 26) + L('Assign','שיבוץ') + '</em></button>';
+  if (next) h += '<button class="bd-next" onclick="Demo.tab(\'evac\')">' + chip(next.triageColor, true) + '<span><small>' + L('Next action','הפעולה הבאה') + '</small><b>' + (w.casBadge ? w.casBadge(next) + ' ' : '') + esc(String(T(next.name)).split(' — ')[0]) + L(' needs an ambulance',' צריך אמבולנס') + '</b></span><em>' + ico('ambulance', 26) + L('Assign','שיבוץ') + '</em></button>';
   else h += '<div class="bd-next ok">' + ico('check-check', 28) + '<span><small>' + L('Next action','הפעולה הבאה') + '</small><b>' + L('Every urgent casualty is on an ambulance','כל הנפגעים הדחופים באמבולנס') + '</b></span></div>';
   // scene numbers
   var tqs = all.map(openTq).filter(function(x){ return x != null; }), lowBp = all.filter(function(c){ var v = lastVit(c); return c.triageColor !== 'black' && v.bpSys != null && v.bpSys < 90; }).length;
@@ -225,20 +253,35 @@ function renderBoard(){
     + '</div>';
   // triage tiles: the Home component, here they filter the board
   var count = function(c){ return all.filter(function(x){ return x.triageColor === c; }).length; };
-  h += '<div class="ov-tiles bd-tiles">' + ['red','yellow','green','gray','black'].map(function(c){ var t = tg(c); return '<button class="ov-tile t-' + c + (f === c ? ' on' : '') + '" aria-pressed="' + (f === c) + '" onclick="Demo.bdFilter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>'; }).join('') + '</div>';
+  h += '<div class="ov-tiles bd-tiles">' + ['red','yellow','green','black'].map(function(c){ var t = tg(c); return '<button class="ov-tile t-' + c + (f === c ? ' on' : '') + '" aria-pressed="' + (f === c) + '" onclick="Demo.bdFilter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>'; }).join('') + '</div>';
   // search row (sticky)
-  h += '<div class="bd-search"><label>' + ico('search', 24) + '<input type="search" enterkeyhint="search" autocomplete="off" placeholder="' + esc(L('Name or code','שם או קוד')) + '" aria-label="' + esc(L('Search by name or wristband code','חיפוש לפי שם או קוד צמיד')) + '" oninput="Demo.bdSearch(this.value)"></label>'
+  h += '<div class="bd-search"><label>' + ico('search', 24) + '<input type="search" enterkeyhint="search" autocomplete="off" placeholder="' + esc(L('Number (#4) or code','מספר (#4) או קוד')) + '" aria-label="' + esc(L('Find a casualty by number or wristband code','חיפוש נפגע לפי מספר או קוד צמיד')) + '" oninput="Demo.bdSearch(this.value)"></label>'
     + '<button onclick="Demo.go(\'scan\')">' + ico('scan-line', 24) + '<span>' + L('Scan','סריקה') + '</span></button></div>';
-  if (f || q) h += '<button class="filter-bar" onclick="Demo.bdFilter(null);Demo.bdSearch(\'\', true)">' + (f ? chip(f) : ico('search', 22)) + '<span>' + L(list.length + ' of ' + all.length + ' shown', 'מוצגים ' + list.length + ' מתוך ' + all.length) + '</span><b>' + L('SHOW ALL','הצג הכל') + '</b></button>';
-  h += '<div class="bd-list">';
+  if (f || q) h += '<button class="filter-bar" onclick="Demo.bdFilter(null);Demo.bdSearch(\'\', true)">' + (f ? chip(f) : ico('search', 22)) + '<span>' + L(list.length + ' of ' + all.length + ' shown', 'מוצגים ' + list.length + ' מתוך ' + all.length) + '</span><b>' + L('Show all','הצג הכל') + '</b></button>';
+  // rows: one line per casualty (default from 6 casualties up) · cards: the full card
+  var rows = w._bdRows != null ? w._bdRows : all.length >= 6;
+  h += '<div class="bd-view" role="group" aria-label="' + L('Layout','תצוגה') + '"><button class="' + (rows ? 'on' : '') + '" aria-pressed="' + rows + '" onclick="Demo.bdRows(true)">' + ico('list-checks', 22) + L('Rows','שורות') + '</button><button class="' + (rows ? '' : 'on') + '" aria-pressed="' + !rows + '" onclick="Demo.bdRows(false)">' + ico('layers', 22) + L('Cards','כרטיסים') + '</button></div>';
+  h += '<div class="bd-list' + (rows ? ' rows' : '') + '">';
   list.forEach(function(c){
+    if (rows){
+      var rv = lastVit(c), rt = openTq(c), rn = String(T(c.name)).split(' — ')[0], bits = [];
+      if (rt != null) bits.push('<span class="' + (rt >= 60 ? 'bad' : 'warn') + '">' + ico('timer', 20) + rt + L(' min',' דק׳') + '</span>');
+      if (c.triageColor !== 'black'){
+        if (rv.pulse === 0) bits.push('<span class="bad">' + ico('heart-pulse', 20) + L('No pulse','אין דופק') + '</span>');
+        else if (rv.bpSys != null && rv.bpSys < 90) bits.push('<span class="bad">' + ico('heart-pulse', 20) + L('BP ','ל״ד ') + rv.bpSys + '</span>');
+        else if (rv.spo2 != null && rv.spo2 < 92) bits.push('<span class="bad">' + ico('wind', 20) + 'SpO₂ ' + rv.spo2 + '%</span>');
+        else if (rv.pulse != null && rv.pulse > 120) bits.push('<span class="warn">' + ico('heart-pulse', 20) + L('HR ','דופק ') + rv.pulse + '</span>');
+      }
+      h += '<button class="bd-row" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">' + chip(c.triageColor) + '<b>' + (w.casBadge ? w.casBadge(c) + ' ' : '') + esc(rn) + '</b><span class="bd-row-v">' + bits.slice(0, 2).join('') + '</span>' + ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 22) + '</button>';
+      return;
+    }
     var v = lastVit(c), tq = openTq(c), veh = w.findVehicleForCasualty ? w.findVehicleForCasualty(c) : null, age = minsSinceTs(c.timestamp), dead = c.triageColor === 'black';
     var name = String(T(c.name)).split(' — '), inj = (c.injuries || []).slice(0, 3).map(function(i){ return esc(T(w.bodyLabelOut ? w.bodyLabelOut(i.region) : ((w.BODY_LABELS || {})[i.region] || i.region))); }).join(' · ');
     var vit = function(lbl, val, flagTxt){ return '<em><small>' + lbl + '</small><i>' + val + '</i>' + (flagTxt ? '<u>' + flagTxt + '</u>' : '') + '</em>'; };
-    var vits = dead ? '' : (v.pulse === 0 ? vit(L('Pulse','דופק'), L('None','אין'), '') : v.pulse != null ? vit(L('Heart rate','דופק'), v.pulse, v.pulse > 120 ? L('HIGH','גבוה') : '') : '')
-      + (v.bpSys ? vit(L('Blood pressure','לחץ דם'), v.bpSys + '/' + (v.bpDia || '–'), v.bpSys < 90 ? L('LOW','נמוך') : '') : '')
-      + (v.spo2 ? vit('SpO₂', v.spo2 + '%', v.spo2 < 92 ? L('LOW','נמוך') : '') : '')
-      + (v.rr ? vit(L('Breathing','נשימה'), v.rr + '/' + L('min','דק׳'), v.rr > 24 ? L('HIGH','גבוה') : '') : '');
+    var vits = dead ? '' : (v.pulse === 0 ? vit(L('Pulse','דופק'), L('None','אין'), '') : v.pulse != null ? vit(L('Heart rate','דופק'), v.pulse, v.pulse > 120 ? L('High','גבוה') : '') : '')
+      + (v.bpSys ? vit(L('Blood pressure','לחץ דם'), v.bpSys + '/' + (v.bpDia || '–'), v.bpSys < 90 ? L('Low','נמוך') : '') : '')
+      + (v.spo2 ? vit('SpO₂', v.spo2 + '%', v.spo2 < 92 ? L('Low','נמוך') : '') : '')
+      + (v.rr ? vit(L('Breathing','נשימה'), v.rr + '/' + L('min','דק׳'), v.rr > 24 ? L('High','גבוה') : '') : '');
     var tags = '';
     if (c.formLevel === 'quick') tags += '<span class="bd-tag">' + ico('zap', 20) + L('Quick triage','מיון מהיר') + '</span>';
     if (v.avpu && AVPU[v.avpu] && !dead) tags += '<span class="bd-tag">' + ico('brain', 20) + L(AVPU[v.avpu][0], AVPU[v.avpu][1]) + '</span>';
@@ -248,7 +291,7 @@ function renderBoard(){
     if (serial(c)) tags += '<span class="bd-tag code">' + ico('qr-code', 20) + '<bdi>' + esc(serial(c)) + '</bdi></span>';
     h += '<button class="bd-card t-' + (c.triageColor || 'none') + '" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">'
       + '<span class="bd-top">' + chip(c.triageColor, true) + (age != null ? '<span class="bd-age">' + ico('clock', 20) + L(age + ' min',age + ' דק׳') + '</span>' : '') + '</span>'
-      + '<b class="bd-name">' + esc(name[0]) + (name[1] ? '<small>' + esc(name[1]) + '</small>' : '') + '</b>'
+      + '<b class="bd-name">' + (w.casBadge ? w.casBadge(c, true) + ' ' : '') + esc(name[0]) + ((w.casDesc && w.casDesc(c)) ? '<small>' + esc(w.casDesc(c)) + '</small>' : '') + '</b>'
       + (vits ? '<span class="bd-vits">' + vits + '</span>' : '')
       + '<span class="bd-inj">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="bd-tags">' + tags + '</span>'
@@ -259,12 +302,14 @@ function renderBoard(){
 }
 
 // ── App bar ────────────────────────────────────────────────────
-var MARK = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path d="M24 3 42 9.5v13.6C42 34.4 34.6 41.6 24 45 13.4 41.6 6 34.4 6 23.1V9.5z" fill="#2f6df6"/><path d="M24 3 42 9.5v13.6C42 34.4 34.6 41.6 24 45z" fill="#1f55d0"/><rect x="20.5" y="13" width="7" height="22" rx="1.5" fill="#fff"/><rect x="13" y="20.5" width="22" height="7" rx="1.5" fill="#fff"/></svg>');
+var MARK = 'shared/logo-shield.svg';
 function renderBar(){
   var back = document.getElementById('app-back'), mark = document.getElementById('app-mark'),
       title = document.getElementById('app-title'), sub = document.getElementById('app-sub'), mb = document.getElementById('menu-btn');
   if (!back) return;
   var pill = document.getElementById('beta-pill'), tabs = document.getElementById('incident-tabs'), skip = document.querySelector('.skip-link');
+  if (pill && !pill.querySelector('.bp-w')) pill.innerHTML = ico('triangle-alert', 20) + '<b class="bp-w">' + L('Beta','בטא') + '</b><span>· ' + L('demo','דמו') + '</span>';
+  else if (pill){ pill.querySelector('.bp-w').textContent = L('Beta','בטא'); pill.querySelector('span').textContent = '· ' + L('demo','דמו'); }
   if (pill) pill.setAttribute('aria-label', L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים'));
   if (tabs) tabs.setAttribute('aria-label', L('Sections','מקטעים'));
   if (skip) skip.textContent = L('Skip to content','דלג לתוכן');
@@ -318,6 +363,7 @@ function morph(a, b){
 // Re-entrancy guard: replacing a focused input fires blur handlers that ask for another render while this one is mid-diff.
 var _rendering = false, _again = false;
 w.renderIncidentPage = function(){
+  normAll();
   if (_rendering){ _again = true; return; }
   _rendering = true;
   try { renderNow(); } finally { _rendering = false; }
@@ -352,7 +398,7 @@ function renderNow(){
 // ── Demo controller ────────────────────────────────────────────
 w._casView = 'list'; w._plFilter = null;
 function closeOverlays(keepQuick){
-  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet','dose-sheet'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
+  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-rush-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet','dose-sheet'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
   if (w.Field) w.Field._k = null;
 }
 var Demo = w.Demo = {
@@ -365,6 +411,7 @@ var Demo = w.Demo = {
     return Promise.resolve();
   },
   bdFilter: function(c){ w._bdFilter = (c && w._bdFilter !== c) ? c : null; w.renderIncidentPage(); },
+  bdRows: function(on){ w._bdRows = !!on; w.renderIncidentPage(); },
   bdSearch: function(v, clear){ w._bdQuery = v || ''; if (clear){ var i = document.querySelector('.bd-search input'); if (i) i.value = ''; } w.renderIncidentPage(); },
   casView: function(v){ w._casView = v; if (v === 'board') w._mciMode = 'manage'; w.renderIncidentPage(); var c = document.getElementById('incident-content'); c.scrollTop = 0; },
   filter: function(color){ w._plFilter = color; w._casView = 'list'; w._incidentTab = 'casualties'; w.renderIncidentPage(); document.getElementById('incident-content').scrollTop = 0; },
@@ -388,7 +435,7 @@ var Demo = w.Demo = {
     var s = document.createElement('div'); s.id = 'menu-sheet'; s.className = 'sheet-wrap no-polish';
     var row = function(icon, title, sub, fn){ return '<button class="sheet-row" onclick="' + fn + '"><span class="gi">' + ico(icon, 28) + '</span><span><b>' + title + '</b><small>' + sub + '</small></span></button>'; };
     s.innerHTML = '<div class="sheet-dim" onclick="Demo.closeMenu()"></div><div class="sheet" role="dialog" aria-label="' + L('Menu','תפריט') + '"><div class="sheet-grab"></div><h3>' + L('Menu','תפריט') + '</h3>'
-      + '<div class="lang-pick"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\');Demo.closeMenu()">ENGLISH</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\');Demo.closeMenu()">עברית</button></div>'
+      + '<div class="lang-pick"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\');Demo.closeMenu()">' + ico('languages', 22) + 'English</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\');Demo.closeMenu()">' + ico('languages', 22) + 'עברית</button></div>'
       + row('play', L('Guided tour','סיור מודרך'), L('About 60 seconds, 8 steps','כ-60 שניות, 8 שלבים'), 'Demo.closeMenu();Tour.start()')
       + row('triangle-alert', L('Important notice','הודעה חשובה'), L('Early beta. Do not use on real patients.','בטא מוקדמת. אין להשתמש בנפגעים אמיתיים.'), 'Demo.closeMenu();Disclaimer.open()')
       + row('rotate-ccw', L('Reset demo','איפוס הדמו'), L('Restore the original six casualties','החזרת ששת הנפגעים המקוריים'), 'Demo.closeMenu();Demo.reset()')
@@ -438,13 +485,13 @@ function renderSide(){
     f.innerHTML = items.map(function(i){ return '<li>' + ico(i[0], 22) + '<span>' + i[1] + '</span></li>'; }).join('');
   }
   if (q && w.qrcode){
-    // the wow on a laptop: scan Casualty A's wristband with your own phone camera
+    // the wow on a laptop: scan Casualty 1's wristband with your own phone camera
     var c0 = (w._incidentCasualties || [])[0], url = c0 && w.Bracelet ? w.Bracelet.linkFor(c0) : 'https://ada988.github.io/shomer-ahi-showcase/';
     var qq; try { qq = w.qrcode(0, 'L'); qq.addData(url); qq.make(); } catch (e) { return; }
     var n = qq.getModuleCount(), d = '';
     for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qq.isDark(r, c)) d += 'M' + (c + 3) + ' ' + (r + 3) + 'h1v1h-1z';
-    q.innerHTML = '<svg class="qr" viewBox="0 0 ' + (n + 6) + ' ' + (n + 6) + '" shape-rendering="crispEdges" role="img" aria-label="' + L('Wristband QR of Casualty A','QR של צמיד נפגע א׳') + '"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '"/></svg>'
-      + '<p><b>' + L('Point your phone camera here','כוונו את מצלמת הטלפון לכאן') + '</b>' + L('Casualty A’s wristband. The record opens on your phone: no app, no login, no network.','הצמיד של נפגע א׳. התיק נפתח בטלפון: בלי אפליקציה, בלי התחברות, בלי רשת.') + '</p>';
+    q.innerHTML = '<svg class="qr" viewBox="0 0 ' + (n + 6) + ' ' + (n + 6) + '" shape-rendering="crispEdges" role="img" aria-label="' + L('Wristband QR of Casualty 1','QR של צמיד נפגע 1') + '"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '"/></svg>'
+      + '<p><b>' + L('Point your phone camera here','כוונו את מצלמת הטלפון לכאן') + '</b>' + L('Casualty 1’s wristband. The record opens on your phone: no app, no login, no network.','הצמיד של נפגע 1. התיק נפתח בטלפון: בלי אפליקציה, בלי התחברות, בלי רשת.') + '</p>';
   }
 }
 Demo.renderSide = renderSide;
@@ -468,7 +515,7 @@ document.addEventListener('input', function(e){
 });
 
 // ── Modal behaviour for every overlay/sheet: focus moves in, Tab stays inside (background is inert), Esc closes, focus returns ──
-var OVERLAY = '#f-kp,#f-sheet,#fs-sheet,#menu-sheet,#ev-assign-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
+var OVERLAY = '#f-kp,#f-sheet,#fs-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
 var _ret = null;
 function topOverlay(){ var l = document.querySelectorAll(OVERLAY); return l.length ? l[l.length - 1] : null; }
 function syncModal(){

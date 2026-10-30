@@ -23,11 +23,12 @@ function tr(s){
   s = String(s);
   if (!HE.test(s)) return s;
   if (!rx) build();
+  s = s.replace(/נפגע (\d+)/g, 'Casualty $1');
   return rx ? s.replace(rx, function(m){ return dict[m]; }) : s;
 }
 
-var TRIAGE_CODES = { 'דחוף':'URGENT', 'מיידי':'URGENT', 'לא-דחוף':'NOT URGENT', 'לא דחוף':'NOT URGENT', 'דחוי':'DELAYED', 'עדיפות שנייה':'DELAYED', 'קל':'NOT URGENT', 'ממתין':'WAITING', 'ציפייה':'WAITING', 'חלל':'NO SIGNS OF LIFE', 'נפטר':'NO SIGNS OF LIFE', 'ללא סימני חיים':'NO SIGNS OF LIFE' };
-var EXACT = { 'Management':'TREAT', 'Evac':'EVACUATE', 'Triage':'TRIAGE', 'Minimal':'NOT URGENT', 'Immediate':'URGENT', 'Delayed':'DELAYED', 'Expectant':'WAITING', 'Deceased':'NO SIGNS OF LIFE', 'DECEASED':'NO SIGNS OF LIFE' };
+var TRIAGE_CODES = { 'דחוף':'URGENT', 'מיידי':'URGENT', 'לא-דחוף':'NOT URGENT', 'לא דחוף':'NOT URGENT', 'דחוי':'DELAYED', 'עדיפות שנייה':'DELAYED', 'קל':'NOT URGENT', 'ממתין':'WAITING', 'ציפייה':'WAITING', 'חלל':'WAITING', 'נפטר':'WAITING', 'ללא סימני חיים':'WAITING' };
+var EXACT = { 'Management':'TREAT', 'Evac':'EVACUATE', 'Triage':'TRIAGE', 'Minimal':'NOT URGENT', 'Immediate':'URGENT', 'Delayed':'DELAYED', 'Expectant':'WAITING', 'Deceased':'WAITING', 'DECEASED':'WAITING' };
 var HE_FIX = { 'hemorrhage':'דימום', 'penetrating':'חודר', 'fracture':'שבר', 'burn':'כוויה', 'weak':'חלש', 'Vented':'מאוורר', 'Handoff':'העברה', 'Temp':'חום', 'mmHg':'מ״מ כספית' };
 function exact(s){
   if (lang === 'he'){ var th = String(s).trim(); if (HE_FIX[th]) return s.replace(th, HE_FIX[th]); return s; } var t = String(s).trim(); return EXACT[t] ? s.replace(t, EXACT[t]) : s; }

@@ -65,6 +65,9 @@ function enhanceForm(c){
   [cds, recs].forEach(function(el){ put(sSug, el); });
   if (recs) { recs.classList.add('b-recs'); recs.setAttribute('data-tour', 'alerts'); }
   sSug.id = 'fs-now';
+  // What to do next: the full text behind every recommendation alert (recommend.js scrolls here)
+  var nxt = document.createElement('div'); nxt.className = 'fs-next'; nxt.innerHTML = W.Field && W.Field.nextHtml ? W.Field.nextHtml() : '';
+  if (nxt.firstChild) { var fb = sSug.querySelector('.fs-fold-b'); fb.insertBefore(nxt, fb.firstChild); }
 
   var sBody = section('fs-body', L('Body map','מפת גוף'), L('Tap a body part to mark a wound','לחצו על אזור בגוף כדי לסמן פציעה'));
   [seg, cls('bm-side')[0], map].forEach(function(el){ move(sBody, el); });
@@ -87,7 +90,7 @@ function enhanceForm(c){
   }
 
   // Record: who, mechanism, timeline, casualty details. Diagnoses list, care echelons, undo/redo and the old strips are dropped.
-  var sRec = section('fs-record', L('Record','תיק'), L('Who, what happened, timeline','מי, מה קרה, ציר זמן'));
+  var sRec = section('fs-record', L('Who and what happened','מי ומה קרה'));
   var patient = document.createElement('div'); patient.className = 'fs-patient';
   var pat = document.createElement('div'); pat.innerHTML = W.Field && W.Field.patientHtml ? W.Field.patientHtml() : '';
   [nameRow].concat([].slice.call(pat.children)).concat([moi]).forEach(function(el){ if (el) patient.appendChild(el); });
@@ -101,18 +104,18 @@ function enhanceForm(c){
   var hand = document.createElement('div'); hand.className = 'fs-handoff';
   handoff.forEach(function(el){ hand.appendChild(el); });
   var bar = document.createElement('div'); bar.className = 'fs-bar';
-  bar.innerHTML = '<button class="xbtn bar-back" onclick="Demo.back()">' + ico(document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left', 26) + '<span>' + L('BACK','חזרה') + '</span></button>'
-    + '<button class="xbtn" onclick="Field.undo()">' + ico('undo-2', 28) + '<span>' + L('UNDO','בטל') + '</span></button>'
-    + '<button class="xbtn xbtn-primary" data-tour="handoff" onclick="FormUI.handoff()">' + ico('radio', 28) + '<span>' + L('HANDOFF','העברה') + '</span></button>';
+  bar.innerHTML = '<button class="xbtn bar-back" onclick="Demo.back()">' + ico(document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left', 26) + '<span>' + L('Back','חזרה') + '</span></button>'
+    + '<button class="xbtn" onclick="Field.undo()">' + ico('undo-2', 28) + '<span>' + L('Undo','בטל') + '</span></button>'
+    + '<button class="xbtn xbtn-primary" data-tour="handoff" onclick="FormUI.handoff()">' + ico('radio', 28) + '<span>' + L('Handoff','העברה') + '</span></button>';
 
   var frag = document.createDocumentFragment();
   var fieldWrap = document.createElement('div'); fieldWrap.innerHTML = W.Field ? W.Field.html() : '';
   var topSec = fieldWrap.querySelector('#field'), monSec = fieldWrap.querySelector('#fs-more');
   var jb = document.createElement('nav'); jb.className = 'jb'; jb.setAttribute('aria-label', L('Jump to','קפיצה אל'));
-  [['field', L('FORM','טופס')], ['fs-body', L('BODY','גוף')], ['fs-time', L('TIMELINE','זמנים')], ['fs-more', L('VITALS','מדדים')]].forEach(function(q){
-    var bt = document.createElement('button'); bt.textContent = q[1]; bt.dataset.t = q[0]; bt.className = (W.FormUI.cur || 'field') === q[0] ? 'on' : ''; if (bt.className) bt.setAttribute('aria-current', 'true'); bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
+  [['field', L('Form','טופס'), 'clipboard-list'], ['fs-body', L('Body','גוף'), 'person-standing'], ['fs-time', L('Timeline','זמנים'), 'clock'], ['fs-more', L('Vitals','מדדים'), 'activity']].forEach(function(q){
+    var bt = document.createElement('button'); bt.innerHTML = ico(q[2], 22) + '<span>' + q[1] + '</span>'; bt.dataset.t = q[0]; bt.className = (W.FormUI.cur || 'field') === q[0] ? 'on' : ''; if (bt.className) bt.setAttribute('aria-current', 'true'); bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
   });
-  if (monSec) { monSec.appendChild(sCare); if (recs) monSec.appendChild(sSug); monSec.appendChild(sRec); }   // no suggestions yet = no empty box
+  if (monSec) { monSec.appendChild(sCare); if (recs || nxt.firstChild) monSec.appendChild(sSug); monSec.appendChild(sRec); }   // no suggestions yet = no empty box
   frag.appendChild(jb);
   if (topSec) frag.appendChild(topSec);
   frag.appendChild(sBody);
@@ -121,7 +124,15 @@ function enhanceForm(c){
   var disc = document.createElement('p'); disc.className = 'fs-disc'; disc.textContent = L('Early beta demo · fictional patients · not for clinical use. Software suggestions can be wrong; a medical professional decides.','דמו בטא מוקדמת · נפגעים בדויים · לא לשימוש קליני. הצעות התוכנה עלולות לטעות; איש צוות רפואי מחליט.'); frag.appendChild(disc);
   var spacer = document.createElement('div'); spacer.className = 'fs-foot'; frag.appendChild(spacer); frag.appendChild(hand); frag.appendChild(bar);
   c.innerHTML = ''; c.appendChild(frag);
-  c.querySelectorAll('button[aria-label]').forEach(function(bt){ if (!/[A-Za-z0-9א-ת]/.test(bt.textContent) && !bt.querySelector('svg') && /delete|remove|מחק|הסר/i.test(bt.getAttribute('aria-label'))) { bt.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; bt.classList.add('del-btn'); } });
+  // Icon + word on every action the engine draws without one; choice lists are marked as groups
+  if (moi) moi.querySelectorAll('button').forEach(function(b){ var g = b.parentElement; if (g && !g.hasAttribute('role')){ g.setAttribute('role', 'group'); g.setAttribute('aria-label', L('Mechanism of injury','מנגנון פציעה')); } });
+  var TXI = [[/tourniquet|חוסם|חסם/i,'timer'],[/pressure|לחץ/i,'bandage'],[/chest tube|thoracostomy|נקז/i,'wind'],[/hemostatic|המוסטטי/i,'droplet'],[/packing|אריזת/i,'package'],[/pelvic|אגן/i,'shield'],[/splint|קיבוע/i,'bone'],[/dressing|חבישה/i,'bandage']];
+  c.querySelectorAll('#fs-body button, .fs-fold button').forEach(function(b){
+    if (b.querySelector('svg') || b.hasAttribute('aria-pressed') || b.closest('[role=group]')) return;
+    var t = b.textContent || '', hit = TXI.filter(function(x){ return x[0].test(t); })[0];
+    if (hit) b.insertAdjacentHTML('afterbegin', ico(hit[1], 24));
+  });
+  c.querySelectorAll('button[aria-label]').forEach(function(bt){ if (!/[A-Za-z0-9א-ת]/.test(bt.textContent) && !bt.querySelector('svg') && /delete|remove|מחק|הסר/i.test(bt.getAttribute('aria-label'))) { bt.innerHTML = ico('x', 22) + '<span>' + L('Delete','מחק') + '</span>'; bt.classList.add('del-btn'); } });
   c.dataset.enh = 'form';
   flattenSvg(c); flattenVitals(c);
 }
@@ -169,26 +180,28 @@ function enhanceBoard(c){
 // MIST+ text -> labelled blocks. Each value is its own bidi island so Hebrew and numbers never scramble.
 function hoBlocks(text){
   var E = W.escapeHtml, iso = function(s){ return '<bdi>' + E(s.replace(/[\u2066-\u2069]/g, '').trim()) + '</bdi>'; };
-  var NAMES = { M:L('MECHANISM','מנגנון'), I:L('INJURIES','פציעות'), S:L('SIGNS','סימנים'), T:L('TREATMENT','טיפול') };
-  var lines = String(text).split('\n').filter(function(x){ return x.trim(); }), out = '';
+  var NAMES = { M:L('M · Mechanism','M · מנגנון'), I:L('I · Injuries','I · פציעות'), S:L('S · Signs','S · סימנים'), T:L('T · Treatment','T · טיפול') };
+  var lines = String(text).split('\n').filter(function(x){ return x.trim(); }), out = '', blocks = [];
+  var rank = function(k){ return k === 'M' ? 1 : k === 'I' ? 2 : k === 'S' ? 3 : /^(Consciousness|הכרה)/.test(k) ? 4 : k === 'T' ? 5 : /^(Tourniquet|TQ|ח״ע|חוסם|Drugs|Medications|תרופות|Blood|דם)/.test(k) ? 6 : 7; };
   lines.forEach(function(ln, n){
     var clean = ln.replace(/[\u2066-\u2069]/g, '');
-    if (n === 0){ var hp = clean.split(' | '); out += '<div class="ho-title">' + iso(hp[0].replace(/^MIST\+\s*—\s*/, '')) + (hp[1] ? '<small>' + iso(hp[1]) + '</small>' : '') + '</div>'; return; }
+    if (n === 0){ var hp = clean.split(' | '); out += '<div class="ho-title">' + (W.casBadge ? W.casBadge({ name: W._casualtyName }, true) + ' ' : '') + iso(hp[0].replace(/^MIST\+\s*—\s*/, '')) + (hp[1] ? '<small>' + iso(hp[1]) + '</small>' : '') + '</div>'; return; }
     if (n === 1 && / \| /.test(clean)){ out += '<div class="ho-chips">' + clean.split(' | ').map(function(c){ return '<span>' + iso(c) + '</span>'; }).join('') + '</div>'; return; }
     var m = /^([^:]{1,40}):\s+(.*)$/.exec(clean);
     if (!m){ out += '<div class="ho-alert">' + iso(clean) + '</div>'; return; }
-    var key = m[1].trim(), val = m[2], label = NAMES[key] || key;
+    var key = m[1].trim(), val = m[2], label = NAMES[key] || key, o0 = out; out = '';
     var items;
     if (key === 'S'){
       var tm = /^(.*?)\s*\(((?:trend|מגמה)[^:]*):\s*(.*)\)$/.exec(val);
       items = (tm ? tm[1] : val).split(' · ').map(function(x){ return '<span class="ho-v" dir="ltr">' + E(x) + '</span>'; }).join('');
-      out += '<div class="ho-row"><b>' + E(label) + '</b><div class="ho-vs">' + items + '</div>' + (tm ? '<p>' + E(L('Trend: ','מגמה: ')) + iso(tm[3]) + '</p>' : '') + '</div>';
+      blocks.push({ r:rank(key), n:n, h:'<div class="ho-row ho-k-S"><b>' + E(label) + '</b><div class="ho-vs">' + items + '</div>' + (tm ? '<p>' + E(L('Trend: ','מגמה: ')) + iso(tm[3]) + '</p>' : '') + '</div>' }); out = o0;
       return;
     }
     var parts = val.split(/ · |, (?=[^\d])| \| /).filter(function(x){ return x.trim(); });
-    out += '<div class="ho-row"><b>' + E(label) + '</b>' + (parts.length > 1 ? '<ul>' + parts.map(function(x){ return '<li>' + iso(x) + '</li>'; }).join('') + '</ul>' : '<p>' + iso(val) + '</p>') + '</div>';
+    blocks.push({ r:rank(key), n:n, h:'<div class="ho-row' + (NAMES[key] ? ' ho-k' : '') + '"><b>' + E(label) + '</b>' + (parts.length > 1 ? '<ul>' + parts.map(function(x){ return '<li>' + iso(x) + '</li>'; }).join('') + '</ul>' : '<p>' + iso(val) + '</p>') + '</div>' }); out = o0;
   });
-  return '<div class="ho-body">' + out + '</div>';
+  blocks.sort(function(a, b){ return a.r - b.r || a.n - b.n; });
+  return '<div class="ho-body">' + out + blocks.map(function(b){ return b.h; }).join('') + '</div>';
 }
 W.FormUI = {
   cur: 'field',
@@ -217,10 +230,10 @@ W.FormUI = {
     var text = W.Polish ? W.Polish.strip((W.ShowcaseI18n ? W.ShowcaseI18n.tr(raw) : raw).replace(/→/g, L(' then ', ' ואז '))) : raw;
     if (lang() === 'he') text = text.replace(/טריאז׳/g, 'מיון').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/ח"ע:/g, 'חוסם עורקים:');
     var s = document.createElement('div'); s.id = 'fs-sheet'; s.className = 'sheet-wrap';
-    s.innerHTML = '<div class="sheet-dim" onclick="FormUI.closeSheet()"></div><div class="sheet ho-sheet" role="dialog" aria-label="MIST+"><div class="sheet-grab"></div>'
-      + '<div class="ho-top"><h3>' + L('Handoff report (MIST+)','דוח העברה (<bdi>MIST+</bdi>)') + '</h3><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('CLOSE','סגור') + '</button></div>' + hoBlocks(text) + '<p class="mist-warn">' + W.escapeHtml(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
-      + '<div class="bo-actions"><button class="xbtn" onclick="FormUI.closeSheet();FormUI.sheet()">' + ico('share-2', 24) + L('SHARE / PRINT','שיתוף / הדפסה') + '</button><button class="xbtn" onclick="showRadioReadout();FormUI.closeSheet()">' + ico('radio', 24) + L('RADIO SCRIPT','תסריט רדיו') + '</button>'
-      + '<button class="xbtn xbtn-primary" onclick="copyMISTPlus()">' + ico('copy', 24) + L('COPY','העתק') + '</button></div></div>';
+    s.innerHTML = '<div class="sheet ho-sheet ho-full" role="dialog" aria-modal="true" aria-label="MIST+">'
+      + '<div class="ho-top"><h3>' + L('Handoff report','דוח העברה') + ' <small dir="ltr">MIST+</small></h3><button class="xbtn ho-big-b" aria-pressed="false" onclick="FormUI.hoBig(this)">' + ico('volume-2', 24) + L('Read aloud','להקראה') + '</button><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('Close','סגור') + '</button></div>' + hoBlocks(text) + '<p class="mist-warn">' + L('Demo · fictional data · not for real patients','דמו · נתונים בדויים · לא לנפגעים אמיתיים') + '</p>'
+      + '<div class="bo-actions"><button class="xbtn" onclick="FormUI.closeSheet();FormUI.sheet()">' + ico('share-2', 24) + L('Share','שיתוף') + '</button><button class="xbtn" onclick="showRadioReadout();FormUI.closeSheet()">' + ico('radio', 24) + L('Radio','רדיו') + '</button>'
+      + '<button class="xbtn xbtn-primary" onclick="copyMISTPlus()">' + ico('copy', 24) + L('Copy','העתק') + '</button></div></div>';
     app.appendChild(s);
   },
   sheet: function(){
@@ -237,6 +250,7 @@ W.FormUI = {
       + items.map(function(i){ return '<button class="sheet-row" onclick="FormUI.closeSheet();' + i[3] + '"><span class="gi">' + ico(i[0], 19) + '</span><span><b>' + i[1] + '</b><small>' + i[2] + '</small></span></button>'; }).join('') + '</div>';
     app.appendChild(s);
   },
+  hoBig: function(b){ var s = document.querySelector('.ho-sheet'); if (!s) return; var on = s.classList.toggle('ho-bigtext'); if (b) b.setAttribute('aria-pressed', String(on)); },
   closeSheet: function(){ var s = document.getElementById('fs-sheet'); if (s) s.remove(); }
 };
 W.BoardUI = { enhance: enhanceBoard };

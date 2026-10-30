@@ -8,7 +8,12 @@ var W = window;
 function lang(){ return (W.ShowcaseI18n && W.ShowcaseI18n.lang) || 'en'; }
 function L(en, he){ return lang() === 'he' ? he : en; }
 function T(s){ return W.ShowcaseI18n ? W.ShowcaseI18n.tr(s) : s; }
-function ico(n, s){ return W.Icon ? W.Icon(n, s) : ''; }
+var EXTRA = { bed:'<path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>',
+  armchair:'<path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"/><path d="M5 18v2"/><path d="M19 18v2"/>' };
+function ico(n, s){
+  if (EXTRA[n]){ s = s || 18; return '<svg class="ui-i" style="width:' + s + 'px;height:' + s + 'px" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + EXTRA[n] + '</svg>'; }
+  return W.Icon ? W.Icon(n, s) : '';
+}
 function esc(s){ return W.escapeHtml(s); }
 function app(){ return document.getElementById('app'); }
 function casualties(){ return W._incidentCasualties || []; }
@@ -44,7 +49,8 @@ function rushPlan(){
 function used(v){ var s = 0, l = 0; (v.casualties || []).forEach(function(i){ if (i && i.pos === 'litter') l++; else s++; }); return { seats:s, litters:l }; }
 function hospital(v){ return HOSPITALS.filter(function(h){ return h.id === v.hospitalId; })[0]; }
 function remaining(v){ return v.etaMinutes != null && v.etaStartAt ? v.etaMinutes * 60 - (Date.now() - v.etaStartAt) / 1000 : null; }
-function etaText(v){ var r = remaining(v); if (r == null) return '—'; return r <= 0 ? L('ARRIVING','מגיע') : mmss(r); }
+function etaMin(r){ if (r == null) return '—'; if (r <= 0) return L('Arriving now','מגיע עכשיו'); var m = Math.max(1, Math.ceil(r / 60)); return m + '<small>' + L(' min',' דק׳') + '</small>'; }
+function etaText(v){ var r = remaining(v); if (r == null) return '—'; return r <= 0 ? L('Arriving','מגיע') : mmss(r); }
 function etaWords(v){ var r = remaining(v); if (r == null) return '—'; if (r <= 0) return L('arriving now','מגיע עכשיו'); var mn = Math.max(1, Math.ceil(r / 60)), at = new Date(Date.now() + r * 1000); return L(mn + ' min (about ' + String(at.getHours()).padStart(2,'0') + ':' + String(at.getMinutes()).padStart(2,'0') + ')', mn + ' דק׳ (בערך ' + String(at.getHours()).padStart(2,'0') + ':' + String(at.getMinutes()).padStart(2,'0') + ')'); }
 function members(v){ return (v.casualties || []).map(function(i){ return byId(i.docId); }).filter(Boolean); }
 // The command board counts a casualty as Evacuated once the ambulance is at the hospital. Returns what to restore on UNDO.
@@ -61,7 +67,7 @@ function tq(c){ var x = (c.xabcde || {}).x || {}; return (x.tourniquets || [])[0
 function undoToast(msg, fn){
   var old = document.getElementById('undo-toast'); if (old) old.remove();
   var el = document.createElement('div'); el.id = 'undo-toast'; el.className = 'undo-toast no-polish'; el.setAttribute('role', 'status');
-  el.innerHTML = '<span>' + msg + '</span>' + (fn ? '<button>' + L('UNDO','בטל') + '</button>' : '');
+  el.innerHTML = '<span>' + msg + '</span>' + (fn ? '<button>' + ico('undo-2', 24) + L('Undo','בטל') + '</button>' : '');
   if (fn) el.querySelector('button').onclick = function(){ fn(); el.remove(); };
   app().appendChild(el); setTimeout(function(){ el.remove(); }, 8000);
   if (navigator.vibrate) navigator.vibrate(25);
@@ -88,12 +94,12 @@ function seed(){
 // The controls (status, litters and seats, hospital, arrival time) sit behind "Manage ambulance N".
 function seatCounter(v, kind){
   var u = used(v), total = kind === 'litter' ? v.litter : v.seats, n = kind === 'litter' ? u.litters : u.seats;
-  var label = kind === 'litter' ? L('LITTERS','אלונקות') : L('SEATS','מושבים');
+  var label = kind === 'litter' ? L('Litters','אלונקות') : L('Seats','מושבים');
   return '<div class="ev-cap"><small>' + label + '</small><div><button aria-label="' + L('Fewer ','פחות ') + label + '" onclick="Evac.cap(\'' + v.id + '\',\'' + kind + '\',-1)">' + ico('minus', 26) + '</button><b class="' + (n > total ? 'over' : '') + '">' + n + ' / ' + total + '</b><button aria-label="' + L('More ','יותר ') + label + '" onclick="Evac.cap(\'' + v.id + '\',\'' + kind + '\',1)">' + ico('plus', 26) + '</button></div></div>';
 }
 function onboardRow(c, v){
   var t = tq(c), tqMin = t ? Math.max(0, Math.round((Date.now() - Date.parse(t.time)) / 60000)) : null;
-  return '<div class="ev-pt">' + W.TriageUI.chip(c.triageColor) + '<span><b>' + esc(T(c.name)) + '</b>' + (c.formLevel === 'quick' ? '<small class="amb-q">' + ico('zap', 22) + L('Quick triage','מיון מהיר') + '</small>' : '') + (tqMin != null ? '<small class="amb-tq">' + ico('timer', 22) + L('Tourniquet on ' + tqMin + ' min','חוסם עורקים ' + tqMin + ' ד׳') + '</small>' : '') + '</span>'
+  return '<div class="ev-pt">' + W.TriageUI.chip(c.triageColor) + '<span><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + '</b>' + (c.formLevel === 'quick' ? '<small class="amb-q">' + ico('zap', 22) + L('Quick triage','מיון מהיר') + '</small>' : '') + (tqMin != null ? '<small class="amb-tq">' + ico('timer', 22) + L('Tourniquet on ' + tqMin + ' min','חוסם עורקים ' + tqMin + ' ד׳') + '</small>' : '') + '</span>'
     + (v.status !== 'evacuating' ? '<button class="ev-rm" onclick="Evac.remove(\'' + v.id + '\',\'' + esc(c._docId) + '\')">' + ico('x', 22) + L('Remove','הסר') + '</button>' : '') + '</div>';
 }
 function statusOf(v){ return STATUS.filter(function(s){ return s.v === v.status; })[0] || STATUS[0]; }
@@ -106,31 +112,36 @@ function etaBlock(v){
 }
 function manageBody(v){
   var h = '<div class="amb-manage-body">';
-  h += '<div class="ev-h">' + L('STATUS','סטטוס') + '</div><div class="ev-status">' + STATUS.map(function(s){
+  h += '<div class="ev-h">' + L('Status','סטטוס') + '</div><div class="ev-status">' + STATUS.map(function(s){
     var on = v.status === s.v;
     return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Evac.status(\'' + v.id + '\',\'' + s.v + '\')">' + ico(s.icon, 28) + '<span>' + L(s.en, s.he) + '</span>' + (on ? ico('check', 22) : '') + '</button>';
   }).join('') + '</div>';
   h += '<div class="ev-caps">' + seatCounter(v, 'litter') + seatCounter(v, 'seat') + '</div>';
-  h += '<div class="ev-h">' + L('HOSPITAL','בית חולים') + '</div><div class="ev-hosp">' + HOSPITALS.map(function(x){
+  h += '<div class="ev-h">' + L('Hospital','בית חולים') + '</div><div class="ev-hosp">' + HOSPITALS.map(function(x){
     var on = v.hospitalId === x.id;
-    return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + (on ? ico('check', 22) : '') + esc(L(x.en, x.he)) + '</b><span>' + x.eta + L(' min',' ד׳') + (x.trauma ? ' · ' + L('Trauma','טראומה') : '') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
+    return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + ico(on ? 'check' : 'hospital', 22) + esc(L(x.en, x.he)) + '</b><span>' + x.eta + L(' min',' ד׳') + (x.trauma ? ' · ' + L('Trauma','טראומה') : '') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
   }).join('') + '</div>';
-  h += '<div class="ev-h">' + L('TIME TO ARRIVE (MIN)','זמן הגעה (דק׳)') + '</div><div class="ev-eta-set"><button aria-label="' + L('One minute less','דקה פחות') + '" onclick="Evac.eta(\'' + v.id + '\',-1)">−1</button><b dir="ltr">' + (v.etaMinutes != null ? etaText(v) : '—') + '</b><button aria-label="' + L('One minute more','דקה יותר') + '" onclick="Evac.eta(\'' + v.id + '\',1)">+1</button></div>'
+  h += '<div class="ev-h">' + L('Time to arrive (min)','זמן הגעה (דק׳)') + '</div><div class="ev-eta-set"><button aria-label="' + L('One minute less','דקה פחות') + '" onclick="Evac.eta(\'' + v.id + '\',-1)">' + ico('minus', 22) + '1</button><b dir="ltr">' + (v.etaMinutes != null ? etaText(v) : '—') + '</b><button aria-label="' + L('One minute more','דקה יותר') + '" onclick="Evac.eta(\'' + v.id + '\',1)">' + ico('plus', 22) + '1</button></div>'
     + '<div class="ev-presets">' + [5, 10, 15, 20, 30].map(function(n){ return '<button aria-label="' + n + L(' minutes',' דקות') + '" onclick="Evac.etaSet(\'' + v.id + '\',' + n + ')">' + n + '</button>'; }).join('') + '</div>';
   return h + '</div>';
 }
 function ambCard(v){
-  var m = sorted(members(v)), road = v.status === 'evacuating', done = v.status === 'athospital', open = !!state.manage[v.id];
-  var h = '<section class="amb' + (road ? ' ev-road' : done ? ' done' : ' ev-card') + '">'
-    + '<div class="amb-h">' + ico('ambulance', 30) + '<b>' + name(v) + '</b>' + statusChip(v) + '</div>';
-  if (done) return h + '<p class="amb-done">' + ico('check-check', 24) + '<span>' + L('Handed over at the hospital: ' + (v.casualties || []).length + ' casualties','נמסרו בבית החולים: ' + (v.casualties || []).length + ' נפגעים') + '</span></p></section>';
-  h += etaBlock(v);
-  h += '<div class="amb-sec"><div class="ev-h">' + L('ON BOARD','על הסיפון') + ' · ' + m.length + '</div>' + capLine(v) + '</div>';
-  h += m.length ? '<div class="ev-pts">' + m.map(function(c){ return onboardRow(c, v); }).join('') + '</div>' : '<p class="ev-empty">' + L('Nobody on board yet.','אין עדיין נפגעים על הסיפון.') + '</p>';
-  if (road) h += '<button class="xbtn xbtn-primary amb-go" onclick="Evac.open(\'' + v.id + '\')">' + ico('navigation', 28) + L('Open transport screen','פתיחת מסך הובלה') + '</button>';
+  var m = sorted(members(v)), road = v.status === 'evacuating', done = v.status === 'athospital', open = !!state.manage[v.id], st = statusOf(v), hs = hospital(v), u = used(v);
+  // status is a filled header band (icon + word), never a side line
+  var h = '<section class="amb st-' + st.v + (road ? ' ev-road' : done ? ' done' : ' ev-card') + '">'
+    + '<div class="amb-band">' + ico(st.icon, 26) + '<span>' + L(st.chip, st.chipHe) + '</span><b>' + name(v) + '</b></div>';
+  if (done) return h + '<p class="amb-done">' + ico('check-check', 26) + '<span>' + L((v.casualties || []).length + ' handed over', (v.casualties || []).length + ' נמסרו') + (hs ? ' · ' + esc(L(hs.en, hs.he)) : '') + '</span></p></section>';
+  var r = remaining(v), cls = r != null && r <= 60 ? 'now' : r != null && r <= 180 ? 'soon' : '';
+  // the big number is a countdown, so it always carries its label and the clock time it lands on
+  if (road || r != null) h += '<div class="amb-eta2 ' + cls + '"><small>' + ico('clock', 24) + (road ? L('Arrives at hospital in','מגיע לבית החולים בעוד') : L('Arrives at scene in','מגיע לזירה בעוד')) + '</small><b>' + etaMin(r) + '</b>' + (r != null && r > 0 ? '<em>' + L('about ','בערך ') + hhmm(Date.now() + r * 1000) + '</em>' : '') + '<span>' + ico('hospital', 26) + (hs ? esc(L(hs.en, hs.he)) : L('No hospital yet','אין בית חולים')) + '</span></div>';
+  h += '<div class="amb-load">'
+    + '<span class="amb-slot' + (u.litters >= v.litter ? ' full' : '') + '">' + ico('bed', 24) + '<b dir="ltr">' + u.litters + '/' + v.litter + '</b>' + L('litters','אלונקות') + '</span>'
+    + '<span class="amb-slot' + (u.seats >= v.seats ? ' full' : '') + '">' + ico('armchair', 24) + '<b dir="ltr">' + u.seats + '/' + v.seats + '</b>' + L('seats','מושבים') + '</span></div>';
+  if (m.length) h += '<div class="ev-pts">' + m.map(function(c){ return onboardRow(c, v); }).join('') + '</div>';
+  if (road) h += '<button class="xbtn xbtn-primary amb-go" onclick="Evac.open(\'' + v.id + '\')">' + ico('navigation', 28) + L('Transport screen','מסך הובלה') + '</button>';
   else {
-    h += '<button class="xbtn xbtn-primary ev-assign amb-go" onclick="Evac.assign(\'' + v.id + '\')">' + ico('plus', 28) + L('Assign a casualty','שיוך נפגע') + '</button>';
-    h += '<button class="amb-manage" aria-expanded="' + open + '" onclick="Evac.manage(\'' + v.id + '\')">' + ico('list-checks', 26) + '<span>' + L('Manage ' + name(v), 'ניהול ' + name(v)) + '</span>' + ico(open ? 'chevron-down' : (lang() === 'he' ? 'chevron-left' : 'chevron-right'), 26) + '</button>';
+    h += '<button class="xbtn xbtn-primary ev-assign amb-go" onclick="Evac.assign(\'' + v.id + '\')">' + ico('plus', 28) + L('Load a casualty','העמסת נפגע') + '</button>';
+    h += '<button class="amb-manage" aria-expanded="' + open + '" onclick="Evac.manage(\'' + v.id + '\')">' + ico('list-checks', 26) + '<span>' + L('Status, hospital, time','סטטוס, בית חולים, זמן') + '</span>' + ico(open ? 'chevron-down' : (lang() === 'he' ? 'chevron-left' : 'chevron-right'), 26) + '</button>';
     if (open) h += manageBody(v);
   }
   return h + '</section>';
@@ -139,22 +150,36 @@ function render(){
   var vs = vehicles();
   if (state.view){ var tv = veh(state.view); if (tv && tv.status === 'evacuating') return renderTransport(tv); state.view = null; }   // the transport screen only exists for a vehicle on the road (UNDO of DEPARTED must not strand it)
   var road = vs.filter(function(v){ return v.status === 'evacuating'; }), fleet = vs.filter(function(v){ return v.status !== 'evacuating' && v.status !== 'athospital'; }), done = vs.filter(function(v){ return v.status === 'athospital'; });
-  var h = '<div class="pl-head"><div><h2>' + L('Evacuate','פינוי') + '</h2><p>' + L('Who is on which ambulance, and when they arrive.','מי על איזה אמבולנס, ומתי יגיעו.') + '</p></div></div>';
-  // One banner: who is still waiting, and the one action that fixes it
-  var waiting = casualties().filter(function(c){ return c.triageColor === 'red' && !W.isCasualtyAssignedToVehicle(c); }).length;
+  var all = casualties(), onScene = all.filter(function(c){ return c.triageColor !== 'black' && !W.isCasualtyAssignedToVehicle(c); }).length;
+  var moving = road.reduce(function(n, v){ return n + (v.casualties || []).length; }, 0), arrived = done.reduce(function(n, v){ return n + (v.casualties || []).length; }, 0);
+  var h = '<h2 class="ev-title">' + L('Evacuate','פינוי') + '</h2>'
+    + '<div class="ev-flow">'
+    + '<span>' + ico('map-pin', 26) + '<b>' + onScene + '</b>' + L('on scene','בזירה') + '</span>'
+    + '<span>' + ico('ambulance', 26) + '<b>' + moving + '</b>' + L('on the way','בדרך') + '</span>'
+    + '<span>' + ico('hospital', 26) + '<b>' + arrived + '</b>' + L('at hospital','בבית חולים') + '</span></div>';
+  // NEXT OUT: who, which ambulance, where, how long. Read at a glance, one button.
+  var waiting = all.filter(function(c){ return c.triageColor === 'red' && !W.isCasualtyAssignedToVehicle(c); });
   var rp = rushPlan();
-  if (waiting){
+  if (waiting.length){
     var hq = HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0];
-    h += '<div class="amb-banner" role="status"><p>' + W.TriageUI.chip('red') + '<b>' + L(waiting === 1 ? '1 urgent casualty is still on scene' : waiting + ' urgent casualties are still on scene', waiting === 1 ? 'נפגע דחוף אחד עדיין בזירה' : waiting + ' נפגעים דחופים עדיין בזירה') + '</b></p>'
-      + (rp ? '<button class="xbtn xbtn-primary ev-rush" onclick="Evac.rush()">' + ico('ambulance', 30) + '<span><b>' + L('Load and go', 'העמסה ויציאה') + '</b><small>' + L('Put ' + esc(T(rp.c.name)).split(' — ')[0] + ' on ' + name(rp.v) + ', to ' + hq.en + ' · ' + hq.eta + ' min', esc(T(rp.c.name)).split(' — ')[0] + ' על ' + name(rp.v) + ', ל' + hq.he + ' · ' + hq.eta + ' ד׳') + '</small></span></button>'
-        : '<p class="amb-banner-sub">' + ico('info', 22) + '<span>' + L('No ambulance has a free litter. Add an ambulance below.','אין אמבולנס עם אלונקה פנויה. הוסיפו אמבולנס למטה.') + '</span></p>')
+    var who = rp ? rp.c : waiting[0];
+    h += '<div class="amb-banner next-out" role="status">'
+      + '<div class="no-head"><span class="no-tag">' + W.TriageUI.shapeSvg('oct', 22) + W.TriageUI.word('red') + '</span><span>' + L('Next out','הבא לפינוי') + '</span>' + (waiting.length > 1 ? '<em>' + L('+' + (waiting.length - 1) + ' more urgent','+' + (waiting.length - 1) + ' דחופים נוספים') + '</em>' : '') + '</div>'
+      + '<div class="no-route">'
+      +   '<div>' + ico('users', 30) + '<b>' + (W.casBadge ? W.casBadge(who) + ' ' : '') + esc(String(T(who.name)).split(' — ')[0]) + '</b></div>'
+      +   (rp ? '<div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b></div>'
+              + '<div>' + ico('hospital', 30) + '<b>' + esc(L(hq.en, hq.he)) + '</b><i dir="ltr">' + hq.eta + L(' min',' ד׳') + '</i></div>'
+            : '<div class="no-none">' + ico('triangle-alert', 30) + '<b>' + L('No free litter','אין אלונקה פנויה') + '</b></div>')
+      + '</div>'
+      + (rp ? '<button class="xbtn xbtn-primary ev-rush" onclick="Evac.rushAsk()">' + ico('ambulance', 30) + '<span><b>' + L('Load and go','העמסה ויציאה') + '</b></span></button>'
+            : '<button class="xbtn xbtn-primary ev-rush ev-rush-add" onclick="Evac.addVehicle()">' + ico('plus', 30) + '<span><b>' + L('Add an ambulance','הוספת אמבולנס') + '</b></span></button>')
       + '</div>';
   }
   road.forEach(function(v){ h += ambCard(v); });
   fleet.forEach(function(v){ h += ambCard(v); });
   done.forEach(function(v){ h += ambCard(v); });
-  h += '<button class="xbtn xbtn-lg ev-addveh" onclick="Evac.addVehicle()">' + ico('plus', 28) + L('Add an ambulance','הוספת אמבולנס') + '</button>';
-  h += '<button class="xbtn xbtn-lg" onclick="show9LineOverlay()">' + ico('radio', 28) + L('Request MEDEVAC (9-line)','בקשת פינוי (9 שורות)') + '</button>';
+  h += '<div class="ev-more"><button class="xbtn xbtn-lg ev-addveh" onclick="Evac.addVehicle()">' + ico('plus', 28) + L('Ambulance','אמבולנס') + '</button>';
+  h += '<button class="xbtn xbtn-lg" onclick="show9LineOverlay()">' + ico('radio', 28) + L('MEDEVAC 9-line','בקשת פינוי') + '</button></div>';
   return h;
 }
 
@@ -162,23 +187,23 @@ function render(){
 function renderTransport(v){
   var h = '', r = remaining(v), cls = r != null && r <= 60 ? 'now' : r != null && r <= 180 ? 'soon' : '', m = sorted(members(v)), hosp = hospital(v);
   var counts = {}; m.forEach(function(c){ counts[c.triageColor] = (counts[c.triageColor] || 0) + 1; });
-  h += '<div class="tp-top"><button class="xbtn" onclick="Evac.close()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 28) + L('Back','חזרה') + '</button><b>' + name(v) + '</b><button class="xbtn' + (state.driver ? ' on' : '') + '" aria-pressed="' + state.driver + '" onclick="Evac.driver()">' + L('Driver view','תצוגת נהג') + '</button></div>';
+  h += '<div class="tp-top"><button class="xbtn" onclick="Evac.close()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 28) + L('Back','חזרה') + '</button><b>' + name(v) + '</b><button class="xbtn' + (state.driver ? ' on' : '') + '" aria-pressed="' + state.driver + '" onclick="Evac.driver()">' + ico('navigation', 26) + L('Driver view','תצוגת נהג') + '</button></div>';
   h += '<div class="tp-eta ' + cls + '"><small>' + L('Arrives in','מגיע בעוד') + '</small><b dir="ltr">' + etaText(v) + '</b><span>' + (hosp ? esc(L(hosp.en, hosp.he)) : L('Choose a hospital','בחרו בית חולים')) + '</span>'
-    + '<div class="tp-step"><button onclick="Evac.eta(\'' + v.id + '\',-1)">−1</button><button onclick="Evac.eta(\'' + v.id + '\',1)">+1</button><button onclick="Evac.eta(\'' + v.id + '\',5)">+5</button></div></div>';
+    + '<div class="tp-step"><button onclick="Evac.eta(\'' + v.id + '\',-1)">' + ico('minus', 22) + '1</button><button onclick="Evac.eta(\'' + v.id + '\',1)">' + ico('plus', 22) + '1</button><button onclick="Evac.eta(\'' + v.id + '\',5)">' + ico('plus', 22) + '5</button></div></div>';
   if (state.driver){
     var sirens = counts.red ? L('Yes: urgent on board','כן: דחוף על הסיפון') : L('No','לא');
-    h += '<div class="tp-driver"><div><small>' + L('ON BOARD','על הסיפון') + '</small><b>' + m.length + '</b></div><div><small>' + L('URGENT','דחוף') + '</small><b>' + (counts.red || 0) + '</b></div><div><small>' + L('DELAYED','דחוי') + '</small><b>' + (counts.yellow || 0) + '</b></div></div>'
-      + '<div class="tp-siren ' + (counts.red ? 'yes' : '') + '"><small>' + L('FAST TRANSPORT','הובלה מהירה') + '</small><b>' + sirens + '</b></div>';
+    h += '<div class="tp-driver"><div><small>' + L('On board','על הסיפון') + '</small><b>' + m.length + '</b></div><div><small>' + L('URGENT','דחוף') + '</small><b>' + (counts.red || 0) + '</b></div><div><small>' + L('DELAYED','דחוי') + '</small><b>' + (counts.yellow || 0) + '</b></div></div>'
+      + '<div class="tp-siren ' + (counts.red ? 'yes' : '') + '"><small>' + L('Fast transport','הובלה מהירה') + '</small><b>' + sirens + '</b></div>';
   } else {
-    h += '<div class="ev-h">' + L('ON BOARD','על הסיפון') + ' (' + m.length + ')</div><div class="tp-pts">' + m.map(function(c){
+    h += '<div class="ev-h">' + L('On board','על הסיפון') + ' (' + m.length + ')</div><div class="tp-pts">' + m.map(function(c){
       var x = tq(c), mins = x ? Math.max(0, Math.round((Date.now() - Date.parse(x.time)) / 60000)) : null, lv = (c.vitalsHistory || []).slice(-1)[0] || {};
-      return '<button class="tp-pt" onclick="Evac.openCasualty(\'' + esc(c._docId) + '\')">' + W.TriageUI.chip(c.triageColor, true) + '<span class="tp-pn"><b>' + esc(T(c.name)) + '</b>'
+      return '<button class="tp-pt" onclick="Evac.openCasualty(\'' + esc(c._docId) + '\')">' + W.TriageUI.chip(c.triageColor, true) + '<span class="tp-pn"><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + '</b>'
         + (mins != null ? '<em>' + L('Tourniquet on ','חוסם עורקים ') + mins + L(' min',' ד׳') + '</em>' : '')
         + '<span class="tp-v">' + (lv.pulse != null ? '<em>HR <i>' + lv.pulse + '</i></em> ' : '') + (lv.bpSys ? '<em>BP <i>' + lv.bpSys + '/' + (lv.bpDia || '–') + '</i></em> ' : '') + (lv.spo2 ? '<em>SpO₂ <i>' + lv.spo2 + '</i></em>' : '') + '</span></span></button>';
     }).join('') + '</div>';
-    h += '<div class="ev-h">' + L('HOSPITAL','בית חולים') + '</div><div class="ev-hosp">' + HOSPITALS.map(function(x){
+    h += '<div class="ev-h">' + L('Hospital','בית חולים') + '</div><div class="ev-hosp">' + HOSPITALS.map(function(x){
       var on = v.hospitalId === x.id;
-      return '<button class="' + (on ? 'on' : '') + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + esc(L(x.en, x.he)) + '</b><span>' + x.eta + L(' min',' ד׳') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
+      return '<button class="' + (on ? 'on' : '') + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + ico(on ? 'check' : 'hospital', 22) + esc(L(x.en, x.he)) + '</b><span>' + x.eta + L(' min',' ד׳') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
     }).join('') + '</div>';
   }
   h += '<div class="tp-actions"><button class="xbtn" onclick="Evac.prealert(\'' + v.id + '\')">' + ico('radio', 28) + L('Pre-alert','התראה מקדימה') + '</button>'
@@ -200,7 +225,7 @@ function assignSheet(v){
     var needLitter = c.triageColor === 'red' || !!tq(c), full = litterFree <= 0 && seatFree <= 0;
     var pos = needLitter && litterFree > 0 ? 'litter' : (seatFree > 0 ? 'seat' : (litterFree > 0 ? 'litter' : null));
     return '<button class="sheet-row" ' + (pos ? '' : 'disabled') + ' onclick="Evac.doAssign(\'' + v.id + '\',\'' + esc(c._docId) + '\',\'' + pos + '\')">' + W.TriageUI.chip(c.triageColor)
-      + '<span><b>' + esc(T(c.name)) + '</b><small>' + (pos ? (pos === 'litter' ? L('Goes on a litter','על אלונקה') : L('Goes in a seat','במושב')) : L('No space left','אין מקום')) + (c.formLevel === 'quick' ? ' · ' + L('Quick triage','מיון מהיר') : '') + '</small></span></button>';
+      + '<span><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + '</b><small>' + (pos ? (pos === 'litter' ? L('Goes on a litter','על אלונקה') : L('Goes in a seat','במושב')) : L('No space left','אין מקום')) + (c.formLevel === 'quick' ? ' · ' + L('Quick triage','מיון מהיר') : '') + '</small></span></button>';
   }).join('');
   sheet('ev-assign-sheet', '<h3>' + L('Assign to ','שיוך ל-') + name(v) + '</h3><p class="sheet-p">' + L(litterFree + ' litter(s) and ' + seatFree + ' seat(s) free', litterFree + ' אלונקות ו-' + seatFree + ' מושבים פנויים') + '</p>'
     + (rows || '<p class="ev-empty">' + L('Everyone is already assigned.','כולם כבר משויכים.') + '</p>') + '<button class="xbtn f-cancel" onclick="Evac.closeSheet(\'ev-assign-sheet\')">' + ico('x', 24) + L('Close','סגור') + '</button>');
@@ -238,6 +263,15 @@ var Evac = {
   assign: function(id){ var v = veh(id); if (v) assignSheet(v); },
   manage: function(id){ state.manage[id] = !state.manage[id]; rerender(); },
   // One tap: put the most urgent casualty still on scene on the best ambulance, pick the nearest ready trauma centre, depart.
+  rushAsk: function(){
+    var rp = rushPlan(); if (!rp) return;
+    var h = HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0];
+    sheet('ev-rush-sheet', '<h3>' + L('Load and go?','העמסה ויציאה?') + '</h3>'
+      + '<div class="rs-who">' + W.TriageUI.chip(rp.c.triageColor) + '<b>' + (W.casBadge ? W.casBadge(rp.c) + ' ' : '') + esc(String(T(rp.c.name)).split(' — ')[0]) + '</b></div>'
+      + '<div class="no-route rs-route"><div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b></div><div>' + ico('hospital', 30) + '<b>' + esc(L(h.en, h.he)) + '</b><i dir="ltr">' + h.eta + L(' min',' ד׳') + '</i></div></div>'
+      + '<button class="xbtn xbtn-primary rs-go" onclick="Evac.closeSheet(\'ev-rush-sheet\');Evac.rush()">' + ico('check', 30) + L('Confirm · load and go','אישור · העמסה ויציאה') + '</button>'
+      + '<button class="xbtn rs-other" onclick="Evac.closeSheet(\'ev-rush-sheet\');Evac.assign(\'' + rp.v.id + '\')">' + ico('users', 26) + L('Choose another casualty','בחירת נפגע אחר') + '</button>');
+  },
   rush: function(){
     var rp = rushPlan(); if (!rp) return;
     var v = rp.v, c = rp.c, before = { cas:v.casualties.slice(), status:v.status, hid:v.hospitalId, dest:v.destination, eta:v.etaMinutes, at:v.etaStartAt };
@@ -274,13 +308,13 @@ var Evac = {
     });
     var text = L('PRE-ALERT — ' + name(v) + ' → ' + (h ? h.en : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + (m.length === 1 ? ' casualty' : ' casualties'), 'התראה מקדימה — ' + name(v) + ' ← ' + (h ? h.he : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + ' נפגעים') + '\n' + lines.join('\n');
     Evac._pre = text;
-    sheet('ev-pre-sheet', '<h3>' + L('PRE-ALERT TO HOSPITAL','התראה מקדימה לבית החולים') + '</h3><pre class="mist" dir="auto">' + esc(text) + '</pre><p class="mist-warn">' + esc(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
-      + '<div class="btn-row"><button class="xbtn" onclick="Evac.closeSheet(\'ev-pre-sheet\')">' + L('CLOSE','סגור') + '</button><button class="xbtn xbtn-primary" onclick="Evac.copyPre();Evac.closeSheet(\'ev-pre-sheet\')">' + ico('copy', 26) + L('COPY','העתק') + '</button></div>');
+    sheet('ev-pre-sheet', '<h3>' + L('Pre-alert to hospital','התראה מקדימה לבית החולים') + '</h3><pre class="mist" dir="auto">' + esc(text) + '</pre><p class="mist-warn">' + esc(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
+      + '<div class="btn-row"><button class="xbtn" onclick="Evac.closeSheet(\'ev-pre-sheet\')">' + ico('x', 26) + L('Close','סגור') + '</button><button class="xbtn xbtn-primary" onclick="Evac.copyPre();Evac.closeSheet(\'ev-pre-sheet\')">' + ico('copy', 26) + L('Copy','העתק') + '</button></div>');
   },
   copyPre: function(){ try { navigator.clipboard.writeText(Evac._pre).catch(function(){ undoToast(L('Copy blocked by the browser','ההעתקה נחסמה בדפדפן')); }); } catch (x) { undoToast(L('Copy blocked by the browser','ההעתקה נחסמה בדפדפן')); } },
   arrive: function(id){
     sheet('ev-arrive-sheet', '<h3>' + L('ARRIVED AT THE HOSPITAL?','הגעתם לבית החולים?') + '</h3><p class="sheet-p">' + L('This hands the casualties over and closes the transport.','פעולה זו מעבירה את הנפגעים ומסיימת את ההובלה.') + '</p>'
-      + '<div class="btn-row"><button class="xbtn" onclick="Evac.closeSheet(\'ev-arrive-sheet\')">' + L('NOT YET','עדיין לא') + '</button><button class="xbtn xbtn-primary" onclick="Evac.doArrive(\'' + id + '\')">' + L('YES, HAND OVER','כן, מסרנו') + '</button></div>');
+      + '<div class="btn-row"><button class="xbtn" onclick="Evac.closeSheet(\'ev-arrive-sheet\')">' + L('Not yet','עדיין לא') + '</button><button class="xbtn xbtn-primary" onclick="Evac.doArrive(\'' + id + '\')">' + L('YES, HAND OVER','כן, מסרנו') + '</button></div>');
   },
   doArrive: function(id){ Evac.closeSheet('ev-arrive-sheet'); var v = veh(id); if (!v) return; var prev = v.status, prevEv = markEvacuated(v, true);
     v.status = 'athospital'; state.view = null; rerender(); undoToast(L('Handed over at hospital','נמסרו בבית החולים'), function(){ v.status = prev; restoreEvac(prevEv); state.view = prev === 'evacuating' ? id : null; rerender(); }); }

@@ -19,3 +19,12 @@ Object.assign(window.SHOWCASE_DICT, {'מינון':'Dose'});
 Object.assign(window.SHOWCASE_DICT, {'משקל:':'Weight:'});
 
 Object.assign(window.SHOWCASE_DICT, {'סולו-מדרול':'Solu-Medrol','פרמין':'Metoclopramide (Pramin)'});
+
+// Form 101 round 2: suspicion wording, X-CARE bleeding items, IV / IO sites, pupils
+Object.assign(window.SHOWCASE_DICT, {'חשד להלם עמוק':'Suspected deep shock','חשד להלם עמוק (':'Suspected deep shock (','אין דימום פורץ':'No massive bleeding','חוסם עורקים או אריזה הונחו':'Tourniquet or packing on','הדימום נעצר — נבדק':'Bleeding stopped — checked','IO הומרוס':'IO humerus','IO טיביה':'IO tibia','יד שמאל':'Left arm','מגיב לאור':'reacts to light','לא מגיב לאור':'no light reaction','חוסם עורקים':'Tourniquet','קיבוע':'Splint','מספר זיהוי (בהמשך)':'ID number (later)'});
+
+// casualty descriptors (sex, age) now live apart from the casualty number
+Object.assign(window.SHOWCASE_DICT, {'גבר, כבן 30':'Male, ~30','אישה, כבת 45':'Female, ~45','גבר, כבן 22':'Male, ~22','גבר, כבן 60':'Male, ~60','אישה, כבת 17':'Female, ~17','גבר, גיל לא ידוע':'Male, age unknown'});
+
+// Form 101 procedures sheet (timeline / handoff / wristband lines)
+Object.assign(window.SHOWCASE_DICT, {'שאיבת הפרשות':'Suction','אינטובציה — ניסיון':'Intubation — attempt','נתיב כירורגי — כירורגי':'Cricothyrotomy — surgical','נתיב כירורגי — מחט':'Cricothyrotomy — needle','נתיב כירורגי (כירורגי)':'Cricothyrotomy (surgical)','נתיב כירורגי (מחט)':'Cricothyrotomy (needle)','הנשמה במפוח (BVM)':'BVM ventilation','נקז חזה ימין':'Chest tube right','נקז חזה שמאל':'Chest tube left','חבישה משלושה צדדים (פצע חזה פתוח)':'3-side dressing (open chest wound)','מגן עין':'Eye shield','חבישת כוויה':'Burn dressing','קיבוע עמוד שדרה':'Spinal immobilisation','החייאה (CPR)':'CPR','מניעת היפותרמיה: שמיכה':'Hypothermia prevention: blanket','מניעת היפותרמיה: HPMK':'Hypothermia prevention: HPMK','האזנה':'listening','תנוחת התאוששות':'Recovery position','הצליח':'success','נכשל':'failed','אינטובציה (הצליח)':'Intubation (success)','אינטובציה (נכשל)':'Intubation (failed)','מקבע אגן (greater trochanter)':'Pelvic binder (greater trochanter)'});

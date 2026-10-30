@@ -29,7 +29,7 @@ var POINTS = [
 function pointsHtml(){
   return '<ol class="dn-list">' + POINTS.map(function(p){
     var t = lang() === 'he' ? p[2] : p[1];
-    return '<li><span class="dn-i">' + ico(p[0], 26) + '</span><div><b>' + t[0] + '</b><p>' + t[1] + '</p></div></li>';
+    return '<li><span class="dn-i">' + ico(p[0], 24) + '</span><div><b>' + t[0] + '</b><p>' + t[1] + '</p></div></li>';
   }).join('') + '</ol>';
 }
 
@@ -39,15 +39,18 @@ function open(gate, cb){
   close(); onOk = cb || null;
   var app = document.getElementById('app'); if (!app) return;
   el = document.createElement('div'); el.className = 'dn no-polish'; el.setAttribute('role', gate ? 'alertdialog' : 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', L('Important notice','הודעה חשובה'));
-  el.innerHTML = '<div class="dn-top">'
-    + '<div class="dn-badge">' + ico('triangle-alert', 30) + '<span>' + L('EARLY BETA','בטא מוקדמת') + '</span></div>'
+  var langSeg = '<div class="dn-lang" role="group" aria-label="' + L('Language','שפה') + '"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\')" lang="en">' + ico('languages', 20) + 'English</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\')" lang="he">עברית</button></div>';
+  el.innerHTML = '<div class="dn-bar">' + langSeg
+    + (gate ? '' : '<button class="dn-x" onclick="Disclaimer.close()">' + ico('x', 22) + '<span>' + L('Close','סגור') + '</span></button>') + '</div>'
+    + '<div class="dn-scroll"><div class="dn-top">'
+    + '<span class="dn-mark">' + ico('triangle-alert', 30) + '</span>'
+    + '<span class="dn-badge">' + L('Early beta · demo','בטא מוקדמת · דמו') + '</span>'
     + '<h2>' + L('Do not use on real patients','אין להשתמש בנפגעים אמיתיים') + '</h2>'
-    + '<p class="dn-sub">' + L('Early beta showcase of a product in development.','תצוגת בטא מוקדמת של מוצר בפיתוח.') + '</p></div>'
-    + (gate && !open._full ? '<div class="dn-body dn-short"><p class="dn-one">' + L('Fictional patients. Not a medical device. Software suggestions can be wrong; only a qualified medical professional makes medical decisions.','נפגעים בדויים. אינו מכשיר רפואי. הצעות התוכנה עלולות לטעות; רק איש צוות רפואי מוסמך מקבל החלטות רפואיות.') + '</p><button class="dn-more" onclick="Disclaimer.full()">' + L('Read the full notice','קראו את ההודעה המלאה') + '</button></div>' : '<div class="dn-body">' + pointsHtml() + '</div>')
-    + '<div class="dn-foot">'
-    + '<div class="dn-lang"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\')">ENGLISH</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\')">עברית</button></div>'
-    + (gate ? '<button class="dn-ok" data-autofocus onclick="Disclaimer.ack()">' + L('I understand — show the demo','הבנתי — הצג את הדמו') + '</button>'
-            : '<button class="dn-ok" data-autofocus onclick="Disclaimer.close()">' + L('Close','סגור') + '</button>')
+    + '<p class="dn-sub">' + L('An early showcase of a product in development.','תצוגה מוקדמת של מוצר בפיתוח.') + '</p></div>'
+    + (gate && !open._full ? '<div class="dn-body dn-short"><p class="dn-one">' + L('Fictional patients. Not a medical device. Software suggestions can be wrong; only a qualified medical professional makes medical decisions.','נפגעים בדויים. אינו מכשיר רפואי. הצעות התוכנה עלולות לטעות; רק איש צוות רפואי מוסמך מקבל החלטות רפואיות.') + '</p><button class="dn-more" onclick="Disclaimer.full()">' + ico('file-text', 22) + L('Read the full notice','קראו את ההודעה המלאה') + '</button></div>' : '<div class="dn-body">' + pointsHtml() + '</div>')
+    + '</div><div class="dn-foot">'
+    + (gate ? '<button class="dn-ok" data-autofocus onclick="Disclaimer.ack()">' + ico('check', 24) + L('I understand — show the demo','הבנתי — הצג את הדמו') + '</button>'
+            : '<button class="dn-ok" data-autofocus onclick="Disclaimer.close()">' + ico('check', 24) + L('Got it','הבנתי') + '</button>')
     + '</div>';
   app.appendChild(el);
   var b = el.querySelector('[data-autofocus]'); if (b) setTimeout(function(){ b.focus({ preventScroll:true }); }, 30);

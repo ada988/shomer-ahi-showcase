@@ -606,7 +606,7 @@ input[type=checkbox]{cursor:pointer}
 .sh2{
   display:flex;justify-content:space-between;align-items:center;
   margin:18px 0 10px;padding-inline-start:10px;
-  border-inline-start:3px solid var(--bl);
+  border-inline-start:0;
 }
 .sh2t{
   font-size:15px;font-weight:800;color:var(--tx);letter-spacing:-.3px;
@@ -636,7 +636,7 @@ input[type=checkbox]{cursor:pointer}
   list-style:none;cursor:pointer;padding:14px 14px 14px 16px;
   min-height:52px;display:flex;align-items:center;gap:10px;
   font-size:15px;font-weight:800;color:var(--tx);
-  border-inline-start:3px solid var(--bl);
+  border-inline-start:0;
   user-select:none;-webkit-tap-highlight-color:transparent;
   transition:background .12s;
 }
@@ -921,8 +921,8 @@ body.role-member .role-member-banner{display:flex!important}
 #rc-items-host{display:flex;flex-direction:column;gap:7px;max-height:45vh;overflow-y:auto;margin-bottom:12px;padding:2px}
 .rc-item{border:1.5px solid var(--sep);border-radius:11px;background:var(--c1);padding:10px 12px;transition:background .12s,border-color .12s;cursor:pointer;user-select:none}
 .rc-item:active{opacity:.85}
-.rc-item.rc-critical{border-inline-start:4px solid var(--re)}
-.rc-item.rc-drug{border-inline-start:4px solid #c0392b;background:linear-gradient(to left,rgba(192,57,43,.07),var(--c1) 60%)}
+.rc-item.rc-critical{border-inline-start:0}
+.rc-item.rc-drug{border-inline-start:0;background:var(--c1)}
 .rc-item.rc-drug .rc-item-name{color:#ffb0a0}
 .rc-drug-pill{display:inline-flex;align-items:center;gap:3px;background:#c0392b;color:#fff;padding:2px 9px;border-radius:6px;font-size:10.5px;font-weight:800;letter-spacing:.5px;margin-inline-start:6px;text-shadow:0 1px 0 rgba(0,0,0,.25);box-shadow:0 1px 3px rgba(192,57,43,.35)}
 .rc-item.rc-present{background:rgba(46,204,113,.08);border-color:rgba(46,204,113,.28)}
@@ -960,7 +960,7 @@ body.role-member .role-member-banner{display:flex!important}
 .rd-load-more{width:100%;padding:10px;border-radius:10px;border:1px solid var(--sep);background:var(--c2);color:var(--t2);font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px}
 /* v3.24: run-check section groups */
 .rc-section{margin-bottom:9px}
-.rc-sec-h{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:5px;background:rgba(255,255,255,.025);border-radius:8px;border-inline-start:3px solid var(--bl);cursor:pointer;user-select:none;transition:background .12s}
+.rc-sec-h{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin-bottom:5px;background:rgba(255,255,255,.025);border-radius:8px;border-inline-start:0;cursor:pointer;user-select:none;transition:background .12s}
 .rc-sec-h:hover{background:rgba(255,255,255,.05)}
 .rc-sec-t{font-size:13px;font-weight:800;color:var(--tx);letter-spacing:-.2px;display:flex;align-items:center;gap:7px}
 .rc-sec-chev{color:var(--t3);transition:transform .22s}
@@ -978,8 +978,8 @@ body.role-member .role-member-banner{display:flex!important}
 .rc-finish-btn{display:inline-flex !important;align-items:center;justify-content:center;gap:6px}
 /* Item card with expiry stripe */
 .rc-item{position:relative}
-.rc-item.rc-exp-expired{border-inline-start:4px solid var(--re) !important}
-.rc-item.rc-exp-warn:not(.rc-critical){border-inline-start:4px solid var(--or) !important}
+.rc-item.rc-exp-expired{border-inline-start:0}
+.rc-item.rc-exp-warn:not(.rc-critical){border-inline-start:0}
 .rc-exp-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin-inline-start:6px}
 .rc-exp-pill.rc-exp-expired{background:rgba(231,76,60,.18);color:var(--re)}
 .rc-exp-pill.rc-exp-warn{background:rgba(230,126,34,.17);color:var(--or)}

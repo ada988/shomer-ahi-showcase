@@ -39,3 +39,29 @@
 .bt-pick .bt-pn{grid-area:name}
 .bt-pick>svg,.bt-pick em{grid-area:end;margin:0}
 @media (max-width:360px){.bt-card{padding:12px}.bt-band .b2-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.bt-band .b2-main>*{grid-column:1 / -1}.bt-band .b2-grid{display:contents}.bt-band .b2-box{grid-column:auto}.bt-band .b2-top{flex-wrap:wrap}}
+
+/* round 5: the three steps as one compact numbered strip */
+.bt-steps2{display:flex!important;gap:6px!important;align-items:stretch}
+.bt-steps2 li{flex:1 1 0;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:8px!important;min-height:56px;padding:8px!important;border:0!important;border-radius:12px!important;background:var(--s1,#15171c)!important}
+.bt-steps2 li i{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#6fd3ff;color:#0b0c0e;font-style:normal;font-size:16px;font-weight:900}
+.bt-steps2 li svg{display:none}
+.bt-steps2 b{text-align:start}
+.bt-card,.bt-pick{border:0!important;background:var(--s1,#15171c)!important}
+.bt-pick.on{background:#102632!important;box-shadow:inset 0 0 0 2px #6fd3ff}
+
+/* scan screen: triage and code on the first line, the full name below — nothing cut off */
+.bs-samples{gap:8px!important}
+.bs-sample{display:grid!important;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chip code" "name name";align-items:center;gap:8px 12px!important;padding:12px 14px!important;border:0!important;border-radius:14px!important;background:var(--s1,#15171c)!important}
+.bs-sample .tchip{grid-area:chip}
+.bs-sample .tchip span{font-size:16px!important}
+.bs-sample code{grid-area:code;justify-self:end;font:800 17px ui-monospace,Menlo,Consolas,monospace!important;letter-spacing:.04em;color:#fff!important}
+.bs-sample .bs-nm{grid-area:name;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:18px!important;font-weight:800}
+.bs-manual input::placeholder{text-transform:none}
+@media (max-width:400px){.bt-steps2 li{flex-direction:column!important;gap:4px!important;padding:8px 4px!important}.bt-steps2 b{text-align:center;word-break:keep-all;overflow-wrap:normal;hyphens:none}}
+
+/* scanned card: one notice line + how old the copy is */
+.ccard .cc-demo{display:flex;align-items:center;gap:8px;font-size:16px!important;font-weight:800;line-height:1.3;text-transform:none!important;letter-spacing:0!important}
+.ccard .cc-demo svg{flex:none}
+.cc-asof{display:flex;align-items:center;gap:8px;margin:8px 0 10px;padding:10px 12px;border-radius:12px;background:#1d2028;color:#e8eaee;font-size:16px;font-weight:700;line-height:1.3}
+.cc-asof svg{flex:none;color:#ffd23f}
+.bo-actions .bo-take{background:#2a2e37!important;border:0!important}
