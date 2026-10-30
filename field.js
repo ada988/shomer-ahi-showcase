@@ -158,7 +158,7 @@ var Field = {
   patIn: function(k, val){
     var X = W._casualtyXABCDE; if (!X) return; X.e = X.e || {}; var n = parseFloat(val);
     if (!Field._patPend){ snapshot(); Field._patPend = true; }   // UNDO must return to the value from BEFORE the first keystroke
-    if (k === 'age') X.e.ageYears = (!isNaN(n) && n >= 0 && n <= 120) ? Math.floor(n) : null;
+    if (k === 'age') X.e.ageYears = (!isNaN(n) && n >= 0 && n <= 120) ? (n < 2 ? Math.round(n * 10) / 10 : Math.floor(n)) : null;
     else X.e.weightKg = (!isNaN(n) && n >= 1 && n <= 250) ? n : null;
     W.MedHost.triggerAutoSave();
   },
@@ -170,7 +170,7 @@ var Field = {
     var pd = Field._pd = (Field._pd && Field._pd.c === W._casualtyXABCDE) ? Field._pd : { c: W._casualtyXABCDE };
     if (pd[k] === n) return;   // the same value committed again (blur after change): no empty UNDO step
     pd[k] = n;
-    if (k === 'age'){ if (n < 0 || n > 120){ undoToast(L('Age must be 0 to 120','הגיל חייב להיות 0 עד 120'), null); return; } if (had) hold(); else snapshot(); W._setPatientAge(Math.floor(n)); }
+    if (k === 'age'){ if (n < 0 || n > 120){ undoToast(L('Age must be 0 to 120','הגיל חייב להיות 0 עד 120'), null); return; } if (had) hold(); else snapshot(); W._setPatientAge((n < 2 ? Math.round(n * 10) / 10 : Math.floor(n))); }
     else { if (n < 1 || n > 250){ undoToast(L('Weight must be 1 to 250 kg','המשקל חייב להיות 1 עד 250 ק״ג'), null); return; } if (had) hold(); else snapshot(); W._setPatientWeight(n); }
   },
   setSex: function(s){
@@ -208,11 +208,11 @@ var Field = {
   },
   // Doses come from the IDF protocol: adult TXA 1 g, ketamine 25 mg IV, blood 500 mL; child TXA 15 mg/kg (max 1 g), ketamine 0.3 mg/kg, fluid 20 mL/kg (max 500 mL).
   dosing: function(g){
-    var e = ctx().e, peds = W.isPedsMode && W.isPedsMode();
+    var e = ctx().e, peds = e.ageYears != null ? Number(e.ageYears) < 12 : (W.isPedsMode && W.isPedsMode());
     if (!peds) return { dose:g.dose, vol:g.vol, sub:g.sub, subHe:g.subHe };
     var kg = e.weightKg || (e.ageYears != null && W._broselowWeight ? W._broselowWeight(e.ageYears) : null);
     if (!kg) return null;
-    var note = e.weightKg ? '' : '~';
+    var note = (e.weightKg && !e.weightEst) ? '' : '~';
     if (g.key === 'txa'){ var mg = Math.min(1000, Math.round(15 * kg)); return { dose:mg + 'mg', sub:mg + ' mg IV (15 mg/kg, ' + note + kg + ' kg)', subHe:mg + ' מ״ג IV (15 מ״ג/ק״ג, ' + note + kg + ' ק״ג)' }; }
     if (g.key === 'ket'){ var k = Math.round(0.3 * kg * 10) / 10; return { dose:k + 'mg', sub:k + ' mg IV (0.3 mg/kg, ' + note + kg + ' kg)', subHe:k + ' מ״ג IV (0.3 מ״ג/ק״ג, ' + note + kg + ' ק״ג)' }; }
     if (g.key === 'blood'){ var ml = Math.min(500, Math.round(20 * kg)); return { vol:ml, sub:ml + ' mL (20 mL/kg, ' + note + kg + ' kg)', subHe:ml + ' מ״ל (20 מ״ל/ק״ג, ' + note + kg + ' ק״ג)' }; }
@@ -231,7 +231,7 @@ var Field = {
       if (it && mins(it) > 180) out.push(L('More than 3 hours since injury. TXA gives no benefit now.', 'עברו יותר מ-3 שעות מהפציעה. אין יתרון ל-TXA.'));
       if (fl.some(function(f){ return /דם|פלזמה|כדוריות/.test(f.type || ''); })) out.push(L('Blood in the line. Flush 10 mL saline between TXA and blood.', 'דם בקו. שטפו 10 מ״ל מלח בין TXA לדם.'));
     } else if (g.key === 'ket'){
-      var k = last(/^קטמין|ketamine/i); if (k && mins(k.time) < 20) out.push(L('Ketamine was given ' + mins(k.time) + ' min ago. Repeat only after 20 min.', 'קטמין ניתן לפני ' + mins(k.time) + ' דקות. מנה חוזרת רק אחרי 20 דקות.'));
+      var k = last(/^קטמין|ketamine/i); if (k && mins(k.time) < 45) out.push(L('Ketamine was given ' + mins(k.time) + ' min ago. Repeat only after 45 min.', 'קטמין ניתן לפני ' + mins(k.time) + ' דקות. מנה חוזרת רק אחרי 20 דקות.'));
     } else if (g.key === 'cef'){
       var c = last(/צפטריאקסון|ceftriaxone/i); if (c && mins(c.time) < 12 * 60) out.push(L('Ceftriaxone was already given at ' + hhmm(c.time) + '.', 'צפטריאקסון כבר ניתן ב-' + hhmm(c.time) + '.'));
       if (fl.some(function(f){ return /הרטמן|Ringer/i.test(f.type || ''); })) out.push(L('Ringer in the line. Never mix with ceftriaxone. Flush the line first.', 'הרטמן בקו. לעולם לא לערבב עם צפטריאקסון. שטפו את הקו קודם.'));

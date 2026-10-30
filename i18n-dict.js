@@ -15,3 +15,5 @@ Object.assign(window.SHOWCASE_DICT, {'הלם עמוק':'DEEP SHOCK','סימני 
 Object.assign(window.SHOWCASE_DICT, {'פינוי אחרון':'Evacuate last','⚫ פינוי אחרון':'⚫ Evacuate last','ימין':'Right','שמאל':'Left','ללא סימני חיים':'no signs of life','מיון':'Triage'});
 
 Object.assign(window.SHOWCASE_DICT, {'מינון':'Dose'});
+
+Object.assign(window.SHOWCASE_DICT, {'משקל:':'Weight:'});

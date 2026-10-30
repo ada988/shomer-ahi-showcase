@@ -1703,15 +1703,19 @@ function _setPatientAge(years){
   // Auto-set weight from Broselow estimate if not already set
   if(!_getPatientWeight()&&years<=12){
     _casualtyXABCDE.e.weightKg=_broselowWeight(years);
+    _casualtyXABCDE.e.weightEst=true;
   }
   addTimestampedAction('e','גיל: '+years+' שנים','');
   MedHost.triggerAutoSave();MedHost.renderIncidentPage();
 }
 // Simple Broselow-style weight estimate by age (kg). Pediatric default lookup.
 function _broselowWeight(years){
-  // APLS estimate (confirm with length tape — dosing is mg/kg)
-  if(years<1)return Math.round((years*12)/2+4);
-  if(years<=5)return 2*(years+4);
+  // IDF trauma book table (ch. 18, appendix B) up to age 10; APLS estimate above. Confirm with a length tape: dosing is mg/kg.
+  if(years<0.5)return 3.5;
+  if(years<1)return 7;
+  if(years<4)return 11;
+  if(years<8)return 17;
+  if(years<11)return 27;
   if(years<=12)return 3*years+7;
   if(years<=17)return Math.min(70,3*years+7); // APLS estimate for teenagers - confirm weight
   return 70;
@@ -1719,7 +1723,8 @@ function _broselowWeight(years){
 function _setPatientWeight(kg){
   if(!_casualtyXABCDE.e)_casualtyXABCDE.e={};
   _casualtyXABCDE.e.weightKg=kg;
-  addTimestampedAction('e','משקל משוער: '+kg+' ק"ג','');
+  _casualtyXABCDE.e.weightEst=false;
+  addTimestampedAction('e','משקל: '+kg+' ק"ג','');
   MedHost.triggerAutoSave();
   MedHost.renderIncidentPage();
 }

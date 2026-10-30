@@ -303,3 +303,9 @@ body.in-form .appbar .ttl b{-webkit-line-clamp:1!important;font-size:19px!import
 .ho-row .ho-vs+p{margin-top:6px;font-size:16px;color:var(--t2)}
 .tl-del.arm{background:#d01a20!important;border-color:#fff!important;color:#fff!important}
 .tp-v em{font-style:normal;white-space:nowrap}
+
+/* dose calculator: blocked cards say so in words */
+.dz-no{display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;padding:4px 12px;border-radius:8px;background:#3a3d44;color:#fff;font-size:17px;font-weight:900;letter-spacing:.04em}
+.dz-c.stop{opacity:1}
+.dz-c.stop .dz-h strong{color:#9aa0a8;text-decoration:line-through;text-decoration-thickness:3px}
+.mist-warn{font-size:16px!important}

@@ -218,7 +218,7 @@ W.FormUI = {
     if (lang() === 'he') text = text.replace(/טריאז׳/g, 'מיון').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/ח"ע:/g, 'חוסם עורקים:');
     var s = document.createElement('div'); s.id = 'fs-sheet'; s.className = 'sheet-wrap';
     s.innerHTML = '<div class="sheet-dim" onclick="FormUI.closeSheet()"></div><div class="sheet ho-sheet" role="dialog" aria-label="MIST+"><div class="sheet-grab"></div>'
-      + '<div class="ho-top"><h3>' + L('Handoff report (MIST+)','דוח העברה (MIST+)') + '</h3><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('CLOSE','סגור') + '</button></div>' + hoBlocks(text) + '<p class="mist-warn">' + W.escapeHtml(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
+      + '<div class="ho-top"><h3>' + L('Handoff report (MIST+)','דוח העברה (<bdi>MIST+</bdi>)') + '</h3><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('CLOSE','סגור') + '</button></div>' + hoBlocks(text) + '<p class="mist-warn">' + W.escapeHtml(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
       + '<div class="bo-actions"><button class="xbtn" onclick="FormUI.closeSheet();FormUI.sheet()">' + ico('share-2', 24) + L('SHARE / PRINT','שיתוף / הדפסה') + '</button><button class="xbtn" onclick="showRadioReadout();FormUI.closeSheet()">' + ico('radio', 24) + L('RADIO SCRIPT','תסריט רדיו') + '</button>'
       + '<button class="xbtn xbtn-primary" onclick="copyMISTPlus()">' + ico('copy', 24) + L('COPY','העתק') + '</button></div></div>';
     app.appendChild(s);
