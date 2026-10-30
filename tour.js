@@ -95,7 +95,8 @@ function draw(t, s){
     if (card.style.top === 'auto'){ if (sTop < cTop && sTop + sH > cTop - 8) spot.style.height = Math.max(60, cTop - 8 - sTop) + 'px'; }
     else if (sTop < cBot + 8 && sTop + sH > cBot + 8){ var nt = cBot + 8; spot.style.top = nt + 'px'; spot.style.height = Math.max(60, sTop + sH - nt) + 'px'; }
   }
-  var nb = card.querySelector('.xbtn-primary'); if (nb) nb.focus({ preventScroll:true });
+  if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+  try { card.focus({ preventScroll:true, focusVisible:false }); } catch(e){ card.focus({ preventScroll:true }); }
 }
 function start(){
   stop(true);

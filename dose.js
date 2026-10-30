@@ -238,7 +238,7 @@ function draw(){
   // patient: weight stepper, age
   h += '<section class="dz-pt">'
     + '<div class="dz-wt"><span class="dz-lbl">' + L('WEIGHT','משקל') + '</span><div class="dz-step" dir="ltr"><button aria-label="' + L('Less weight','פחות משקל') + '" onclick="Field.doseWt(-1)">' + ico('minus', 28) + '</button>'
-    + '<label><input type="number" inputmode="decimal" min="1" max="250" step="any" value="' + (e.weightKg && !e.weightEst ? e.weightKg : '') + '" placeholder="' + fmt(P.wt) + '" onchange="Field.doseSet(\'wt\',this.value)" aria-label="' + L('Weight in kg','משקל בק״ג') + '"><u>kg</u></label>'
+    + '<label><input type="number" inputmode="decimal" min="1" max="250" step="any" value="' + (e.weightKg && !e.weightEst ? e.weightKg : '') + '" placeholder="' + fmt(P.wt) + '" onchange="Field.doseSet(\'wt\',this.value)" aria-label="' + L('Weight in kg','משקל בק״ג') + '"><u>' + L('kg','ק״ג') + '</u></label>'
     + '<button aria-label="' + L('More weight','יותר משקל') + '" onclick="Field.doseWt(1)">' + ico('plus', 28) + '</button></div></div>'
     + '<div class="dz-age"><span class="dz-lbl">' + L('AGE','גיל') + '</span><label class="dz-agein"><input type="number" inputmode="decimal" min="0" max="120" step="any" value="' + (e.ageYears != null ? e.ageYears : '') + '" placeholder="—" onchange="Field.doseSet(\'age\',this.value)" aria-label="' + L('Age in years','גיל בשנים') + '"><u>' + L('y','שנים') + '</u></label></div>'
     + '</section>';

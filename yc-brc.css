@@ -1,0 +1,41 @@
+/* brc: YC design pass */
+
+/* Wristbands tab: one band up top, a list that swaps it */
+.bt-hero h2{margin:0 0 6px}
+.bt-cta{display:grid!important;grid-template-columns:1.3fr 1fr;gap:10px!important;margin:16px 0 0!important}
+.bt-cta .xbtn{min-height:64px!important;font-size:19px!important;font-weight:800!important;display:flex;align-items:center;justify-content:center;gap:10px;text-transform:none!important;white-space:normal;line-height:1.15}
+@media (max-width:360px){.bt-cta{grid-template-columns:1fr}}
+.bt-steps2{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
+.bt-steps2 li{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:12px 8px;border-radius:14px;background:var(--c2,#15171c);border:2px solid rgba(255,255,255,.12);text-align:center;color:#fff}
+.bt-steps2 li svg{flex:none;color:#6fd3ff}
+.bt-steps2 b{font-size:16px;font-weight:800;line-height:1.25;overflow-wrap:break-word;hyphens:auto}
+.bt-card{margin:20px 0 28px;padding:14px;border-radius:18px;background:var(--c2,#15171c);border:2px solid rgba(255,255,255,.14)}
+.bt-card-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.bt-card-h>div{min-width:0}
+.bt-card-h .tchip{flex:none}
+.bt-card .bt-name{font-size:21px!important;font-weight:900}
+.bt-card .bt-sub{display:block!important;margin-top:2px;font-size:16px!important;color:var(--t2,#cfd3da)}
+.bt-sub code,.bt-pn code{font:800 16px/1 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border-radius:6px;background:#0b0c0e;color:#fff;letter-spacing:.04em}
+.bt-band{border-radius:14px;overflow:hidden}
+.bt-band .brc2{border-width:2px}
+.bt-btns2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.bt-btns2 .xbtn{min-height:60px;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;text-transform:none;white-space:normal;line-height:1.15}
+.bt-lh{margin:0 0 10px;font-size:18px;font-weight:900;letter-spacing:.02em;color:#fff}
+.bt-lh span{color:var(--t2,#cfd3da);font-weight:700}
+.bt-picks{display:grid;gap:8px}
+.bt-pick{display:flex;align-items:center;gap:12px;width:100%;min-height:72px;padding:10px 14px;border-radius:14px;background:var(--c2,#15171c);border:2px solid rgba(255,255,255,.12);color:#fff;font:inherit;text-align:start;cursor:pointer}
+.bt-pick .tchip{flex:none}
+.bt-pick>svg{flex:none;color:var(--t2,#cfd3da);margin-inline-start:auto}
+.bt-pick.on{border-color:#6fd3ff;background:#102632}
+.bt-pick em{display:inline-flex;align-items:center;gap:6px;margin-inline-start:auto;font-style:normal;font-size:16px;font-weight:900;color:#6fd3ff;flex:none}
+.bt-pn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.bt-pn b{font-size:18px;font-weight:900;overflow-wrap:anywhere}
+.bt-empty{margin:20px 0;font-size:18px;font-weight:700;color:var(--t2,#cfd3da)}
+/* names never truncated: chip on its own line, name and code below */
+.bt-card-h{flex-direction:column;align-items:flex-start;gap:8px}
+.bt-card .bt-name,.bt-pn b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+.bt-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"chip end" "name end";gap:8px 12px;align-items:center}
+.bt-pick .tchip{grid-area:chip;justify-self:start}
+.bt-pick .bt-pn{grid-area:name}
+.bt-pick>svg,.bt-pick em{grid-area:end;margin:0}
+@media (max-width:360px){.bt-card{padding:12px}.bt-band .b2-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.bt-band .b2-main>*{grid-column:1 / -1}.bt-band .b2-grid{display:contents}.bt-band .b2-box{grid-column:auto}.bt-band .b2-top{flex-wrap:wrap}}

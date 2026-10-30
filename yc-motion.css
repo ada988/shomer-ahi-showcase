@@ -1,0 +1,23 @@
+/* motion: YC design pass
+   Dialogs take focus themselves, so no ring lands on a button nobody pressed.
+   Motion is short and only for people who have not asked the system for less. */
+[tabindex="-1"]:focus,[tabindex="-1"]:focus-visible{outline:none!important}
+
+@media (prefers-reduced-motion:no-preference){
+  @keyframes ycUp{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes ycFade{from{opacity:0}to{opacity:1}}
+  @keyframes ycRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes ycBump{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+  /* bottom sheets slide up, their dim fades in */
+  .sheet-wrap .sheet,#menu-sheet .sheet,.dz-rb{animation:ycUp 220ms cubic-bezier(.2,.8,.2,1) both}
+  .sheet-wrap .sheet-dim,.dz-rb-wrap{animation:ycFade 180ms ease both}
+  /* full-screen panels and the tour card rise in */
+  .dz-wrap,#qt,.bo,.tour-card{animation:ycRise 200ms cubic-bezier(.2,.8,.2,1) both}
+  /* a new screen fades in (only the top-level blocks, so live timers never flicker) */
+  #incident-content>*{animation:ycFade 140ms ease both}
+  /* a triage count that changed pulses once */
+  .ov-tile.bump{animation:ycBump 320ms cubic-bezier(.2,.8,.2,1)}
+  /* toasts slide up from the bottom */
+  .undo-toast{animation:ycRise 180ms ease both}
+}

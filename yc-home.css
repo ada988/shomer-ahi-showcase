@@ -1,0 +1,51 @@
+/* home: YC design pass
+   Surfaces, not outlines: fills carry the hierarchy, the white ring means "selected" and nothing else.
+   Sentence case for buttons and banners; capitals only for small section labels and triage words. */
+:root{--s0:#0b0c0e;--s1:#15171c;--s2:#1d2028;--s3:#262a33;--hair:rgba(255,255,255,.14);--brand:var(--accent,#1f6bff);--brand-hi:#4f8cff}
+
+/* ── app bar: brand mark + a calm, always-visible BETA label ── */
+.appbar .mark{border-radius:10px}
+.beta-pill{background:var(--s2)!important;border:3px solid #ffd400!important;color:#ffd400!important;height:58px;min-width:96px}
+.beta-pill b,.beta-pill span{color:#ffd400!important}
+.beta-pill span{font-size:16px}
+.menu-btn,.back-btn{background:var(--s2)!important;border:2px solid var(--hair)!important}
+
+/* ── home ── */
+.ov-hero{margin-bottom:14px}
+.ov-hero .eyebrow{font-size:16px!important;font-weight:800;letter-spacing:.08em!important;color:var(--brand-hi)!important}
+.ov-hero h2{font-size:28px!important;font-weight:900;line-height:1.15;margin:4px 0 6px}
+.ov-hero p{margin:0}
+
+.ov-tour{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;margin:0 0 14px;padding:10px 16px;border-radius:16px;border:0;background:var(--brand);color:#fff;text-align:start;font:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(47,109,246,.28)}
+.ov-tour>.ui-i,.ov-tour>svg{flex:none;width:28px!important;height:28px!important;padding:10px;border-radius:50%;background:rgba(255,255,255,.18);box-sizing:content-box}
+.ov-tour b{display:block;font-size:21px;font-weight:800;line-height:1.2}
+.ov-tour small{display:block;font-size:16px;font-weight:700;color:#dbe6ff;margin-top:2px}
+
+.ov-alert{border:0!important;border-radius:16px!important;min-height:76px}
+.ov-alert b{font-size:19px!important;font-weight:800!important;text-transform:none}
+.ov-alert>span{flex:1;min-width:0}
+.ov-alert>.ui-i:last-child,.ov-alert>svg:last-child{flex:none;opacity:.9}
+
+/* triage tiles: same component on Home and on the Command board. Full colour, no outline. */
+#incident-content .ov-tiles .ov-tile{border:0!important;border-radius:16px!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18)}
+#incident-content .ov-tiles .ov-tile.t-black{box-shadow:inset 0 0 0 2px #5a606c}
+#incident-content .ov-tiles .ov-tile.on{outline:4px solid #fff;outline-offset:3px}
+
+.sec-label{font-size:16px!important;font-weight:800;letter-spacing:.08em!important;color:#aab0bb!important}
+
+/* the two ways in: one filled (one patient), one dark with a blue edge (many casualties); icon + word tell them apart */
+.ov-choose .ch,.add-split .ch{border:0!important;border-radius:16px}
+.ov-choose .ch.full,.add-split .ch.full{background:var(--brand)!important}
+.ov-choose .ch.quick,.add-split .ch.quick{background:var(--s2)!important;box-shadow:inset 0 0 0 3px var(--brand-hi)}
+.ov-choose .ch.quick .ch-i{background:rgba(79,140,255,.22)}
+.ch strong{font-size:26px;font-weight:900}
+
+.go{border:0!important;background:var(--s1)!important;border-radius:16px!important}
+.go .gi{background:var(--s3)!important}
+.kv{border-radius:16px}
+.kv>div{border-color:var(--hair)!important}
+
+/* ── menu sheet ── */
+#menu-sheet .sheet{background:var(--s1)}
+#menu-sheet button{border-color:var(--hair)!important}
+#menu-sheet button.on,#menu-sheet button[aria-pressed=true]{border-color:#fff!important}

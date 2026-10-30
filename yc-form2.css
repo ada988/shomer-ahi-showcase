@@ -1,0 +1,71 @@
+/* form2: YC design pass */
+/* ── Form 101: calmer surfaces. White rings are for "selected"; everything else uses a soft line ── */
+#field .f-id{background:#15171c!important;color:#fff!important;border:2px solid rgba(255,255,255,.14)!important;border-inline-start:12px solid var(--tg)!important}
+#field .f-id.dark{color:#fff!important}
+#field .f-id-i{color:var(--tg)}
+#field .f-id-i svg{filter:drop-shadow(0 0 0 #fff)}
+#field .f-id-t b{color:#fff}
+#field .f-id-b,#field .f-id.dark .f-id-b{background:#1d2028!important;color:#fff!important;border:2px solid rgba(255,255,255,.22)!important}
+#field .f-shock{border:3px solid rgba(255,255,255,.85)!important}
+#field .f-shock b{letter-spacing:.02em}
+
+/* triage: every option in full colour; the chosen one has the white ring and the word SET */
+#field .f-tri .f-tbtn{border:3px solid rgba(255,255,255,.16)!important;filter:none!important;opacity:1!important}
+#field .f-tri:has(.on) .f-tbtn:not(.on){filter:none!important;opacity:1!important}
+#field .f-tri .f-tbtn.on{border-color:#fff!important;outline:4px solid #fff!important;outline-offset:3px!important;box-shadow:0 0 0 3px #0b0c0e inset}
+
+/* jump bar: one line each, equal columns, 56px */
+.jb{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+.jb button{min-height:56px!important;font-size:17px!important;line-height:1!important;white-space:nowrap;padding:0 2px!important;border-width:2px!important;border-color:rgba(255,255,255,.16)!important;letter-spacing:.01em}
+.jb button.on{border-color:#fff!important}
+@media (max-width:360px){.jb button{font-size:16px!important;letter-spacing:0}}
+/* one way back inside the form: the BACK in the bottom bar */
+body.in-form #app-back{display:none!important}
+/* jumped-to sections clear the sticky bars */
+#field,#fs-body,#fs-time,#fs-more,.fs{scroll-margin-top:calc(var(--abv,72px) + 84px)!important}
+
+/* ── Timeline: tap a row to edit or delete ── */
+.tl-list{gap:8px}
+.tl-i{display:block!important;padding:0!important;border:0!important;background:none!important}
+.tl-row{display:grid;grid-template-columns:76px minmax(0,1fr) 28px;gap:12px;align-items:center;width:100%;min-height:72px;padding:10px 12px;border-radius:14px;border:2px solid rgba(255,255,255,.12);background:#15171c;color:#fff;text-align:start;font:inherit;cursor:pointer}
+.tl-row:active{background:#1d2028}
+.tl-row .tl-when{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.tl-row .tl-when b{font:900 22px/1 var(--f,inherit)!important;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.tl-row .tl-when small{font-size:16px!important;font-weight:700;color:var(--t2,#b8bec8);white-space:nowrap}
+.tl-row .tl-what{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+.tl-row .tl-chip{display:inline-flex!important;align-items:center;gap:6px;padding:3px 10px!important;border-radius:999px!important;background:var(--xc,#3a3f4a)!important;color:#fff;font-size:16px!important;font-weight:900;letter-spacing:.03em;line-height:1.2}
+.tl-row .tl-chip b{display:inline!important;min-width:0!important;height:auto!important;padding:0!important;background:none!important;border-radius:0!important;font-size:16px!important;font-weight:900}
+.tl-row .tl-txt{display:block;font-size:17px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.tl-row .tl-txt small{display:block;margin-top:2px;font-size:16px;font-weight:600;color:var(--t2,#b8bec8)}
+.tl-row .tl-go{display:grid;place-items:center;color:#9aa0a8}
+.tl-rs .tl-rs-t{margin:4px 0 0}
+.tl-rs .tl-rs-t b{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
+.tl-rs .tl-rs-x{margin:6px 0 14px;font-size:19px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+.tl-rs-b{display:grid;gap:10px}
+.tl-rs-b .xbtn{min-height:64px;font-size:19px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:10px}
+.tl-rs-b .tl-rs-del{border:3px solid #ff6b6b!important;color:#ffb3b3!important;background:transparent!important}
+.tl-rs-n{margin:12px 0 0;font-size:16px;font-weight:700;color:var(--t2,#b8bec8);line-height:1.4}
+
+/* ── Body map: one smooth figure; regions show only where something is marked ── */
+.body-map-wrap .bm-sil{fill:#1d2028}
+.body-map-wrap .bm-out{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.6;stroke-linejoin:round;pointer-events:none}
+.body-map-wrap .body-region{fill:transparent;stroke:rgba(255,255,255,.10);stroke-width:.8}
+.body-map-wrap .body-region.selected{fill:rgba(111,211,255,.28);stroke:#6fd3ff;stroke-width:1.6;stroke-dasharray:none}
+.body-map-wrap .body-region.hemorrhage,.body-map-wrap .body-region.injured{fill:rgba(208,26,32,.62);stroke:#ff6b6b}
+.body-map-wrap .body-region.burn{fill:rgba(184,66,10,.62);stroke:#ff9a4d}
+.body-map-wrap .body-region.fracture{fill:rgba(192,138,0,.55);stroke:#f5d000}
+.body-map-wrap .body-region.penetrating{fill:rgba(109,63,192,.62);stroke:#c49bff}
+/* Front / Back: the same segmented control as List / Command board */
+#fs-body .seg{display:grid!important;grid-template-columns:1fr 1fr;gap:10px;padding:0!important;background:none!important;margin:0 0 14px!important}
+#fs-body .seg .so{min-height:60px!important;border:2px solid var(--line,rgba(255,255,255,.16))!important;background:var(--c2,#1d2028)!important;color:var(--t2,#cfd3da)!important;font-size:18px!important;font-weight:800!important;border-radius:14px!important;box-shadow:none!important}
+#fs-body .seg .so.on{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+.tl-row .tl-when,.tl-row .tl-what{grid-area:auto!important}
+.jb button{font-size:16px!important;letter-spacing:0!important}
+/* patient's Right / Left beside the figure */
+#fs-body .bm-side{max-width:360px;margin:0 auto -6px}
+#fs-body .bm-side b{border:2px solid rgba(255,255,255,.35);background:#1d2028;min-height:32px;display:inline-flex;align-items:center}
+/* narrow phones: columns follow the word length so TIMELINE fits on one line */
+@media (max-width:400px){.jb{grid-template-columns:54fr 54fr 94fr 70fr!important;gap:5px!important}.jb button{padding:0 1px!important}}
+
+/* Hebrew timeline: a drug line like "קטמין 25mg IV" reads in its own direction, numbers stay together */
+[dir=rtl] .tl-txt{unicode-bidi:plaintext;text-align:right}

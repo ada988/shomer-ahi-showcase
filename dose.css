@@ -141,3 +141,11 @@
 @media (max-width:420px){.dz-top .dz-long{display:none}.dz-top .dz-short{display:inline}}
 @media (max-width:360px){.dz-pain-g{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:520px), (max-height:700px){.dz-tabs{position:static}}
+/* units sit beside the number (never on top of it), in both reading directions */
+.dz-step label,.dz-agein{display:flex!important;align-items:center;gap:6px;min-height:64px;box-sizing:border-box;padding:0 10px;border-radius:12px;border:3px solid #555;background:#15171c}
+.dz-step label:focus-within,.dz-agein:focus-within{border-color:#6fd3ff}
+.dz-pt .dz-step input,.dz-pt .dz-agein input{flex:1;min-width:0;min-height:58px;padding:0;border:0;background:transparent;text-align:center}
+.dz-pt .dz-step u,.dz-pt .dz-agein u{position:static;transform:none;flex:none;unicode-bidi:isolate}
+.dz-pt .dz-step input,.dz-pt .dz-agein input{border:0!important;background:transparent!important;box-shadow:none!important;outline:none!important;border-radius:0!important}
+@media (max-width:480px){.dz-pt{grid-template-columns:minmax(0,1fr) minmax(0,.62fr)}.dz-step{grid-template-columns:52px minmax(0,1fr) 52px;gap:4px}.dz-step button{min-height:64px}.dz-step label,.dz-agein{padding:0 6px}}
+@media (max-width:360px){.dz-pt{grid-template-columns:1fr}}

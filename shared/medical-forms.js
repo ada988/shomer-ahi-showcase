@@ -930,14 +930,20 @@ var BODY_BACK=(typeof BODY_BACK!=='undefined')?BODY_BACK:[
   {id:'back_l_shin',label:'שוק L (אחורי)',d:'M108,280 L127,280 L125,352 L110,352Z',burn:0}
 ];
 
+// Front and back share one outline (viewBox 200 × 400): head + body with arms and legs
+var BODY_SILHOUETTE='M100,3 C110,3 117,12 117,24 C117,36 110,46 100,46 C90,46 83,36 83,24 C83,12 90,3 100,3Z M94.0,40.0 C91.8,42.2 95.3,50.2 93.0,53.0 C90.7,55.8 84.8,55.8 80.0,57.0 C75.2,58.2 69.0,58.8 64.0,60.0 C59.0,61.2 53.8,61.8 50.0,64.0 C46.2,66.2 43.2,67.7 41.0,73.0 C38.8,78.3 38.2,87.2 37.0,96.0 C35.8,104.8 35.3,116.2 34.0,126.0 C32.7,135.8 30.3,146.5 29.0,155.0 C27.7,163.5 27.3,171.2 26.0,177.0 C24.7,182.8 21.5,186.0 21.0,190.0 C20.5,194.0 21.3,198.5 23.0,201.0 C24.7,203.5 28.0,204.8 31.0,205.0 C34.0,205.2 38.3,204.5 41.0,202.0 C43.7,199.5 45.5,194.2 47.0,190.0 C48.5,185.8 49.0,183.3 50.0,177.0 C51.0,170.7 52.0,160.2 53.0,152.0 C54.0,143.8 55.0,136.2 56.0,128.0 C57.0,119.8 58.0,108.0 59.0,103.0 C60.0,98.0 61.3,94.8 62.0,98.0 C62.7,101.2 62.8,114.2 63.0,122.0 C63.2,129.8 62.7,137.8 63.0,145.0 C63.3,152.2 64.3,157.5 65.0,165.0 C65.7,172.5 66.2,177.5 67.0,190.0 C67.8,202.5 69.0,225.0 70.0,240.0 C71.0,255.0 72.5,267.0 73.0,280.0 C73.5,293.0 72.7,306.3 73.0,318.0 C73.3,329.7 75.7,341.7 75.0,350.0 C74.3,358.3 69.8,363.2 69.0,368.0 C68.2,372.8 67.5,376.8 70.0,379.0 C72.5,381.2 79.8,381.2 84.0,381.0 C88.2,380.8 93.7,382.8 95.0,378.0 C96.3,373.2 92.2,362.5 92.0,352.0 C91.8,341.5 93.5,327.0 94.0,315.0 C94.5,303.0 94.5,294.2 95.0,280.0 C95.5,265.8 96.3,244.0 97.0,230.0 C97.7,216.0 98.5,202.3 99.0,196.0 C99.5,189.7 99.7,192.0 100.0,192.0 C100.3,192.0 100.5,189.7 101.0,196.0 C101.5,202.3 102.3,216.0 103.0,230.0 C103.7,244.0 104.5,265.8 105.0,280.0 C105.5,294.2 105.5,303.0 106.0,315.0 C106.5,327.0 108.2,341.5 108.0,352.0 C107.8,362.5 103.7,373.2 105.0,378.0 C106.3,382.8 111.8,380.8 116.0,381.0 C120.2,381.2 127.5,381.2 130.0,379.0 C132.5,376.8 131.8,372.8 131.0,368.0 C130.2,363.2 125.7,358.3 125.0,350.0 C124.3,341.7 126.7,329.7 127.0,318.0 C127.3,306.3 126.5,293.0 127.0,280.0 C127.5,267.0 129.0,255.0 130.0,240.0 C131.0,225.0 132.2,202.5 133.0,190.0 C133.8,177.5 134.3,172.5 135.0,165.0 C135.7,157.5 136.7,152.2 137.0,145.0 C137.3,137.8 136.8,129.8 137.0,122.0 C137.2,114.2 137.3,101.2 138.0,98.0 C138.7,94.8 140.0,98.0 141.0,103.0 C142.0,108.0 143.0,119.8 144.0,128.0 C145.0,136.2 146.0,143.8 147.0,152.0 C148.0,160.2 149.0,170.7 150.0,177.0 C151.0,183.3 151.5,185.8 153.0,190.0 C154.5,194.2 156.3,199.5 159.0,202.0 C161.7,204.5 166.0,205.2 169.0,205.0 C172.0,204.8 175.3,203.5 177.0,201.0 C178.7,198.5 179.5,194.0 179.0,190.0 C178.5,186.0 175.3,182.8 174.0,177.0 C172.7,171.2 172.3,163.5 171.0,155.0 C169.7,146.5 167.3,135.8 166.0,126.0 C164.7,116.2 164.2,104.8 163.0,96.0 C161.8,87.2 161.2,78.3 159.0,73.0 C156.8,67.7 153.8,66.2 150.0,64.0 C146.2,61.8 141.0,61.2 136.0,60.0 C131.0,58.8 124.8,58.2 120.0,57.0 C115.2,55.8 109.3,55.8 107.0,53.0 C104.7,50.2 108.2,42.2 106.0,40.0 C103.8,37.8 96.2,37.8 94.0,40.0Z';
+
 var _bodyMenuStep=(typeof _bodyMenuStep!=='undefined')?_bodyMenuStep:0;
 
 function renderBodyMap(){
   const _esc=(typeof escapeHtml==='function')?escapeHtml:(s=>String(s??''));
   const regions=_casualtyView==='front'?BODY_FRONT:BODY_BACK;
   const side=_casualtyView;
+  let _bmMarks='';
   let svg=`<svg viewBox="0 0 200 400" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block;margin:0 auto;max-width:360px" role="img" aria-label="מפת גוף — ${side==='front'?'קדמי':'אחורי'}">`;
   svg+=`<rect x="0" y="0" width="200" height="400" fill="none"/>`;
+  // Smooth human silhouette; the tap regions are clipped to it so marked regions follow the body outline
+  svg+=`<defs><clipPath id="bm-clip-${side}"><path d="${BODY_SILHOUETTE}"/></clipPath></defs><path class="bm-sil" d="${BODY_SILHOUETTE}"/><g clip-path="url(#bm-clip-${side})">`;
   regions.forEach(r=>{
     const injury=_casualtyInjuries.find(i=>i.region===r.id && i.side===side);
     const treatment=_casualtyTreatments.find(t=>t.region===r.id && t.side===side);
@@ -947,17 +953,19 @@ function renderBodyMap(){
     svg+=`<path d="${r.d}" class="${cls}" onclick="handleRegionTap('${r.id}')" style="cursor:pointer"><title>${_esc(ariaLabel)}</title></path>`;
     const c=getPathCenter(r.d);
     if(treatment){
-      svg+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="#0b0c0e" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${({tourniquet:'TQ',pressureDressing:'PD',hemostatic:'HG',woundPacking:'WP',bandage:'D',splint:'S',pelvicBinder:'PB',tubeThora:'CT',custom:'+'})[treatment.type]||'+'}</text>`;
+      _bmMarks+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="#0b0c0e" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${({tourniquet:'TQ',pressureDressing:'PD',hemostatic:'HG',woundPacking:'WP',bandage:'D',splint:'S',pelvicBinder:'PB',tubeThora:'CT',custom:'+'})[treatment.type]||'+'}</text>`;
       if(injury){
         const dotCol={hemorrhage:'#e74c3c',fracture:'#f1c40f',burn:'#e67e22',penetrating:'#9b59b6',other:'#3498db'}[injury.type]||'#3498db';
-        svg+=`<circle cx="${c.x+9}" cy="${c.y-6}" r="3" fill="${dotCol}" style="pointer-events:none"/>`;
+        _bmMarks+=`<circle cx="${c.x+9}" cy="${c.y-6}" r="3" fill="${dotCol}" style="pointer-events:none"/>`;
       }
     } else if(injury){
       const ic={hemorrhage:'B',fracture:'F',burn:'BU',penetrating:'P',other:'+'}[injury.type]||'+';
       const icc={hemorrhage:'#d01a20',fracture:'#c08a00',burn:'#b8420a',penetrating:'#6d3fc0',other:'#3b4656'}[injury.type]||'#3b4656';
-      svg+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="${icc}" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${ic}</text>`;
+      _bmMarks+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="${icc}" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${ic}</text>`;
     }
   });
+  svg+=`</g><path class="bm-out" d="${BODY_SILHOUETTE}"/>`;
+  svg+=_bmMarks;
   regions.forEach(r=>{
     const injury=_casualtyInjuries.find(i=>i.region===r.id && i.side===side);
     const treatment=_casualtyTreatments.find(t=>t.region===r.id && t.side===side);

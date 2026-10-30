@@ -8,7 +8,7 @@
 .xc-tabs button.on small{color:#333}
 .xc-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 .xc-g{border-radius:16px;border:4px solid var(--xc);background:var(--c2);overflow:hidden}
-.xc-gh{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:12px;width:100%;min-height:76px;padding:0 14px 0 0;border:0;background:transparent;color:#fff;text-align:start}
+.xc-gh{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:12px;width:100%;min-height:76px;padding:0;padding-inline-end:14px;border:0;background:transparent;color:#fff;text-align:start}
 .xc-let{display:grid;place-items:center;align-self:stretch;background:var(--xc);color:#fff;font-size:34px;font-weight:900;line-height:1}
 .xc-p .xc-let{font-size:22px}
 .xc-gt{display:flex;flex-direction:column;gap:2px;padding:8px 0;min-width:0}

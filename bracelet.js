@@ -19,7 +19,7 @@ function ago(sec){ var m = Math.max(0, Math.round((Date.now()/1000 - sec) / 60))
 var TRIAGE = {
   red:    { c:'#cc1820', en:'URGENT', he:'דחוף', code:'T1', sh:'oct', tx:'#fff' },
   yellow: { c:'#ffd400', en:'DELAYED', he:'עדיפות שנייה', code:'T2', sh:'tri', tx:'#111' },
-  green:  { c:'#19a463', en:'NOT URGENT', he:'לא דחוף', code:'T3', sh:'circ', tx:'#fff' },
+  green:  { c:'#19c37d', en:'NOT URGENT', he:'לא דחוף', code:'T3', sh:'circ', tx:'#06140d' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', code:'T4', sh:'hex', tx:'#111' },
   black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים', code:'T0', sh:'sqx', tx:'#fff' }
 };
@@ -577,21 +577,43 @@ function openSerialOrDoc(id){
 }
 
 // ── Bracelets tab ──────────────────────────────────────────────
+// One full-size wristband for the selected casualty, then a list that swaps it. Band, caption and actions live in one card.
+var selId = null;
 function renderTab(){
   var list = W._incidentCasualties || [];
-  var h = '<div class="bt-hero"><div><h2>' + L('Wristbands','צמידים') + '</h2><p>' + L('Every casualty gets a wristband. Its QR code carries their medical summary — any responder can scan it with a phone and see what was done, and when.','לכל נפגע צמיד. קוד ה-QR נושא את תמצית המידע הרפואי — כל מגיב יכול לסרוק בטלפון ולראות מה בוצע ומתי.') + '</p></div>'
-    + '<div class="bt-cta"><button class="xbtn xbtn-primary xbtn-lg" onclick="Bracelet.scan()">' + ico('scan-line', 20) + L('Scan a wristband','סריקת צמיד') + '</button>'
-    + '<button class="xbtn xbtn-lg" onclick="Bracelet.print()">' + ico('printer', 20) + L('Print all','הדפס הכל') + '</button></div></div>'
-    + '<ol class="bt-steps"><li><b>1</b>' + L('Print','הדפס') + '</li><li><b>2</b>' + L('Attach to the casualty','חבר לנפגע') + '</li><li><b>3</b>' + L('Anyone scans — full picture, offline','כל אחד סורק — תמונה מלאה, גם בלי רשת') + '</li></ol>'
-    + '<div class="bt-list">';
+  var cur = list.filter(function(c){ return c._docId === selId; })[0] || list[0];
+  var h = '<div class="bt-hero"><div><h2>' + L('Wristbands','צמידים') + '</h2><p>' + L('Every casualty gets a wristband. Its QR code carries their medical summary: any responder can scan it with a phone and see what was done, and when.','לכל נפגע צמיד. קוד ה-QR נושא את תמצית המידע הרפואי: כל מגיב יכול לסרוק בטלפון ולראות מה בוצע ומתי.') + '</p></div>'
+    + '<div class="bt-cta"><button class="xbtn xbtn-primary xbtn-lg" onclick="Bracelet.scan()">' + ico('scan-line', 24) + L('Scan a wristband','סריקת צמיד') + '</button>'
+    + '<button class="xbtn xbtn-lg" onclick="Bracelet.print()">' + ico('printer', 24) + L('Print all','הדפסת הכל') + '</button></div></div>'
+    + '<ol class="bt-steps2">'
+    +   '<li>' + ico('printer', 26) + '<b>' + L('Print','הדפסה') + '</b></li>'
+    +   '<li>' + ico('tag', 26) + '<b>' + L('Attach to the casualty','חיבור לנפגע') + '</b></li>'
+    +   '<li>' + ico('scan-line', 26) + '<b>' + L('Anyone scans, even offline','כל אחד סורק, גם בלי רשת') + '</b></li>'
+    + '</ol>';
+  if (!cur) return h + '<p class="bt-empty">' + L('No casualties yet.','אין עדיין נפגעים.') + '</p>';
+  var id = esc(cur._docId);
+  h += '<article class="bt-card" id="bt-sel">'
+    + '<div class="bt-card-h">' + W.TriageUI.chip(cur.triageColor) + '<div><div class="bt-name">' + esc(T(cur.name)) + '</div>'
+    + '<div class="bt-sub">' + L('Wristband','צמיד') + ' <code dir="ltr">' + esc(serialFor(cur)) + '</code>' + (cur.formLevel === 'quick' ? ' · ' + L('Quick triage','מיון מהיר') : '') + '</div></div></div>'
+    + '<div class="bt-band">' + braceletHtml(cur) + '</div>'
+    + '<div class="bt-btns2"><button class="xbtn xbtn-primary" onclick="Bracelet.viewCard(\'' + id + '\')">' + ico('scan-line', 24) + L('Scan result','תוצאת סריקה') + '</button>'
+    + '<button class="xbtn" onclick="Bracelet.open(\'' + id + '\')">' + ico('printer', 24) + L('Print','הדפסה') + '</button></div>'
+    + '</article>';
+  h += '<h3 class="bt-lh">' + L('All casualties','כל הנפגעים') + ' <span>(' + list.length + ')</span></h3><div class="bt-picks">';
   list.forEach(function(c){
-    var tg = triageOf(c.triageColor);
-    h += '<article class="bt-item"><div class="bt-scale">' + braceletHtml(c, { list:true }) + '</div>'
-      + '<div class="bt-row"><div><div class="bt-name">' + esc(T(c.name)) + '</div><div class="bt-sub"><i style="background:' + tg.c + '"></i>' + L(tg.en, tg.he) + (c.formLevel === 'quick' ? ' · ' + L('QUICK TRIAGE','מיון מהיר') : '') + '</div></div>'
-      + '<div class="bt-btns"><button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(c._docId) + '\')">' + ico('scan-line', 24) + L('SCAN RESULT','תוצאת סריקה') + '</button>'
-      + '<button class="xbtn" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Print wristband','הדפס צמיד') + '">' + ico('printer', 24) + L('PRINT','הדפס') + '</button></div></div></article>';
+    var on = c === cur;
+    h += '<button class="bt-pick' + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Bracelet.pick(\'' + esc(c._docId) + '\')">'
+      + W.TriageUI.chip(c.triageColor)
+      + '<span class="bt-pn"><b>' + esc(T(c.name)) + '</b><code dir="ltr">' + esc(serialFor(c)) + '</code></span>'
+      + (on ? '<em>' + ico('check', 22) + L('Shown','מוצג') + '</em>' : ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 26))
+      + '</button>';
   });
   return h + '</div>';
+}
+function pick(docId){
+  selId = docId;
+  if (W.renderIncidentPage) W.renderIncidentPage();
+  setTimeout(function(){ var el = document.getElementById('bt-sel'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 30);
 }
 
 // ── Hash route: a scanned QR opens the card directly ───────────
@@ -604,7 +626,7 @@ W.addEventListener('hashchange', route);
 W.addEventListener('pagehide', function(){ if (stopScan){ try { stopScan(); } catch (e) {} stopScan = null; } });
 
 W.Bracelet = { pack: pack, unpack: unpack, decode: decodeSnap, parse: parseScan, linkFor: linkFor,  serialFor: serialFor, snapshot: snapshot, braceletHtml: braceletHtml, renderTab: renderTab, route: route,
-  open: showBracelet, viewCard: viewCard, copy: copy, print: print, scan: scan, manual: manual, close: close,
+  open: showBracelet, pick: pick, viewCard: viewCard, copy: copy, print: print, scan: scan, manual: manual, close: close,
   openCardFor: openSerialOrDoc, relang: function(){ if (overlay && redo) redo(); }, css: brcCss };
 
 // Hooks used by the shared form (pair wristband / find by code / export).

@@ -125,11 +125,12 @@ function renderOverview(){
   var waitingReds = list.filter(function(x){ return x.triageColor === 'red' && unassigned(x); });
   var alertHtml = waitingReds.length
     ? '<button class="ov-alert" onclick="Demo.openCasualty(\'' + esc(waitingReds[0]._docId) + '\')">' + ico('triangle-alert', 32)
-      + '<span><b>' + L(waitingReds.length + ' URGENT ' + (waitingReds.length > 1 ? 'CASUALTIES' : 'CASUALTY') + ' WAITING FOR EVACUATION', waitingReds.length + ' נפגעים דחופים ממתינים לפינוי') + '</b><small>' + L('Tap to open the first one','לחצו לפתיחת הראשון') + '</small></span></button>'
+      + '<span><b>' + (waitingReds.length === 1 ? L('1 urgent casualty waiting for evacuation','נפגע דחוף אחד ממתין לפינוי') : L(waitingReds.length + ' urgent casualties waiting for evacuation', waitingReds.length + ' נפגעים דחופים ממתינים לפינוי')) + '</b><small>' + (waitingReds.length === 1 ? L('Tap to open their Form 101','לחצו לפתיחת טופס 101 שלו') : L('Tap to open the first one','לחצו לפתיחת הראשון')) + '</small></span>' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</button>'
     : '';
+  var prev = w._ovCounts || {}; w._ovCounts = {};
   var tiles = ['red','yellow','green','gray','black'].map(function(c){
-    var t = tg(c);
-    return '<button class="ov-tile t-' + c + '" onclick="Demo.filter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>';
+    var t = tg(c), n = count(c), bump = prev[c] != null && prev[c] !== n; w._ovCounts[c] = n;
+    return '<button class="ov-tile t-' + c + (bump ? ' bump' : '') + '" onclick="Demo.filter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>';
   }).join('');
   var go = function(icon, title, sub, fn, primary){
     return '<button class="go' + (primary ? ' primary' : '') + '" onclick="' + fn + '"><span class="gi">' + ico(icon, 28) + '</span><span><b>' + title + '</b><small>' + sub + '</small></span><span class="chev">' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</span></button>';
@@ -138,15 +139,15 @@ function renderOverview(){
   return '<div class="ov-hero"><div class="eyebrow">' + L('LIVE SCENARIO','תרחיש חי') + '</div>'
     + '<h2>' + L('Bus-stop attack · ' + list.length + ' casualties','פיגוע בתחנת אוטובוס · ' + list.length + ' נפגעים') + '</h2>'
     + '<p>' + L('You are the first medic on scene, ' + mins + ' minutes in. Everyone is triaged.','אתם החובש הראשון בזירה, ' + mins + ' דקות מתחילת האירוע. כולם מוינו.') + '</p></div>'
+    + '<button class="ov-tour" onclick="Tour.start()">' + ico('play', 28) + '<span><b>' + L('Start the 60-second tour','התחילו סיור של 60 שניות') + '</b><small>' + L('8 steps through the whole app','8 שלבים בכל האפליקציה') + '</small></span></button>'
     + alertHtml
     + '<div class="ov-tiles">' + tiles + '</div>'
     + '<div class="sec-label">' + L('HOW MANY PATIENTS?','כמה נפגעים?') + '</div>'
     + '<div class="ov-choose">'
-    +   '<button class="ch full" onclick="Demo.newFull()"><span class="ch-i">' + ico('file-text', 34) + '</span><b>' + L('ONE PATIENT','נפגע אחד') + '</b><strong>' + L('FULL FORM 101','טופס 101 מלא') + '</strong><small>' + L('The complete care record: body map, vitals, every drug and time.','תיק הטיפול המלא: מפת גוף, מדדים, כל תרופה וזמן.') + '</small></button>'
-    +   '<button class="ch quick" onclick="Quick.open()"><span class="ch-i">' + ico('zap', 34) + '</span><b>' + L('MANY CASUALTIES','נפגעים רבים') + '</b><strong>' + L('QUICK TRIAGE','מיון מהיר') + '</strong><small>' + L('A colour for each casualty in seconds. Open the full form 101 later.','צבע לכל נפגע תוך שניות. את טופס 101 המלא פותחים אחר כך.') + '</small></button>'
+    +   '<button class="ch full" onclick="Demo.newFull()"><span class="ch-i">' + ico('file-text', 34) + '</span><b>' + L('ONE PATIENT','נפגע אחד') + '</b><strong>' + L('Full Form 101','טופס 101 מלא') + '</strong><small>' + L('The complete care record: body map, vitals, every drug and time.','תיק הטיפול המלא: מפת גוף, מדדים, כל תרופה וזמן.') + '</small></button>'
+    +   '<button class="ch quick" onclick="Quick.open()"><span class="ch-i">' + ico('zap', 34) + '</span><b>' + L('MANY CASUALTIES','נפגעים רבים') + '</b><strong>' + L('Quick triage','מיון מהיר') + '</strong><small>' + L('A colour for each casualty in seconds. Open the full form 101 later.','צבע לכל נפגע תוך שניות. את טופס 101 המלא פותחים אחר כך.') + '</small></button>'
     + '</div>'
-    + '<div class="sec-label">' + L('SEE IT WORK','ראו איך זה עובד') + '</div>'
-    + go('play', L('Take the guided tour','סיור מודרך'), L('About 60 seconds, 8 steps','כ-60 שניות, 8 שלבים'), 'Tour.start()', true)
+    + '<div class="sec-label">' + L('WRISTBANDS','צמידים') + '</div>'
     + go('scan-line', L('Scan a wristband','סריקת צמיד'), L('The QR code carries the casualty’s record','קוד ה-QR נושא את תיק הנפגע'), "Demo.go('scan')")
     + '<div class="sec-label">' + L('INCIDENT','אירוע') + '</div>'
     + '<dl class="kv">'
@@ -193,7 +194,72 @@ function renderPatients(){
   return h + '</div>';
 }
 
+// ── Command board ──────────────────────────────────────────────
+// Who needs what right now: one next action, four scene numbers, the same triage tiles as Home,
+// a search row that stays on screen, and one card per casualty (same card language as the list).
+var AVPU = { A:['Alert','ער'], V:['Responds to voice','מגיב לקול'], P:['Responds to pain','מגיב לכאב'], U:['Unresponsive','לא מגיב'] };
+function minsSinceTs(t){ var d = t && t.toDate ? t.toDate() : (t ? new Date(t) : null); return d && !isNaN(d) ? Math.max(0, Math.round((Date.now() - d.getTime()) / 60000)) : null; }
+function lastVit(c){ var v = (c.vitalsHistory || []).slice(-1)[0] || {}; return { pulse: v.pulse != null ? v.pulse : c.pulse, bpSys: v.bpSys != null ? v.bpSys : c.bpSys, bpDia: v.bpDia != null ? v.bpDia : c.bpDia, spo2: v.spo2 != null ? v.spo2 : c.spo2, rr: v.rr != null ? v.rr : c.rr, avpu: v.avpu || c.avpu || (((c.xabcde || {}).d || {}).avpu) || '' }; }
+function openTq(c){ var t = (((c.xabcde || {}).x || {}).tourniquets || []).filter(function(q){ return !q.released && !q.removed; })[0]; return t ? Math.max(0, Math.round((Date.now() - Date.parse(t.time)) / 60000)) : null; }
+function renderBoard(){
+  var order = { red:0, yellow:1, green:2, gray:3, black:4 };
+  var all = (w._incidentCasualties || []).slice().sort(function(a, b){ return (order[a.triageColor] != null ? order[a.triageColor] : 9) - (order[b.triageColor] != null ? order[b.triageColor] : 9); });
+  var f = w._bdFilter, q = String(w._bdQuery || '').trim().toLowerCase();
+  var serial = function(c){ return w.Bracelet && w.Bracelet.serialFor ? w.Bracelet.serialFor(c) : ''; };
+  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (String(T(c.name)) + ' ' + c.name + ' ' + serial(c)).toLowerCase().indexOf(q) >= 0); });
+  var h = '<div class="seg-tabs" role="tablist"><button role="tab" aria-selected="false" onclick="Demo.casView(\'list\')">' + L('List','רשימה') + '</button><button class="on" role="tab" aria-selected="true" onclick="Demo.casView(\'board\')">' + L('Command board','לוח פיקוד') + '</button></div>';
+  h += '<div class="bd-head"><h2>' + L('Command board','לוח פיקוד') + '</h2><p>' + L('Who needs what, right now.','מי צריך מה, עכשיו.') + '</p></div>';
+  // next action
+  var next = all.filter(function(c){ return (c.triageColor === 'red' || c.triageColor === 'yellow') && unassigned(c); })[0];
+  if (next) h += '<button class="bd-next" onclick="Demo.tab(\'evac\')">' + chip(next.triageColor, true) + '<span><small>' + L('Next action','הפעולה הבאה') + '</small><b>' + esc(String(T(next.name)).split(' — ')[0]) + L(' is waiting for an ambulance',' ממתין לאמבולנס') + '</b></span><em>' + ico('ambulance', 26) + L('Assign','שיבוץ') + '</em></button>';
+  else h += '<div class="bd-next ok">' + ico('check-check', 28) + '<span><small>' + L('Next action','הפעולה הבאה') + '</small><b>' + L('Every urgent casualty is on an ambulance','כל הנפגעים הדחופים באמבולנס') + '</b></span></div>';
+  // scene numbers
+  var tqs = all.map(openTq).filter(function(x){ return x != null; }), lowBp = all.filter(function(c){ var v = lastVit(c); return c.triageColor !== 'black' && v.bpSys != null && v.bpSys < 90; }).length;
+  var onAmb = all.filter(function(c){ return !unassigned(c); }).length, onScene = all.filter(function(c){ return unassigned(c) && c.triageColor !== 'black'; }).length;
+  var stat = function(icon, n, label, sub, warn){ return '<div class="bd-stat' + (warn ? ' warn' : '') + '">' + ico(icon, 26) + '<b>' + n + '</b><span>' + label + (sub ? '<small>' + sub + '</small>' : '') + '</span></div>'; };
+  h += '<div class="bd-stats">'
+    + stat('timer', tqs.length, L('Tourniquets on','חוסמי עורקים'), tqs.length ? L('longest ' + Math.max.apply(null, tqs) + ' min','הארוך ' + Math.max.apply(null, tqs) + ' דק׳') : '', tqs.some(function(m){ return m >= 60; }))
+    + stat('heart-pulse', lowBp, L('Blood pressure under 90','לחץ דם מתחת 90'), '', lowBp > 0)
+    + stat('users', onScene, L('Still on scene','עדיין בזירה'), '', false)
+    + stat('ambulance', onAmb, L('On an ambulance','באמבולנס'), '', false)
+    + '</div>';
+  // triage tiles: the Home component, here they filter the board
+  var count = function(c){ return all.filter(function(x){ return x.triageColor === c; }).length; };
+  h += '<div class="ov-tiles bd-tiles">' + ['red','yellow','green','gray','black'].map(function(c){ var t = tg(c); return '<button class="ov-tile t-' + c + (f === c ? ' on' : '') + '" aria-pressed="' + (f === c) + '" onclick="Demo.bdFilter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>'; }).join('') + '</div>';
+  // search row (sticky)
+  h += '<div class="bd-search"><label>' + ico('search', 24) + '<input type="search" enterkeyhint="search" autocomplete="off" placeholder="' + esc(L('Name or code','שם או קוד')) + '" aria-label="' + esc(L('Search by name or wristband code','חיפוש לפי שם או קוד צמיד')) + '" oninput="Demo.bdSearch(this.value)"></label>'
+    + '<button onclick="Demo.go(\'scan\')">' + ico('scan-line', 24) + '<span>' + L('Scan','סריקה') + '</span></button></div>';
+  if (f || q) h += '<button class="filter-bar" onclick="Demo.bdFilter(null);Demo.bdSearch(\'\', true)">' + (f ? chip(f) : ico('search', 22)) + '<span>' + L(list.length + ' of ' + all.length + ' shown', 'מוצגים ' + list.length + ' מתוך ' + all.length) + '</span><b>' + L('SHOW ALL','הצג הכל') + '</b></button>';
+  h += '<div class="bd-list">';
+  list.forEach(function(c){
+    var v = lastVit(c), tq = openTq(c), veh = w.findVehicleForCasualty ? w.findVehicleForCasualty(c) : null, age = minsSinceTs(c.timestamp), dead = c.triageColor === 'black';
+    var name = String(T(c.name)).split(' — '), inj = (c.injuries || []).slice(0, 3).map(function(i){ return esc(T(w.bodyLabelOut ? w.bodyLabelOut(i.region) : ((w.BODY_LABELS || {})[i.region] || i.region))); }).join(' · ');
+    var vit = function(lbl, val, flagTxt){ return '<em><small>' + lbl + '</small><i>' + val + '</i>' + (flagTxt ? '<u>' + flagTxt + '</u>' : '') + '</em>'; };
+    var vits = dead ? '' : (v.pulse === 0 ? vit(L('Pulse','דופק'), L('None','אין'), '') : v.pulse != null ? vit(L('Heart rate','דופק'), v.pulse, v.pulse > 120 ? L('HIGH','גבוה') : '') : '')
+      + (v.bpSys ? vit(L('Blood pressure','לחץ דם'), v.bpSys + '/' + (v.bpDia || '–'), v.bpSys < 90 ? L('LOW','נמוך') : '') : '')
+      + (v.spo2 ? vit('SpO₂', v.spo2 + '%', v.spo2 < 92 ? L('LOW','נמוך') : '') : '')
+      + (v.rr ? vit(L('Breathing','נשימה'), v.rr + '/' + L('min','דק׳'), v.rr > 24 ? L('HIGH','גבוה') : '') : '');
+    var tags = '';
+    if (c.formLevel === 'quick') tags += '<span class="bd-tag">' + ico('zap', 20) + L('Quick triage','מיון מהיר') + '</span>';
+    if (v.avpu && AVPU[v.avpu] && !dead) tags += '<span class="bd-tag">' + ico('brain', 20) + L(AVPU[v.avpu][0], AVPU[v.avpu][1]) + '</span>';
+    if (tq != null) tags += '<span class="bd-tag' + (tq >= 60 ? ' bad' : ' warn') + '">' + ico('timer', 20) + L('Tourniquet ' + tq + ' min','חוסם עורקים ' + tq + ' דק׳') + '</span>';
+    if (veh) tags += '<span class="bd-tag ok">' + ico('ambulance', 20) + (veh.status === 'athospital' ? L('At hospital','בבית חולים') : L('On ambulance','באמבולנס')) + '</span>';
+    else if (!dead) tags += '<span class="bd-tag">' + ico('map-pin', 20) + L('On scene','בזירה') + '</span>';
+    if (serial(c)) tags += '<span class="bd-tag code">' + ico('qr-code', 20) + '<bdi>' + esc(serial(c)) + '</bdi></span>';
+    h += '<button class="bd-card t-' + (c.triageColor || 'none') + '" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">'
+      + '<span class="bd-top">' + chip(c.triageColor, true) + (age != null ? '<span class="bd-age">' + ico('clock', 20) + L(age + ' min',age + ' דק׳') + '</span>' : '') + '</span>'
+      + '<b class="bd-name">' + esc(name[0]) + (name[1] ? '<small>' + esc(name[1]) + '</small>' : '') + '</b>'
+      + (vits ? '<span class="bd-vits">' + vits + '</span>' : '')
+      + '<span class="bd-inj">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
+      + '<span class="bd-tags">' + tags + '</span>'
+      + '<span class="bd-open">' + L('Open Form 101','פתיחת טופס 101') + ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 24) + '</span></button>';
+  });
+  if (!list.length) h += '<p class="empty">' + L('No casualty matches.','אין נפגע מתאים.') + '</p>';
+  return h + '</div>';
+}
+
 // ── App bar ────────────────────────────────────────────────────
+var MARK = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path d="M24 3 42 9.5v13.6C42 34.4 34.6 41.6 24 45 13.4 41.6 6 34.4 6 23.1V9.5z" fill="#2f6df6"/><path d="M24 3 42 9.5v13.6C42 34.4 34.6 41.6 24 45z" fill="#1f55d0"/><rect x="20.5" y="13" width="7" height="22" rx="1.5" fill="#fff"/><rect x="13" y="20.5" width="22" height="7" rx="1.5" fill="#fff"/></svg>');
 function renderBar(){
   var back = document.getElementById('app-back'), mark = document.getElementById('app-mark'),
       title = document.getElementById('app-title'), sub = document.getElementById('app-sub'), mb = document.getElementById('menu-btn');
@@ -214,6 +280,7 @@ function renderBar(){
     sub.textContent = tgWord(w._casualtyTriageColor);
   } else {
     back.hidden = true; mark.hidden = false; mb.hidden = false;
+    if (mark.getAttribute('src') !== MARK) mark.setAttribute('src', MARK);
     title.textContent = L('Shomer Ahi','שומר אחי');
     sub.textContent = '';
   }
@@ -263,7 +330,7 @@ function renderNow(){
   if (!w._casualtyEditMode && w._incidentTab === 'casualties' && w._casView === 'board' && w._mciMode === 'evac'){ w._mciMode = 'manage'; w._incidentTab = 'evac'; }
   var tabNow = activeTab(), html, view;
   if (w._casualtyEditMode){ html = w.renderIncidentCasualties(); view = 'form'; }
-  else if (tabNow === 'casualties' && w._casView === 'board'){ html = '<div class="seg-tabs" role="tablist"><button role="tab" onclick="Demo.casView(\'list\')">' + L('List','רשימה') + '</button><button class="on" role="tab" onclick="Demo.casView(\'board\')">' + L('Command board','לוח פיקוד') + '</button></div>' + w.renderMCIDashboard(); view = 'mci'; }
+  else if (tabNow === 'casualties' && w._casView === 'board'){ html = renderBoard(); view = 'board'; }
   else if (tabNow === 'casualties'){ html = renderPatients(); view = 'casualties'; }
   else if (tabNow === 'evac'){ html = w.Evac ? w.Evac.render() : ''; view = 'evac'; }
   else if (tabNow === 'bracelets'){ html = w.Bracelet.renderTab(); view = 'bracelets'; }
@@ -297,6 +364,8 @@ var Demo = w.Demo = {
     var c = document.getElementById('incident-content'); c.scrollTop = 0;
     return Promise.resolve();
   },
+  bdFilter: function(c){ w._bdFilter = (c && w._bdFilter !== c) ? c : null; w.renderIncidentPage(); },
+  bdSearch: function(v, clear){ w._bdQuery = v || ''; if (clear){ var i = document.querySelector('.bd-search input'); if (i) i.value = ''; } w.renderIncidentPage(); },
   casView: function(v){ w._casView = v; if (v === 'board') w._mciMode = 'manage'; w.renderIncidentPage(); var c = document.getElementById('incident-content'); c.scrollTop = 0; },
   filter: function(color){ w._plFilter = color; w._casView = 'list'; w._incidentTab = 'casualties'; w.renderIncidentPage(); document.getElementById('incident-content').scrollTop = 0; },
   newFull: function(){ closeOverlays(); w._incidentTab = 'casualties'; w.newCasualty(); },
@@ -408,7 +477,7 @@ function syncModal(){
   bg.forEach(function(c){ if (top) c.setAttribute('inert', ''); else c.removeAttribute('inert'); });
   if (top){
     if (!_ret) _ret = document.activeElement;
-    if (!top.__fx){ top.__fx = true; top.setAttribute('role', top.getAttribute('role') || 'dialog'); top.setAttribute('aria-modal', 'true'); if (!top.getAttribute('aria-label')) top.setAttribute('aria-label', (top.querySelector('h3,.bo-title,h2') || {}).textContent || 'Dialog'); var f = top.querySelector('[data-autofocus],.sheet button,.bo-x,button,input'); if (f) setTimeout(function(){ f.focus({ preventScroll:true }); }, 20); }
+    if (!top.__fx){ top.__fx = true; top.setAttribute('role', top.getAttribute('role') || 'dialog'); top.setAttribute('aria-modal', 'true'); if (!top.getAttribute('aria-label')) top.setAttribute('aria-label', (top.querySelector('h3,.bo-title,h2') || {}).textContent || 'Dialog'); var f = top.querySelector('[data-autofocus]'); if (!f){ f = top.querySelector('[role=dialog]') || top; if (!f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1'); } setTimeout(function(){ try { f.focus({ preventScroll:true, focusVisible:false }); } catch(e){ f.focus(); } }, 20); }
   } else if (_ret){ try { _ret.focus({ preventScroll:true }); } catch(e){} _ret = null; }
 }
 new MutationObserver(syncModal).observe(document.getElementById('app'), { childList:true });

@@ -67,7 +67,7 @@ function enhanceForm(c){
   sSug.id = 'fs-now';
 
   var sBody = section('fs-body', L('Body map','מפת גוף'), L('Tap a body part to mark a wound','לחצו על אזור בגוף כדי לסמן פציעה'));
-  [seg, map].forEach(function(el){ move(sBody, el); });
+  [seg, cls('bm-side')[0], map].forEach(function(el){ move(sBody, el); });
   var fInj = fold('inj', '<span>' + L('Marked injuries','פציעות מסומנות') + '</span>'); put(fInj, inj); if (inj) sBody.querySelector('.fs-b').appendChild(fInj);
   var fTr = fold('tr', '<span>' + L('Treatments on the body','טיפולים על הגוף') + '</span>'); put(fTr, treat); if (treat) sBody.querySelector('.fs-b').appendChild(fTr);
 
@@ -109,7 +109,7 @@ function enhanceForm(c){
   var fieldWrap = document.createElement('div'); fieldWrap.innerHTML = W.Field ? W.Field.html() : '';
   var topSec = fieldWrap.querySelector('#field'), monSec = fieldWrap.querySelector('#fs-more');
   var jb = document.createElement('nav'); jb.className = 'jb'; jb.setAttribute('aria-label', L('Jump to','קפיצה אל'));
-  [['field', L('101 FORM','טופס 101')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-time', L('TIMELINE','ציר זמן')], ['fs-more', L('VITALS + RECORD','מדדים ותיק')]].forEach(function(q){
+  [['field', L('FORM','טופס')], ['fs-body', L('BODY','גוף')], ['fs-time', L('TIMELINE','זמנים')], ['fs-more', L('VITALS','מדדים')]].forEach(function(q){
     var bt = document.createElement('button'); bt.textContent = q[1]; bt.dataset.t = q[0]; bt.className = (W.FormUI.cur || 'field') === q[0] ? 'on' : ''; if (bt.className) bt.setAttribute('aria-current', 'true'); bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
   });
   if (monSec) { monSec.appendChild(sCare); if (recs) monSec.appendChild(sSug); monSec.appendChild(sRec); }   // no suggestions yet = no empty box

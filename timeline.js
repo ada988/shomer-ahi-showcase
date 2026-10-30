@@ -44,22 +44,35 @@ Field.timelineHtml = function(){
     var e = r.e, c = (isDrug(e) && CAT.drug) || (/מקבע אגן/.test(String(e.action || '')) && CAT.c) || CAT[e.category] || ['•','tl-vit', String(e.category || '').toUpperCase().slice(0, 12), String(e.category || '')];
     var mins = r.t ? Math.max(0, Math.round((now - r.t) / 60000)) : null;
     var note = e.category === 'note', text = note ? String(e.action || '') : disp(e.action), det = e.details ? (IDS[e.details] ? L(IDS[e.details][0], IDS[e.details][1]) : T(String(e.details))) : '';
-    h += '<li class="tl-i"><div class="tl-when"><b dir="ltr">' + hm(e.time) + '</b><small>' + (mins == null ? '' : mins < 1 ? L('now','עכשיו') : mins < 60 ? mins + L(' min',' דק׳') : Math.floor(mins / 60) + L(' h ',' ש׳ ') + (mins % 60) + L(' min',' דק׳')) + '</small></div>'
-      + '<div class="tl-what ' + c[1] + '"><span class="tl-chip"><b>' + c[0] + '</b>' + L(c[2], c[3]) + '</span><p' + (note ? ' class="no-tr" dir="auto"' : '') + '>' + esc(text) + (det ? '<small>' + esc(det) + '</small>' : '') + '</p></div>'
-      + (Field._tlArm && Field._tlArm.i === r.i && Date.now() - Field._tlArm.t < 4000
-        ? '<button class="tl-del arm" onclick="Field.tlTap(' + r.i + ')" aria-label="' + L('Confirm delete','אישור מחיקה') + '">' + ico('x', 22) + '<span>' + L('CONFIRM DELETE','אישור מחיקה') + '</span></button></li>'
-        : '<button class="tl-del" onclick="Field.tlTap(' + r.i + ')" aria-label="' + L('Delete this entry','מחיקת הרשומה') + '">' + ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span></button></li>');
+    var ago = mins == null ? '' : mins < 1 ? L('now','עכשיו') : mins < 60 ? L(mins + ' min ago','לפני ' + mins + ' דק׳') : L(Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min ago','לפני ' + Math.floor(mins / 60) + ' ש׳ ' + (mins % 60) + ' דק׳');
+    h += '<li class="tl-i"><button class="tl-row" onclick="Field.tlOpen(' + r.i + ')" aria-label="' + esc(L('Entry at ' + hm(e.time) + ': open to edit or delete','רשומה ב-' + hm(e.time) + ': פתיחה לעריכה או מחיקה')) + '">'
+      + '<span class="tl-when"><b dir="ltr">' + hm(e.time) + '</b><small>' + ago + '</small></span>'
+      + '<span class="tl-what"><span class="tl-chip ' + c[1] + '"><b>' + c[0] + '</b>' + L(c[2], c[3]) + '</span><span class="tl-txt' + (note ? ' no-tr" dir="auto' : '') + '">' + esc(text) + (det ? '<small>' + esc(det) + '</small>' : '') + '</span></span>'
+      + '<span class="tl-go" aria-hidden="true">' + ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 26) + '</span></button></li>';
   });
   h += '</ol>';
   if (all.length > 8) h += '<button class="xbtn tl-more" onclick="Field.tlAll()">' + (Field._tlAll ? L('SHOW LESS','הצג פחות') : L('SHOW ALL ' + all.length,'הצג את כל ' + all.length)) + '</button>';
   return h + '</section>';
 };
-Field._tlArm = null;
-Field.tlTap = function(i){
-  var a = Field._tlArm;
-  if (a && a.i === i && Date.now() - a.t < 4000){ Field._tlArm = null; Field.tlDel(i); return; }
-  Field._tlArm = { i:i, t:Date.now() }; W.MedHost.renderIncidentPage();
-  setTimeout(function(){ if (Field._tlArm && Date.now() - Field._tlArm.t >= 4000){ Field._tlArm = null; W.MedHost.renderIncidentPage(); } }, 4100);
+// Tap a row: a sheet with the entry and its actions (edit a note, delete). Delete is undoable.
+Field.tlOpen = function(i){
+  var e = (W._casualtyTimeline || [])[i]; if (!e) return;
+  Field.tlRowClose();
+  var note = e.category === 'note', text = note ? String(e.action || '') : disp(e.action);
+  var el = document.createElement('div'); el.id = 'tl-row-sheet'; el.className = 'sheet-wrap no-polish';
+  el.innerHTML = '<div class="sheet-dim" onclick="Field.tlRowClose()"></div><div class="sheet tl-sheet tl-rs" role="dialog" aria-label="' + L('Timeline entry','רשומה בציר הזמן') + '"><div class="sheet-grab"></div>'
+    + '<p class="tl-rs-t"><b dir="ltr">' + hm(e.time) + '</b></p><p class="tl-rs-x' + (note ? ' no-tr" dir="auto' : '') + '">' + esc(text) + '</p>'
+    + '<div class="tl-rs-b">' + (note ? '<button class="xbtn" onclick="Field.tlEdit(' + i + ')">' + ico('file-text', 24) + L('EDIT NOTE','עריכת הערה') + '</button>' : '')
+    + '<button class="xbtn tl-rs-del" onclick="Field.tlRowClose();Field.tlDel(' + i + ')">' + ico('x', 24) + L('DELETE ENTRY','מחיקת הרשומה') + '</button>'
+    + '<button class="xbtn" onclick="Field.tlRowClose()">' + L('CLOSE','סגור') + '</button></div>'
+    + (note ? '' : '<p class="tl-rs-n">' + L('Deleting also removes its record (drug, fluid, tourniquet or wound mark). UNDO brings it back.','מחיקה מסירה גם את הרשומה הקשורה (תרופה, נוזל, חוסם או סימון פציעה). ביטול מחזיר אותה.') + '</p>')
+    + '</div>';
+  (document.getElementById('app') || document.body).appendChild(el);
+};
+Field.tlRowClose = function(){ var s = document.getElementById('tl-row-sheet'); if (s) s.remove(); };
+Field.tlEdit = function(i){
+  var e = (W._casualtyTimeline || [])[i]; if (!e) return;
+  Field.tlRowClose(); Field.tlNote(i);
 };
 Field.tlAll = function(){ Field._tlAll = !Field._tlAll; W.MedHost.renderIncidentPage(); };
 Field.tlDel = function(i){
@@ -82,13 +95,15 @@ Field.tlDel = function(i){
   if (W.deleteTimelineEntry) W.deleteTimelineEntry(i); else { if (W.pushMedHistory) W.pushMedHistory(); tl.splice(i, 1); W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage(); }
   if (Field.toast) Field.toast(L('Deleted: ','נמחק: ') + esc(T(String(e.action || '')).slice(0, 40)) + (linked ? L(' (and its record)',' (וגם הרשומה)') : ''), function(){ W.medUndo(); });
 };
-Field.tlNote = function(){
+Field.tlNote = function(editIdx){
+  Field._tlEditIdx = (typeof editIdx === 'number') ? editIdx : null;
   var old = document.getElementById('tl-sheet'); if (old) old.remove();
   var el = document.createElement('div'); el.id = 'tl-sheet'; el.className = 'sheet-wrap no-polish';
-  el.innerHTML = '<div class="sheet-dim" onclick="Field.tlNoteClose()"></div><div class="sheet tl-sheet" role="dialog" aria-label="' + L('Add a note','הוספת הערה') + '"><div class="sheet-grab"></div><h3>' + L('ADD A NOTE TO THE TIMELINE','הערה לציר הזמן') + '</h3>'
+  el.innerHTML = '<div class="sheet-dim" onclick="Field.tlNoteClose()"></div><div class="sheet tl-sheet" role="dialog" aria-label="' + L('Add a note','הוספת הערה') + '"><div class="sheet-grab"></div><h3>' + (Field._tlEditIdx != null ? L('Edit note','עריכת הערה') : L('Add a note to the timeline','הערה לציר הזמן')) + '</h3>'
     + '<textarea id="tl-note" class="no-tr" dir="auto" maxlength="300" rows="4" placeholder="' + L('What happened, what you did, what you saw','מה קרה, מה עשיתם, מה ראיתם') + '"></textarea>'
     + '<div class="btn-row"><button class="xbtn" onclick="Field.tlNoteClose()">' + L('CANCEL','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.tlNoteSave()">' + L('SAVE NOTE','שמירת הערה') + '</button></div></div>';
   (document.getElementById('app') || document.body).appendChild(el);
+  var ed = Field._tlEditIdx != null ? (W._casualtyTimeline || [])[Field._tlEditIdx] : null; if (ed){ var ta0 = el.querySelector('#tl-note'); ta0.value = String(ed.action || ''); }
   setTimeout(function(){ var ta = document.getElementById('tl-note'); if (ta) ta.focus(); }, 60);
 };
 Field.tlNoteClose = function(){ var s = document.getElementById('tl-sheet'); if (s) s.remove(); };
@@ -96,6 +111,9 @@ Field.tlNoteSave = function(){
   var ta = document.getElementById('tl-note'); var txt = ta ? ta.value : '';
   txt = String(txt).replace(/[\u0000-\u001f\u202a-\u202e\u2066-\u2069]/g, ' ').trim().slice(0, 300);
   Field.tlNoteClose(); if (!txt){ if (Field.toast) Field.toast(L('Empty note, nothing saved','הערה ריקה, לא נשמר דבר'), null); return; }
+  var ei = Field._tlEditIdx; Field._tlEditIdx = null;
+  var ed = ei != null ? (W._casualtyTimeline || [])[ei] : null;
+  if (ed){ if (W.pushMedHistory) W.pushMedHistory(); ed.action = txt; if (W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage(); if (Field.toast) Field.toast(L('Note changed','ההערה עודכנה'), function(){ W.medUndo(); }); return; }
   if (W.addTimestampedAction) W.addTimestampedAction('note', txt, '');
   W.MedHost.renderIncidentPage();
   if (Field.toast) Field.toast(L('Note added','הערה נוספה'), function(){ W.medUndo(); });

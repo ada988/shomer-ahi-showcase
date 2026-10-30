@@ -1,0 +1,68 @@
+/* evac2: YC design pass — one ambulance card, one banner, quick triage in the app's own colours.
+   Rules kept: targets ≥48px (primary 56–64), text ≥16px, every icon has a word, colour never alone. */
+
+/* ── Banner: urgent casualties still on scene + the one action ── */
+#incident-content .amb-banner{margin:0 0 18px;padding:14px;border-radius:16px;background:var(--c2,#171a20);border:2px solid rgba(255,255,255,.14);border-inline-start:8px solid var(--t-red,#d01a20)}
+.amb-banner>p{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0}
+.amb-banner>p>b{font-size:20px;font-weight:800;line-height:1.25;color:#fff}
+.amb-banner .tchip{flex:none}
+#incident-content .amb-banner .ev-rush{width:100%;margin-top:12px;display:flex!important;align-items:center;justify-content:flex-start;gap:14px;min-height:72px;padding:10px 16px;text-align:start;white-space:normal;border-radius:14px}
+.amb-banner .ev-rush span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.amb-banner .ev-rush b{font-size:21px;font-weight:900;line-height:1.15}
+.amb-banner .ev-rush small{font-size:16px;font-weight:700;line-height:1.3;color:#e6eeff}
+.amb-banner-sub{display:flex;align-items:flex-start;gap:8px;margin:10px 0 0;font-size:17px;font-weight:700;color:var(--t2,#cfd3da)}
+
+/* ── Ambulance card ── */
+#incident-content section.amb{margin:0 0 18px;padding:14px;border-radius:16px;border:2px solid rgba(255,255,255,.14);background:var(--c2,#171a20)}
+#incident-content section.amb.ev-road{border-color:rgba(255,255,255,.14);border-inline-start:8px solid var(--accent,#1f6bff);background:var(--c2,#171a20)}
+#incident-content section.amb.done{opacity:1;display:block}
+.amb-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.amb-h>b{font-size:23px;font-weight:900;line-height:1.15;flex:1 1 auto;min-width:0}
+.amb-chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;border-radius:999px;background:var(--c4,#2b303a);color:#fff;font-size:16px;font-weight:800;white-space:nowrap}
+.amb-chip.st-evacuating{background:var(--accent,#1f6bff)}
+.amb-chip.st-athospital{background:#2b303a}
+#incident-content .amb .ev-eta{padding:12px 6px 6px}
+#incident-content .amb .ev-eta small{font-size:17px;font-weight:800;letter-spacing:0;color:var(--t2,#cfd3da)}
+#incident-content .amb .ev-eta b{font-size:64px}
+#incident-content .amb .ev-eta span{display:inline-flex;align-items:center;gap:8px;font-size:19px;font-weight:800}
+#incident-content .amb .ev-eta.soon b{color:#ffd23f}
+#incident-content .amb .ev-eta.now b{color:#ff9a9d}
+.amb-eta-none{display:flex;align-items:center;gap:10px;margin:12px 0 4px;padding:12px;border-radius:12px;background:var(--c1,#13151a);font-size:17px;font-weight:700;color:var(--t2,#cfd3da);line-height:1.35}
+.amb-eta-none svg{flex:none}
+.amb-sec{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+.amb-sec .ev-h{margin-bottom:6px}
+.amb-cap{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:16px;font-weight:800;color:var(--t2,#cfd3da)}
+#incident-content .amb .ev-pt{border:2px solid rgba(255,255,255,.1);background:var(--c1,#13151a)}
+#incident-content .amb .ev-pt small{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:800;color:#ffcf7a}
+#incident-content .amb .ev-pt small.amb-q{color:#bcd2ff}
+#incident-content .amb .ev-rm{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:96px;border:2px solid rgba(255,255,255,.25);color:#fff;background:transparent}
+#incident-content .amb .amb-go{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:12px;min-height:64px}
+.amb-manage{width:100%;display:flex;align-items:center;gap:12px;min-height:64px;margin-top:10px;padding:0 16px;border-radius:14px;border:2px solid rgba(255,255,255,.18);background:transparent;color:#fff;font:800 19px/1.2 var(--f,inherit);text-align:start;cursor:pointer}
+.amb-manage span{flex:1;min-width:0}
+.amb-manage[aria-expanded="true"]{background:var(--c3,#20242c)}
+.amb-manage-body{margin-top:4px}
+#incident-content .amb .ev-status button,#incident-content .amb .ev-hosp button,#incident-content .amb .ev-cap button,#incident-content .amb .ev-eta-set button,#incident-content .amb .ev-presets button{border-width:2px}
+#incident-content .amb .ev-status button.on,#incident-content .amb .ev-hosp button.on{outline:4px solid #fff;outline-offset:2px}
+#incident-content .amb .ev-status button svg:last-child:not(:first-child){margin-inline-start:auto}
+#incident-content .amb .ev-hosp button b{display:inline-flex;align-items:center;gap:6px}
+.ev-cap button svg{display:block;margin:auto}
+.amb-done{display:flex;align-items:center;gap:10px;margin:10px 0 0;font-size:18px;font-weight:800}
+#incident-content .ev-addveh,#incident-content .ev-addveh+.xbtn-lg{border-width:2px}
+
+/* ── Transport screen ── */
+#incident-content .tp-eta{border-width:2px}
+
+/* ── Quick triage: the app's blue family, icon + word, fewer white outlines ── */
+.qt-title b{display:flex!important;align-items:center;gap:8px;color:#bcd2ff!important}
+.qt-title b svg{flex:none}
+.qt-count span{border:2px solid rgba(0,0,0,.35)!important}
+.qt-count span em{font-size:16px!important}
+.qt-yn button,#qt .qt-yn .yes,#qt .qt-yn .no{display:flex;align-items:center;justify-content:center;gap:14px;border:2px solid rgba(255,255,255,.22)!important;background:var(--c3,#20242c)!important}
+.qt-yn button svg{flex:none}
+.qt-yn button:active,#qt .qt-yn .yes:active,#qt .qt-yn .no:active{background:var(--c4,#2b303a)!important}
+.qt-res{border:0!important;box-shadow:0 0 0 2px rgba(255,255,255,.22) inset}
+.qt-pick button{border:2px solid rgba(255,255,255,.22)!important}
+.qt-pick button.on,.qt-pick button:focus-visible{outline:4px solid #fff;outline-offset:2px}
+.qt-rep{border:2px solid rgba(255,255,255,.14)!important;background:var(--c2,#171a20)}
+.qt-rep b{font-size:16px!important}
+.qt-step small{color:#bcd2ff!important}
