@@ -741,9 +741,11 @@ function show9LineOverlay(){
   const ov=document.createElement('div');
   // z-index above the incident sheet (99999) so the overlay actually
   // renders on top instead of trapped behind. safe-area for iPhone notch.
-  ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.96);z-index:100500;display:flex;flex-direction:column;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));direction:rtl;overflow-y:auto';
+  const host=document.getElementById('app');
+  ov.style.cssText='position:'+(host?'absolute':'fixed')+';top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:100500;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom));direction:'+(document.documentElement.dir||'rtl')+';overflow-y:auto';
+  ov.className='nl-ov';
   ov.setAttribute('role','dialog');ov.setAttribute('aria-label','9-Line MEDEVAC');
-  let inner='<div style="font-size:18px;font-weight:900;color:#e74c3c;text-align:center;margin-bottom:12px">📋 9-Line MEDEVAC</div>';
+  let inner='<div class="nl-top"><b>9-Line MEDEVAC</b><button onclick="closeMedevacOverlay()" class="nl-x">✕ סגור</button></div>';
   inner+='<div id="sh-9line-gps-status" style="font-size:11px;color:var(--t3);text-align:center;margin-bottom:8px"></div>';
   lines.forEach(l=>{
     inner+=`<div style="display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:4px">`;
@@ -760,7 +762,7 @@ function show9LineOverlay(){
   inner+=`<button onclick="share9LineWA()" style="flex:1;padding:16px;border-radius:12px;border:none;background:#25D366;color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--f);min-height:52px">📱 WhatsApp</button>`;
   inner+=`<button onclick="closeMedevacOverlay()" aria-label="סגור" style="padding:16px 22px;border-radius:12px;border:2px solid var(--t3);background:none;color:var(--t2);font-size:15px;font-weight:800;cursor:pointer;font-family:var(--f);min-height:52px">✕</button>`;
   inner+=`</div>`;
-  ov.innerHTML=inner;ov.id='medevac-overlay';document.body.appendChild(ov);
+  ov.innerHTML=inner;ov.id='medevac-overlay';(host||document.body).appendChild(ov);
   // Auto-fetch GPS on open (non-blocking). Falls back silently.
   fetch9LineGPS(true);
 }

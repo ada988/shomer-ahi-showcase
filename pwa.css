@@ -170,3 +170,9 @@ body.in-form .appbar .ttl b{-webkit-line-clamp:1!important;font-size:19px!import
 .tl-when small,.tl-del span{font-size:15px!important}
 .fs-disc{margin:18px 2px 6px;font-size:16px;font-weight:700;color:var(--t2);line-height:1.4}
 .b2-tri{justify-content:flex-start}
+.nl-top{position:sticky;top:-12px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-12px -14px 10px;padding:10px 14px;background:var(--bg);border-bottom:2px solid var(--line)}
+.nl-top b{font-size:22px;font-weight:900}
+.nl-x{min-height:56px;padding:0 16px;border-radius:12px;border:3px solid var(--line);background:var(--c2);color:#fff;font-size:18px;font-weight:900}
+.nl-ov input{font-size:18px!important;min-height:56px!important}
+.nl-ov div[style*="font-size:12px"]{font-size:16px!important;color:var(--t2)!important}
+.nl-ov button{font-size:17px!important;min-height:60px!important}

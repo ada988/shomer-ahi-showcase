@@ -341,9 +341,9 @@ function _hv(x){return x!==null&&x!==undefined&&x!==''&&!(typeof x==='number'&&i
 function _bpOut(v){if(!v)return null;if(_hv(v.bpSys))return v.bpSys+'/'+(_hv(v.bpDia)?v.bpDia:'—');return(_hv(v.bp)&&v.bp!=='-'&&v.bp!=='—/—')?String(v.bp):null;}
 function airwayLabelOut(s){return({clear:'פתוח',compromised:'בסיכון',obstructed:'חסום'})[s]||s||'';}
 function hypoLabelOut(m){return({HPMK:'HPMK — ערכת מניעת היפותרמיה',blanket:'שמיכה'})[m]||m||'';}
-function triageOutName(c){return({red:'אדום — דחוף',yellow:'צהוב — דחוי',green:'ירוק — לא דחוף',gray:'אפור — ממתין',black:'שחור — ללא סימני חיים'})[c]||'לא נקבע';}
+function triageOutName(c){return({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[c]||'לא נקבע';}
 // NATO evacuation categories: Urgent ≤1h, Priority ≤4h, Routine ≤24h.
-function evacOutName(p){return({immediate:'דחוף (עד שעה)',urgent:'בעדיפות (עד 4 שעות)',routine:'שגרתי (עד 24 שעות)',expectant:'ציפייה'})[p]||'';}
+function evacOutName(p){return({immediate:'דחוף (עד שעה)',urgent:'בעדיפות (עד 4 שעות)',routine:'שגרתי (עד 24 שעות)',expectant:'ממתין'})[p]||'';}
 function vitalsOutText(v){
   if(!v)return'לא נמדדו';
   const p=['HR '+(_hv(v.pulse)?v.pulse+(v.pulse===0?' (אין דופק)':''):'—'),'RR '+(_hv(v.rr)?v.rr+(v.rr===0?' (אין נשימה)':''):'—'),'SpO₂ '+(_hv(v.spo2)?v.spo2+'%':'—'),'BP '+(_bpOut(v)||'—')];
@@ -479,7 +479,7 @@ function generateMISTPlusReport(){
   const evac=evacOutName(typeof _casualtyEvacPriority!=='undefined'?_casualtyEvacPriority:null);
   const it=injuryTimeOut(x);
   const who=(e.ageYears==null&&!(typeof _getPatientWeight==='function'&&_getPatientWeight()))?'':[e.ageYears!=null?'גיל '+e.ageYears:'',sexOutName(e.sex),(typeof _getPatientWeight==='function'&&_getPatientWeight())?_getPatientWeight()+' ק"ג':'',(e.sex==='F'&&e.ageYears!=null&&e.ageYears>=12&&e.ageYears<=50)?'היריון: '+(e.pregnant===true?'כן':e.pregnant===false?'לא':'לא ידוע'):''].filter(Boolean).join(' · ');
-  const L=['MIST+ HANDOFF — '+name+(who?' | '+who:''),
+  const L=['MIST+ — '+name+(who?' | '+who:''),
     'שעה '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' | טריאז\': '+triageOutName(triageCol)+(evac?' | פינוי: '+evac:'')];
   tqL.forEach(l=>L.push(S(l)));
   if(medL)L.push('תרופות: '+S(medL));
@@ -808,7 +808,7 @@ function _buildDetailedForm101HTML(){
     const totals={};
     meds.forEach(m=>{const k=m.drug||m.name||'';const mg=parseFloat(String(m.dose||'').replace(/[^\d.]/g,''))||0;totals[k]=(totals[k]||0)+mg;});
     H+=`<h3 style="margin-top:10px">סיכום מצטבר</h3><table class="kv">`;
-    Object.entries(totals).forEach(([k,v])=>{H+=rowSec(k,v+' יח');});
+    Object.entries(totals).forEach(([k,v])=>{H+=rowSec(k,'× '+v);});
     H+=`</table>`;
   } else H+=`<p class="empty">לא ניתנו תרופות</p>`;
   H+=`</section>`;
