@@ -45,6 +45,7 @@ function used(v){ var s = 0, l = 0; (v.casualties || []).forEach(function(i){ if
 function hospital(v){ return HOSPITALS.filter(function(h){ return h.id === v.hospitalId; })[0]; }
 function remaining(v){ return v.etaMinutes != null && v.etaStartAt ? v.etaMinutes * 60 - (Date.now() - v.etaStartAt) / 1000 : null; }
 function etaText(v){ var r = remaining(v); if (r == null) return '—'; return r <= 0 ? L('ARRIVING','מגיע') : mmss(r); }
+function etaWords(v){ var r = remaining(v); if (r == null) return '—'; if (r <= 0) return L('arriving now','מגיע עכשיו'); var mn = Math.max(1, Math.ceil(r / 60)), at = new Date(Date.now() + r * 1000); return L(mn + ' min (about ' + String(at.getHours()).padStart(2,'0') + ':' + String(at.getMinutes()).padStart(2,'0') + ')', mn + ' דק׳ (בערך ' + String(at.getHours()).padStart(2,'0') + ':' + String(at.getMinutes()).padStart(2,'0') + ')'); }
 function members(v){ return (v.casualties || []).map(function(i){ return byId(i.docId); }).filter(Boolean); }
 // The command board counts a casualty as Evacuated once the ambulance is at the hospital. Returns what to restore on UNDO.
 function markEvacuated(v, on){
@@ -147,7 +148,7 @@ function renderTransport(v){
   var h = '', r = remaining(v), cls = r != null && r <= 60 ? 'now' : r != null && r <= 180 ? 'soon' : '', m = sorted(members(v)), hosp = hospital(v);
   var counts = {}; m.forEach(function(c){ counts[c.triageColor] = (counts[c.triageColor] || 0) + 1; });
   h += '<div class="tp-top"><button class="xbtn" onclick="Evac.close()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 28) + L('BACK','חזרה') + '</button><b>' + name(v) + '</b><button class="xbtn' + (state.driver ? ' on' : '') + '" aria-pressed="' + state.driver + '" onclick="Evac.driver()">' + L('DRIVER VIEW','תצוגת נהג') + '</button></div>';
-  h += '<div class="tp-eta ' + cls + '"><small>' + L('ARRIVE IN','הגעה בעוד') + '</small><b>' + etaText(v) + '</b><span>' + (hosp ? esc(L(hosp.en, hosp.he)) : L('Choose a hospital','בחרו בית חולים')) + '</span>'
+  h += '<div class="tp-eta ' + cls + '"><small>' + L('ARRIVES IN','מגיע בעוד') + '</small><b>' + etaText(v) + '</b><span>' + (hosp ? esc(L(hosp.en, hosp.he)) : L('Choose a hospital','בחרו בית חולים')) + '</span>'
     + '<div class="tp-step"><button onclick="Evac.eta(\'' + v.id + '\',-1)">−1</button><button onclick="Evac.eta(\'' + v.id + '\',1)">+1</button><button onclick="Evac.eta(\'' + v.id + '\',5)">+5</button></div></div>';
   if (state.driver){
     var sirens = counts.red ? L('YES — URGENT ON BOARD','כן — דחוף על הסיפון') : L('NO','לא');
@@ -194,9 +195,9 @@ function assignSheet(v){
 var Evac = {
   seed: seed, render: render, etaText: etaText, state: state,
   reset: function(){ state.view = null; state.driver = false; },
-  open: function(id){ state.view = id; rerender(); var c = document.getElementById('incident-content'); if (c) c.scrollTop = 0; },
-  close: function(){ state.view = null; rerender(); },
-  driver: function(){ state.driver = !state.driver; rerender(); },
+  open: function(id){ var ot = document.getElementById('undo-toast'); if (ot) ot.remove(); state.view = id; rerender(); var c = document.getElementById('incident-content'); if (c) c.scrollTop = 0; },
+  close: function(){ var ot = document.getElementById('undo-toast'); if (ot) ot.remove(); state.view = null; rerender(); },
+  driver: function(){ var ot = document.getElementById('undo-toast'); if (ot) ot.remove(); state.driver = !state.driver; rerender(); },
   closeSheet: function(id){ var s = document.getElementById(id); if (s) s.remove(); },
   cap: function(id, kind, d){ var v = veh(id); if (!v) return; var k = kind === 'litter' ? 'litter' : 'seats', u = used(v), inUse = kind === 'litter' ? u.litters : u.seats; v[k] = Math.max(inUse, Math.min(12, (v[k] || 0) + d)); rerender(); },   // never fewer places than casualties already on board
   status: function(id, s){
@@ -255,7 +256,7 @@ var Evac = {
       var S = W.Bracelet ? W.Bracelet.snapshot(c) : {}, t = (S.tq && S.tq[0]) ? ' · TQ ' + hhmm(S.tq[0][1] * 1000) : '', lv = S.v || [];
       return (i + 1) + '. ' + W.TriageUI.word(c.triageColor) + ' — ' + T(c.name) + t + (lv[0] != null ? ' · HR ' + lv[0] : '') + (lv[1] ? ' · BP ' + lv[1] + '/' + (lv[2] || '–') : '') + (lv[3] != null ? ' · SpO₂ ' + lv[3] : '');
     });
-    var text = L('PRE-ALERT — ' + name(v) + ' → ' + (h ? h.en : '?') + ' — ETA ' + etaText(v) + ' — ' + m.length + (m.length === 1 ? ' casualty' : ' casualties'), 'התראה מקדימה — ' + name(v) + ' ← ' + (h ? h.he : '?') + ' — ETA ' + etaText(v) + ' — ' + m.length + ' נפגעים') + '\n' + lines.join('\n');
+    var text = L('PRE-ALERT — ' + name(v) + ' → ' + (h ? h.en : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + (m.length === 1 ? ' casualty' : ' casualties'), 'התראה מקדימה — ' + name(v) + ' ← ' + (h ? h.he : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + ' נפגעים') + '\n' + lines.join('\n');
     Evac._pre = text;
     sheet('ev-pre-sheet', '<h3>' + L('PRE-ALERT TO HOSPITAL','התראה מקדימה לבית החולים') + '</h3><pre class="mist" dir="auto">' + esc(text) + '</pre><p class="mist-warn">' + esc(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
       + '<div class="btn-row"><button class="xbtn" onclick="Evac.closeSheet(\'ev-pre-sheet\')">' + L('CLOSE','סגור') + '</button><button class="xbtn xbtn-primary" onclick="Evac.copyPre();Evac.closeSheet(\'ev-pre-sheet\')">' + ico('copy', 26) + L('COPY','העתק') + '</button></div>');

@@ -277,7 +277,8 @@ function braceletHtml(c, opts){
   opts = opts || {}; ensureBrcCss();
   var s = snapshot(c), tg = triageOf(s.t), url = baseUrl() + '#b=' + s.s + '.' + encodeSnap(s), sh = W.TriageUI ? W.TriageUI.shapeSvg(tg.sh, 40) : '';
   var tq = s.tq[0], meds = s.md.slice(-3);
-  var who = [T(s.n) || L('Unnamed casualty','נפגע ללא שם'), s.ag != null ? s.ag + L(' y',' שנים') : '', (s.sx === 'M' || s.sx === 'male') ? L('M','ז') : (s.sx === 'F' || s.sx === 'female') ? L('F','נ') : ''].filter(Boolean).join(' · ');
+  var nm = T(s.n) || L('Unnamed casualty','נפגע ללא שם');
+  var who = /\d/.test(nm) ? nm : [nm, s.ag != null ? s.ag + L(' y',' שנים') : '', (s.sx === 'M' || s.sx === 'male') ? L('M','ז') : (s.sx === 'F' || s.sx === 'female') ? L('F','נ') : ''].filter(Boolean).join(' · ');
   return '<div class="brc2' + (opts.print ? ' brc-print' : '') + (opts.list ? ' brc-list' : '') + '" style="--tg:' + tg.c + ';--tgt:' + tg.tx + '">'
     + '<div class="b2-tri">' + sh + '<b>' + esc(L(tg.en, tg.he)) + '</b></div>'
     + '<div class="b2-main">'
@@ -473,7 +474,7 @@ function showBracelet(docId){
   if (!c) return;
   var link = linkFor(c);
   mount(topbar(L('Wristband','צמיד')) + '<div class="bo-body">'
-    + '<div class="bo-hint">' + L('This is the bracelet as it prints. The QR carries the casualty’s medical summary — scan it with any phone camera.','כך הצמיד נראה בהדפסה. ה-QR נושא את תמצית המידע הרפואי — סרוק בכל מצלמת טלפון.') + '</div>'
+    + '<div class="bo-hint">' + L('This is the wristband as it prints. The QR carries the casualty’s medical summary — scan it with any phone camera.','כך הצמיד נראה בהדפסה. ה-QR נושא את תמצית המידע הרפואי — סרוק בכל מצלמת טלפון.') + '</div>'
     + braceletHtml(c)
     + '<p class="bo-hint">' + L('Scan the QR on the wristband with any phone camera to open this record.','סרקו את ה-QR שעל הצמיד בכל מצלמת טלפון כדי לפתוח את התיק.') + '</p>'
     + '<div class="bo-actions">'
@@ -526,9 +527,9 @@ function loadJsQR(){
 }
 function scan(){
   var samples = (W._incidentCasualties || []).map(function(c){ var tg = triageOf(c.triageColor); return '<button class="bs-sample" onclick="Bracelet.open(\'' + esc(c._docId) + '\')"><i style="background:' + tg.c + '"></i><span>' + esc(T(c.name)) + '</span><code>' + serialFor(c) + '</code></button>'; }).join('');
-  mount(topbar(L('Scan a bracelet','סריקת צמיד')) + '<div class="bo-body">'
+  mount(topbar(L('Scan a wristband','סריקת צמיד')) + '<div class="bo-body">'
     + '<div class="bs-view" id="bs-view"><video id="bs-video" playsinline muted></video><div class="bs-frame"></div><div class="bs-msg" id="bs-msg">' + L('Starting camera…','מפעיל מצלמה…') + '</div></div>'
-    + '<div class="bs-or">' + L('No camera, or nothing to scan? Use a sample bracelet:','אין מצלמה? נסה צמיד לדוגמה:') + '</div>'
+    + '<div class="bs-or">' + L('No camera, or nothing to scan? Use a sample wristband:','אין מצלמה? נסה צמיד לדוגמה:') + '</div>'
     + '<div class="bs-samples">' + samples + '</div>'
     + '<form class="bs-manual" onsubmit="return Bracelet.manual(this)"><input data-autofocus name="c" placeholder="' + L('Or type a code, e.g. JFU-PQJ','או הקלד קוד, למשל JFU-PQJ') + '" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="xbtn">' + L('Open','פתח') + '</button></form></div>', 'bo-scan', function(){ scan(); });
   startCamera();
@@ -541,7 +542,7 @@ function startCamera(){
   navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' }, width:{ ideal:1280 } }, audio:false }).then(function(st){
     if (!alive){ st.getTracks().forEach(function(t){ t.stop(); }); return; }
     stream = st; video.srcObject = st; try { var pp = video.play(); if (pp && pp.catch) pp.catch(function(){}); } catch(e){}   // closing the scanner while play() is pending must not raise
-    msg.textContent = L('Point the camera at a bracelet QR code','כוון את המצלמה אל קוד ה-QR של הצמיד');
+    msg.textContent = L('Point the camera at a wristband QR code','כוון את המצלמה אל קוד ה-QR של הצמיד');
     if ('BarcodeDetector' in W){ try { det = new BarcodeDetector({ formats:['qr_code'] }); } catch(e){ det = null; } }
     var ready = det ? Promise.resolve() : loadJsQR();
     ready.then(function(){
@@ -557,17 +558,17 @@ function startCamera(){
           }
           p.then(function(txt){
             if (!alive) return;
-            if (txt){ var s = parseScan(txt); if (s){ alive = false; stopScan(); showCard(s); return; } msg.textContent = L('Not a Shomer Ahi bracelet — try again','זה לא צמיד של שומר אחי — נסה שוב'); }
+            if (txt){ var s = parseScan(txt); if (s){ alive = false; stopScan(); showCard(s); return; } msg.textContent = L('Not a Shomer Ahi wristband — try again','זה לא צמיד של שומר אחי — נסה שוב'); }
             setTimeout(tick, 120);
           });
         } else setTimeout(tick, 120);
       })();
-    }, function(){ alive = false; stopScan(); msg.textContent = L('The scanner could not load. Type the code below, or use a sample bracelet.','לא ניתן לטעון את הסורק. הקלידו את הקוד למטה, או השתמשו בצמיד לדוגמה.'); });
-  }).catch(function(){ msg.textContent = L('Camera blocked or unavailable — use a sample bracelet below','המצלמה חסומה או לא זמינה — השתמש בצמיד לדוגמה למטה'); });
+    }, function(){ alive = false; stopScan(); msg.textContent = L('The scanner could not load. Type the code below, or use a sample wristband.','לא ניתן לטעון את הסורק. הקלידו את הקוד למטה, או השתמשו בצמיד לדוגמה.'); });
+  }).catch(function(){ msg.textContent = L('Camera blocked or unavailable — use a sample wristband below','המצלמה חסומה או לא זמינה — השתמש בצמיד לדוגמה למטה'); });
 }
 function manual(form){
   var v = form.c.value.trim(), s = parseScan(v);
-  if (s) showCard(s); else W.toast(L('No bracelet with that code','לא נמצא צמיד עם הקוד הזה'), false);
+  if (s) showCard(s); else W.toast(L('No wristband with that code','לא נמצא צמיד עם הקוד הזה'), false);
   return false;
 }
 function openSerialOrDoc(id){
@@ -578,7 +579,7 @@ function openSerialOrDoc(id){
 // ── Bracelets tab ──────────────────────────────────────────────
 function renderTab(){
   var list = W._incidentCasualties || [];
-  var h = '<div class="bt-hero"><div><h2>' + L('Wristbands','צמידים') + '</h2><p>' + L('Every casualty gets a bracelet. Its QR code carries their medical summary — any responder can scan it with a phone and see what was done, and when.','לכל נפגע צמיד. קוד ה-QR נושא את תמצית המידע הרפואי — כל מגיב יכול לסרוק בטלפון ולראות מה בוצע ומתי.') + '</p></div>'
+  var h = '<div class="bt-hero"><div><h2>' + L('Wristbands','צמידים') + '</h2><p>' + L('Every casualty gets a wristband. Its QR code carries their medical summary — any responder can scan it with a phone and see what was done, and when.','לכל נפגע צמיד. קוד ה-QR נושא את תמצית המידע הרפואי — כל מגיב יכול לסרוק בטלפון ולראות מה בוצע ומתי.') + '</p></div>'
     + '<div class="bt-cta"><button class="xbtn xbtn-primary xbtn-lg" onclick="Bracelet.scan()">' + ico('scan-line', 20) + L('Scan a wristband','סריקת צמיד') + '</button>'
     + '<button class="xbtn xbtn-lg" onclick="Bracelet.print()">' + ico('printer', 20) + L('Print all','הדפס הכל') + '</button></div></div>'
     + '<ol class="bt-steps"><li><b>1</b>' + L('Print','הדפס') + '</li><li><b>2</b>' + L('Attach to the casualty','חבר לנפגע') + '</li><li><b>3</b>' + L('Anyone scans — full picture, offline','כל אחד סורק — תמונה מלאה, גם בלי רשת') + '</li></ol>'
@@ -588,7 +589,7 @@ function renderTab(){
     h += '<article class="bt-item"><div class="bt-scale">' + braceletHtml(c, { list:true }) + '</div>'
       + '<div class="bt-row"><div><div class="bt-name">' + esc(T(c.name)) + '</div><div class="bt-sub"><i style="background:' + tg.c + '"></i>' + L(tg.en, tg.he) + (c.formLevel === 'quick' ? ' · ' + L('QUICK TRIAGE','מיון מהיר') : '') + '</div></div>'
       + '<div class="bt-btns"><button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(c._docId) + '\')">' + L('Scan result','תוצאת סריקה') + '</button>'
-      + '<button class="xbtn" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Print bracelet','הדפס צמיד') + '">' + ico('printer', 24) + L('PRINT','הדפס') + '</button></div></div></article>';
+      + '<button class="xbtn" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Print wristband','הדפס צמיד') + '">' + ico('printer', 24) + L('PRINT','הדפס') + '</button></div></div></article>';
   });
   return h + '</div>';
 }

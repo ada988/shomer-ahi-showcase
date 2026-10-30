@@ -37,8 +37,8 @@ function counts(){ var c = { red:0, yellow:0, green:0, gray:0, black:0 }; (W._in
 // URGENT includes the optional DELAYED group; WAITING is not breathing; NO SIGNS OF LIFE is counted on its own.
 function groups(){ var c = counts(); return { urgent: c.red, delayed: c.yellow, notUrgent: c.green, waiting: c.gray, dead: c.black, total: c.red + c.yellow + c.green + c.gray + c.black }; }
 function countBar(){
-  var g = groups(), cells = [['red', g.urgent], ['green', g.notUrgent], ['gray', g.waiting]].concat(g.delayed ? [['yellow', g.delayed]] : []);
-  return '<div class="qt-count">' + cells.map(function(x){ var k = x[0], t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 24) + '<b>' + x[1] + '</b><em>' + W.TriageUI.word(k) + '</em></span>'; }).join('') + '</div>';
+  var g = groups(), cells = [['red', g.urgent], ['green', g.notUrgent], ['gray', g.waiting]].concat(g.delayed ? [['yellow', g.delayed]] : []).concat(g.dead ? [['black', g.dead]] : []);
+  return '<div class="qt-count" style="grid-template-columns:repeat(' + cells.length + ',minmax(0,1fr))">' + cells.map(function(x){ var k = x[0], t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 24) + '<b>' + x[1] + '</b><em>' + W.TriageUI.word(k) + '</em></span>'; }).join('') + '</div>';
 }
 function reportLine(){
   var g = groups();
@@ -51,7 +51,7 @@ function head(){
 function body(){
   if (S.result){
     var r = S.result, t = W.TriageUI.tg(r.color);
-    return '<div class="qt-res t-' + r.color + '">' + W.TriageUI.shapeSvg(t.shape, 64) + '<b>' + W.TriageUI.word(r.color) + '</b><span>' + esc(L(r.reason[0], r.reason[1]).replace(/^(URGENT|WAITING|NOT URGENT|דחוף|ממתין|לא דחוף)[:]?\s*/, '').replace(/^for now\.\s*/, '')) + '</span></div>'
+    return '<div class="qt-res t-' + r.color + '">' + W.TriageUI.shapeSvg(t.shape, 64) + '<b>' + W.TriageUI.word(r.color) + '</b><span>' + esc(L(r.reason[0], r.reason[1]).replace(/^(URGENT|WAITING|NOT URGENT|דחוף|ממתין|לא דחוף)[:]?\s*/, '').replace(/^for now\.\s*/, '').replace(/^./, function(c){ return c.toUpperCase(); })) + '</span></div>'
       + '<button class="xbtn xbtn-primary qt-next" onclick="Quick.save(false)">' + ico('check', 28) + L('SAVE AND NEXT CASUALTY','שמור ונפגע הבא') + '</button>'
       + '<div class="btn-row"><button class="xbtn" onclick="Quick.save(true)">' + ico('file-text', 26) + L('SAVE + OPEN FULL FORM 101','שמור + פתח טופס 101 מלא') + '</button><button class="xbtn" onclick="Quick.change()">' + L('CHANGE GROUP','שנה קבוצה') + '</button></div>'
       + '<button class="xbtn qt-back" onclick="Quick.back()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 26) + L('BACK','חזרה') + '</button>';

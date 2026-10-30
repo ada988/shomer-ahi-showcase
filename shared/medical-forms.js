@@ -4186,7 +4186,7 @@ function renderNextActionPrompt(){
       } else {
         const noEvac=active.find(c=>c.triageColor && c.triageColor!=='black' && c.triageColor!=='gray' && !isCasualtyAssignedToVehicle(c));
         if(noEvac){
-          promptText=`${noEvac.name||''} מוכן — שייך לרכב`;
+          promptText=`${noEvac.name||''} · מוכן — שייך לרכב`;
           btnText='פינוי';btnAction=`_setMciMode('evac');MedHost.renderIncidentPage()`;
           col='var(--bl)';bg='rgba(52,152,219,.12)';
         } else {
@@ -4607,7 +4607,7 @@ function renderMCIStatsBar(){
   h+=`<div style="display:flex;gap:8px;justify-content:center;padding:6px 0;font-size:11px;color:var(--t2);margin-bottom:6px;font-weight:600">`;
   h+=`<span>${total} נפגעים</span>`;
   h+=`<span style="color:var(--t4)">|</span><span style="color:var(--gr)">${evaced} פונו</span>`;
-  h+=`<span style="color:var(--t4)">|</span><span style="color:${total-evaced>0?'var(--or)':'var(--t3)'}">${total-evaced} ממתינים</span>`;
+  h+=`<span style="color:var(--t4)">|</span><span style="color:${total-evaced>0?'var(--or)':'var(--t3)'}">${total-evaced} בזירה</span>`;
   if(timer)h+=`<span style="color:var(--t4)">|</span><span>${timer}</span>`;
   h+=`</div>`;
   return h;
@@ -4744,9 +4744,9 @@ function renderMCICasualtyCard(c,realIdx,displayNum,expanded){
     const rAbn=(lastV.rr>30||lastV.rr<10)&&lastV.rr;
     const sAbn=lastV.spo2<90;
     h+=`<span class="mci-card-vitals" aria-label="סימנים חיוניים">`;
-    h+=`<span class="${pAbn?'abnormal':''}" ${pAbn?'aria-label="דופק חריג"':''}>${pAbn?'⚠':''}P:${lastV.pulse||'—'}</span> `;
-    if(lastV.rr)h+=`<span class="${rAbn?'abnormal':''}" ${rAbn?'aria-label="נשימות חריגות"':''}>${rAbn?'⚠':''}R:${lastV.rr}</span> `;
-    if(lastV.spo2)h+=`<span class="${sAbn?'abnormal':''}" ${sAbn?'aria-label="חמצן נמוך"':''}>${sAbn?'⚠':''}S:${lastV.spo2}</span> `;
+    h+=`<span class="${pAbn?'abnormal':''}" ${pAbn?'aria-label="דופק חריג"':''}>${pAbn?'⚠ ':''}HR ${lastV.pulse||'—'}</span> `;
+    if(lastV.rr)h+=`<span class="${rAbn?'abnormal':''}" ${rAbn?'aria-label="נשימות חריגות"':''}>${rAbn?'⚠ ':''}RR ${lastV.rr}</span> `;
+    if(lastV.spo2)h+=`<span class="${sAbn?'abnormal':''}" ${sAbn?'aria-label="חמצן נמוך"':''}>${sAbn?'⚠ ':''}SpO₂ ${lastV.spo2}%</span> `;
     h+=`</span>`;
   }
   if(avpu){const avpuCol=avpu==='A'?'var(--gr)':avpu==='V'?'var(--ye)':'var(--re-hi)';const avpuIcon=avpu==='A'?'':avpu==='V'?'◑':'●';h+=`<span aria-label="רמת הכרה AVPU ${escapeHtml(String(avpu))}" style="font-size:13px;font-weight:800;color:${avpuCol}">${avpuIcon} ${escapeHtml(String(avpu))}</span>`;}
@@ -4758,9 +4758,9 @@ function renderMCICasualtyCard(c,realIdx,displayNum,expanded){
   const firstInj=(c.injuries&&c.injuries.length>0)?BODY_LABELS[c.injuries[0].region]||'':'';
   if(moiLabel||firstInj){
     h+=`<div style="font-size:12px;color:var(--t3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">`;
-    if(moiLabel)h+=`M:${escapeHtml(moiLabel)}`;
-    if(firstInj)h+=` | I:${escapeHtml(firstInj)}`;
-    if(tqs.length)h+=` | TQ:${escapeHtml(getTqElapsed(tqs[0].time).str)}`;
+    if(moiLabel)h+=`${escapeHtml(moiLabel)}`;
+    if(firstInj)h+=` · ${escapeHtml(firstInj)}`;
+    if(tqs.length)h+=` · ח"ע ${escapeHtml(getTqElapsed(tqs[0].time).str)}`;
     h+=`</div>`;
   }
 

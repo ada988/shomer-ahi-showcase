@@ -148,6 +148,7 @@ function flattenVitals(root){
 
 // ── Triage board ───────────────────────────────────────────────
 function enhanceBoard(c){
+  c.dataset.enh = 'board';
   // Quick-triage records carry a QUICK badge on the command board too (same as the casualty list).
   [].slice.call(c.querySelectorAll('.mci-card')).forEach(function(card){
     var m = /toggleMCICardExpand\('([^']+)'\)/.exec(card.getAttribute('onclick') || ''), rec = m && (W._incidentCasualties || []).filter(function(x){ return x._docId === m[1]; })[0];

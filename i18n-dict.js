@@ -7,3 +7,5 @@ Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא �
 Object.assign(window.SHOWCASE_DICT, {'מוכן — שייך לרכב':'Ready: assign to an ambulance','נפגע דחוף ממתין':'URGENT casualty waiting','נפגעים דחופים ממתינים':'URGENT casualties waiting','לפינוי מעל 15 דק׳':'for evacuation over 15 min'});
 
 Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא נקבע':'Not set','Lethal Triad':'Lethal triad (cold, acidosis, bleeding)'});
+
+Object.assign(window.SHOWCASE_DICT, {'בזירה':'on scene','· מוכן — שייך לרכב':'· Ready: assign to an ambulance'});

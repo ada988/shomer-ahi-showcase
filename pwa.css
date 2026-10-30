@@ -176,3 +176,39 @@ body.in-form .appbar .ttl b{-webkit-line-clamp:1!important;font-size:19px!import
 .nl-ov input{font-size:18px!important;min-height:56px!important}
 .nl-ov div[style*="font-size:12px"]{font-size:16px!important;color:var(--t2)!important}
 .nl-ov button{font-size:17px!important;min-height:60px!important}
+
+/* ═══ Round 2 (screens) ═══ */
+.filter-bar{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px 12px!important}
+.filter-bar>:first-child{grid-column:1 / -1;justify-self:start;max-width:100%}
+.filter-bar>span:not(:first-child){flex:none!important;font-size:17px;font-weight:800}
+.ev-cap>div{display:grid!important;grid-template-columns:56px minmax(64px,1fr) 56px!important;align-items:center;gap:6px}
+.ev-cap b{display:block;text-align:center;white-space:nowrap;font-size:22px;min-width:0;overflow:visible}
+.ev-pt{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:6px!important}
+.ev-pt>*{flex:none}
+.ev-pt span{min-width:0;overflow-wrap:normal;word-break:normal}
+.ev-pt b{word-break:normal!important;overflow-wrap:anywhere}
+@media (max-width:360px){
+  .ev-status button{flex-direction:column!important;gap:2px!important;font-size:15px!important;line-height:1.1;text-align:center;padding:6px 4px!important;white-space:normal!important}
+}
+#qt{z-index:99980!important}
+#tst,.undo-toast,.eta-toast{z-index:99990!important}
+@media (max-height:500px) and (orientation:landscape){
+  .ab-float #incident-content{padding-top:calc(var(--abh,56px) + 8px)!important}
+  .appbar{height:56px!important;min-height:56px!important}
+  .appbar .ttl small{display:none}
+  .back-btn,.menu-btn,.beta-pill{height:48px!important;min-height:48px!important}
+  .tabbar button{min-height:52px!important;flex-direction:row!important;gap:8px!important}
+  .tabbar{padding-top:2px!important;padding-bottom:calc(2px + env(safe-area-inset-bottom))!important}
+}
+.pwa-bar{background:#14161b!important;border-color:#fff!important}
+.pwa-go{background:#fff!important;color:#0b0c0e!important}
+.cc-vv small{white-space:nowrap}
+#incident-content .ov-tile b{align-self:end}
+#incident-content .ov-tiles .ov-tile{align-content:start}
+/* Command board: one sticky bar only, no duplicate overdue alert (Home and Evacuate carry it), labels fit */
+#incident-content[data-enh=board] .b-modes{position:static!important}
+#incident-content[data-enh=board] .b-alert{display:none!important}
+#incident-content[data-enh=board] .b-kpis *{overflow-wrap:anywhere;hyphens:auto}
+#incident-content[data-enh=board] .b-kpis div[style*="font-size:9px"],#incident-content[data-enh=board] .b-kpis div[style*="font-size:10px"]{font-size:15px!important;line-height:1.1}
+#incident-content[data-enh=board] .b-modes button{font-size:15px!important;white-space:normal!important;line-height:1.1}
+.mci-card-vitals span{white-space:nowrap}

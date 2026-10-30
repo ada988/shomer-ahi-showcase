@@ -78,3 +78,6 @@ W.PWA = {
   navigator.serviceWorker.addEventListener('controllerchange', function(){ if (!had || done) return; done = true; location.reload(); });
   navigator.serviceWorker.getRegistration().then(function(r){ if (r) r.update(); }).catch(function(){});
 })();
+
+// Escape closes the 9-line MEDEVAC overlay too
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ var o = document.getElementById('medevac-overlay'); if (o){ o.remove(); e.stopPropagation(); } } }, true);

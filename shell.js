@@ -285,7 +285,7 @@ function renderNow(){
 // ── Demo controller ────────────────────────────────────────────
 w._casView = 'list'; w._plFilter = null;
 function closeOverlays(keepQuick){
-  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
+  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
   if (w.Field) w.Field._k = null;
 }
 var Demo = w.Demo = {

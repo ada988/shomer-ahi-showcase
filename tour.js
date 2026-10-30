@@ -10,8 +10,8 @@ function ensureForm(){ return W._casualtyEditMode ? Promise.resolve() : W.Demo.g
 
 var STEPS = [
   { pre: function(){ W.Bracelet.close(true); return W.Demo.tab('status'); }, target:'.ov-tiles', pos:'bottom',
-    en:['A live mass-casualty scene','Six casualties from a bus-stop attack. Each block is a triage group: shape, word and colour.'],
-    he:['זירת אר״ן חיה','שישה נפגעי פיגוע בתחנת אוטובוס. כל בלוק הוא קבוצת מיון: צורה, מילה וצבע.'] },
+    en:['A live mass-casualty scene','Casualties from a bus-stop attack. Each block is a triage group: shape, word and colour.'],
+    he:['זירת אר״ן חיה','נפגעי פיגוע בתחנת אוטובוס. כל בלוק הוא קבוצת מיון: צורה, מילה וצבע.'] },
   { pre: function(){ return W.Demo.tab('status').then(function(){ W.Quick.open(); }); }, target:'.qt-yn', pos:'top',
     en:['Quick triage in seconds','Many casualties: a few yes / no questions from the IDF protocol give each one a colour. Bleeding, breathing, airway, chest, shock.'],
     he:['מיון מהיר תוך שניות','נפגעים רבים: כמה שאלות כן / לא לפי פרוטוקול צה״ל נותנות לכל אחד צבע. דימום, נשימה, נתיב אוויר, חזה, הלם.'] },
@@ -116,8 +116,9 @@ function stop(silent){
 function finish(){ stop(); W.Bracelet.close(true); W.Demo.tab('status'); }
 function onKey(e){
   if (e.key === 'Escape'){ stop(); e.stopPropagation(); }
-  else if (e.key === 'ArrowRight' && i < STEPS.length - 1){ show(i + 1); }
-  else if (e.key === 'ArrowLeft' && i > 0){ show(i - 1); }
+  var rtl = document.documentElement.dir === 'rtl', fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+  if (e.key === fwd && i < STEPS.length - 1){ show(i + 1); }
+  else if (e.key === back && i > 0){ show(i - 1); }
 }
 W.addEventListener('resize', function(){ if (root) show(i); });
 W.Tour = { start: start, stop: stop, go: show, finish: finish, active: function(){ return !!root; }, redraw: function(){ if (root) show(i); } };

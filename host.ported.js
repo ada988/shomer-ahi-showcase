@@ -712,13 +712,9 @@ function generate9LineMEDEVAC(){
   const specialEquip=[];
   if(hasCric)specialEquip.push('מכשיר הנשמה');
   if(hasBurn)specialEquip.push('ציוד כוויות');
-  // Line 5: A=litter urgent, B=litter priority, C=ambulatory, E=escort(dead/expectant)
-  const line5parts=[];
-  if(counts.red>0)line5parts.push(`A${counts.red}`);
-  if(counts.yellow>0)line5parts.push(`B${counts.yellow}`);
-  if(counts.green>0)line5parts.push(`C${counts.green}`);
-  if(expectant>0)line5parts.push(`E${expectant} (ציפייה)`);
-  const line5=line5parts.join(' ')||'0';
+  // Line 5: number of patients by type: L = litter, A = ambulatory (walking). Not breathing / no signs of life are not evacuated first.
+  const l5L=(counts.red||0)+(counts.yellow||0), l5A=(counts.green||0);
+  const line5=[l5L?`L${l5L}`:'',l5A?`A${l5A}`:''].filter(Boolean).join(' ')||'0';
   const lines=[
     {num:1,label:'מיקום (קואורדינטות)',value:location,editable:true},
     {num:2,label:'תדר/קריאה',value:defaults.freq||'',placeholder:'הזן תדר וקריאה',editable:true},
