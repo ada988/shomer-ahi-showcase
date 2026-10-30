@@ -72,7 +72,7 @@ function body(){
       // three optional taps so this casualty can be told apart later
       + '<div class="qt-desc" role="group" aria-label="' + L('Describe (optional)','תיאור (רשות)') + '">' + DESC.map(function(g){ return '<div>' + g.o.map(function(o){ var on = (S.desc || {})[g.k] === o[0]; return '<button aria-pressed="' + on + '" class="' + (on ? 'on' : '') + '" onclick="Quick.desc(\'' + g.k + '\',\'' + o[0] + '\')">' + ico(on ? 'check' : 'circle', 22) + L(o[1].charAt(0).toUpperCase() + o[1].slice(1), o[2]) + '</button>'; }).join('') + '</div>'; }).join('') + '</div>'
       + '<button class="xbtn xbtn-primary qt-next" onclick="Quick.save(false)">' + ico('check', 30) + L('Save · next casualty','שמירה · הנפגע הבא') + '</button>'
-      + '<div class="btn-row"><button class="xbtn qt-band" onclick="Quick.save(\'band\')">' + ico('qr-code', 26) + L('Save · wristband','שמירה · צמיד') + '</button><button class="xbtn" onclick="Quick.save(true)">' + ico('file-text', 26) + L('Save · open Form 101','שמירה · טופס 101') + '</button><button class="xbtn" onclick="Quick.change()">' + ico('rotate-ccw', 26) + L('Change colour','שינוי צבע') + '</button></div>'
+      + '<div class="btn-row"><button class="xbtn qt-band" onclick="Quick.save(\'tag\')">' + ico('tag', 26) + L('Save · scan tag','שמירה · סריקת תג') + '</button><button class="xbtn" onclick="Quick.save(true)">' + ico('file-text', 26) + L('Save · open Form 101','שמירה · טופס 101') + '</button><button class="xbtn" onclick="Quick.change()">' + ico('rotate-ccw', 26) + L('Change colour','שינוי צבע') + '</button></div>'
       + '<button class="xbtn qt-back" onclick="Quick.back()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 26) + L('Back','חזרה') + '</button>';
   }
   var at = PATH.indexOf(S.step === 'reopen' ? 'breath' : S.step === 'tq' ? 'bleed' : S.step);
@@ -150,6 +150,11 @@ var Quick = {
     rec.bracelet = { serial: W.Bracelet.serialFor(rec) };
     W._upsertOfflineCasualty(rec);
     if (openFull === 'band'){ Quick.close(); W._incidentTab = 'bracelets'; W.renderIncidentPage(); setTimeout(function(){ W.Bracelet.open(id); }, 60); return; }
+    if (openFull === 'tag'){   // link the tag now, then carry on with the next casualty
+      var prevS = S; S = { step:'bleed', history:[], result:null, flags:{} }; draw();
+      setTimeout(function(){ W.Bracelet.scanTag(id, function(){ if (!document.getElementById('qt')) Quick.open && Quick.open(); }); }, 30);
+      void prevS; return;
+    }
     if (openFull){ Quick.close(); W._incidentTab = 'casualties'; setTimeout(function(){ W.editCasualtyById(id); }, 60); return; }
     var prev = S; S = { step:'bleed', history:[], result:null, flags:{} }; draw();
     // Undo puts the record back on the result screen, exactly as it was before Save

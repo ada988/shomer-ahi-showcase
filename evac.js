@@ -99,7 +99,7 @@ function seatCounter(v, kind){
 }
 function onboardRow(c, v){
   var t = tq(c), tqMin = t ? Math.max(0, Math.round((Date.now() - Date.parse(t.time)) / 60000)) : null;
-  return '<div class="ev-pt">' + W.TriageUI.chip(c.triageColor) + '<span><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + '</b>' + (c.formLevel === 'quick' ? '<small class="amb-q">' + ico('zap', 22) + L('Quick triage','מיון מהיר') + '</small>' : '') + (tqMin != null ? '<small class="amb-tq">' + ico('timer', 22) + L('Tourniquet on ' + tqMin + ' min','חוסם עורקים ' + tqMin + ' ד׳') + '</small>' : '') + '</span>'
+  return '<div class="ev-pt">' + W.TriageUI.chip(c.triageColor) + '<span><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + (W.casTag ? W.casTag(c) : '') + '</b>' + (c.formLevel === 'quick' ? '<small class="amb-q">' + ico('zap', 22) + L('Quick triage','מיון מהיר') + '</small>' : '') + (tqMin != null ? '<small class="amb-tq">' + ico('timer', 22) + L('Tourniquet on ' + tqMin + ' min','חוסם עורקים ' + tqMin + ' ד׳') + '</small>' : '') + '</span>'
     + (v.status !== 'evacuating' ? '<button class="ev-rm" onclick="Evac.remove(\'' + v.id + '\',\'' + esc(c._docId) + '\')">' + ico('x', 22) + L('Remove','הסר') + '</button>' : '') + '</div>';
 }
 function statusOf(v){ return STATUS.filter(function(s){ return s.v === v.status; })[0] || STATUS[0]; }
@@ -166,7 +166,7 @@ function render(){
     h += '<div class="amb-banner next-out" role="status">'
       + '<div class="no-head"><span class="no-tag">' + W.TriageUI.shapeSvg('oct', 22) + W.TriageUI.word('red') + '</span><span>' + L('Next out','הבא לפינוי') + '</span>' + (waiting.length > 1 ? '<em>' + L('+' + (waiting.length - 1) + ' more urgent','+' + (waiting.length - 1) + ' דחופים נוספים') + '</em>' : '') + '</div>'
       + '<div class="no-route">'
-      +   '<div>' + ico('users', 30) + '<b>' + (W.casBadge ? W.casBadge(who) + ' ' : '') + esc(String(T(who.name)).split(' — ')[0]) + '</b></div>'
+      +   '<div>' + ico('users', 30) + '<b>' + (W.casBadge ? W.casBadge(who) + ' ' : '') + esc(String(T(who.name)).split(' — ')[0]) + (W.casTag ? W.casTag(who) : '') + '</b></div>'
       +   (rp ? '<div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b></div>'
               + '<div>' + ico('hospital', 30) + '<b>' + esc(L(hq.en, hq.he)) + '</b><i dir="ltr">' + hq.eta + L(' min',' ד׳') + '</i></div>'
             : '<div class="no-none">' + ico('triangle-alert', 30) + '<b>' + L('No free litter','אין אלונקה פנויה') + '</b></div>')
@@ -267,7 +267,7 @@ var Evac = {
     var rp = rushPlan(); if (!rp) return;
     var h = HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0];
     sheet('ev-rush-sheet', '<h3>' + L('Load and go?','העמסה ויציאה?') + '</h3>'
-      + '<div class="rs-who">' + W.TriageUI.chip(rp.c.triageColor) + '<b>' + (W.casBadge ? W.casBadge(rp.c) + ' ' : '') + esc(String(T(rp.c.name)).split(' — ')[0]) + '</b></div>'
+      + '<div class="rs-who">' + W.TriageUI.chip(rp.c.triageColor) + '<b>' + (W.casBadge ? W.casBadge(rp.c) + ' ' : '') + esc(String(T(rp.c.name)).split(' — ')[0]) + (W.casTag ? W.casTag(rp.c) : '') + '</b></div>'
       + '<div class="no-route rs-route"><div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b></div><div>' + ico('hospital', 30) + '<b>' + esc(L(h.en, h.he)) + '</b><i dir="ltr">' + h.eta + L(' min',' ד׳') + '</i></div></div>'
       + '<button class="xbtn xbtn-primary rs-go" onclick="Evac.closeSheet(\'ev-rush-sheet\');Evac.rush()">' + ico('check', 30) + L('Confirm · load and go','אישור · העמסה ויציאה') + '</button>'
       + '<button class="xbtn rs-other" onclick="Evac.closeSheet(\'ev-rush-sheet\');Evac.assign(\'' + rp.v.id + '\')">' + ico('users', 26) + L('Choose another casualty','בחירת נפגע אחר') + '</button>');

@@ -115,7 +115,8 @@ function idStrip(){
   return '<div class="f-id' + (live ? '' : ' noname') + '">'
     + (W.casBadge ? W.casBadge({ name: W._casualtyName }, true) : '') + '<span class="f-id-t"><b>' + parts[0] + '</b><button class="f-id-who" onclick="Field.editWho()" aria-label="' + L('Edit age, sex and weight','עריכת גיל, מין ומשקל') + '">' + (who || L('Age · sex · weight','גיל · מין · משקל'))
     + (e.weightKg ? '' : '<u>' + L('Add weight','הוסיפו משקל') + '</u>') + ico('pencil', 20) + '</button></span>'
-    + (serial ? '<button class="f-id-b" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Wristband ','צמיד ') + esc(serial) + '">' + ico('qr-code', 26) + '<b dir="ltr">' + esc(serial) + '</b></button>' : '')
+    + (c && c.tagId ? '<button class="f-id-b f-id-tag" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Tag ','תג ') + esc(c.tagId) + '">' + ico('tag', 26) + '<b dir="ltr">' + esc(c.tagId) + '</b></button>'
+       : '<button class="f-id-b f-id-link" onclick="Bracelet.linkForm()">' + ico('scan-line', 26) + '<b>' + L('Scan tag','סריקת תג') + '</b></button>')
     + '</div>';
 }
 function shockHtml(){
@@ -167,6 +168,11 @@ function html(){
     + vt(L('Breaths','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 24 || v.rr < 10), v.rr > 24 ? L('High','גבוה') : L('Low','נמוך'))
     + '</div>'
     + '<div class="f-tapbar"><button onclick="Field.tapStart(\'pulse\')">' + ico('heart-pulse', 30) + '<span>' + L('Tap the heartbeat','הקישו את הדופק') + '</span></button><button onclick="Field.tapStart(\'rr\')">' + ico('wind', 30) + '<span>' + L('Tap the breaths','הקישו את הנשימות') + '</span></button></div>';
+  // 6 · finish: link this record to the tag on the casualty
+  var me = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0];
+  h += me && me.tagId
+    ? '<div class="f-taglink done">' + ico('tag', 30) + '<span><b>' + L('Linked to tag','מקושר לתג') + ' <bdi dir="ltr">' + esc(me.tagId) + '</bdi></b><small>' + L('Scanning this tag opens this record.','סריקת התג פותחת את התיק הזה.') + '</small></span><button class="xbtn" onclick="Bracelet.linkForm()">' + ico('scan-line', 24) + L('Change','החלפה') + '</button></div>'
+    : '<button class="f-taglink" onclick="Bracelet.linkForm()">' + ico('scan-line', 34) + '<span><b>' + L('Link to tag','קישור לתג') + '</b><small>' + L('Done? Scan the tag on the casualty.','סיימתם? סרקו את התג שעל הנפגע.') + '</small></span></button>';
   return '<section class="field" id="field" data-tour="field">' + top + '</section><section class="field fmon" id="fs-more"><div class="fs-h-wrap"><h2 class="fs-h">' + L('Monitor','ניטור') + '</h2></div>' + h + '</section>';
 }
 function vt(label, val, unit, idx, bad, word){

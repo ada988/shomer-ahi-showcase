@@ -65,3 +65,30 @@
 .cc-asof{display:flex;align-items:center;gap:8px;margin:8px 0 10px;padding:10px 12px;border-radius:12px;background:#1d2028;color:#e8eaee;font-size:16px;font-weight:700;line-height:1.3}
 .cc-asof svg{flex:none;color:#ffd23f}
 .bo-actions .bo-take{background:#2a2e37!important;border:0!important}
+
+/* ── casualty tags ── */
+.ctag{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;padding:2px 10px;min-height:34px;border-radius:8px;background:#262a33;color:#e8eaee;font:700 16px/1 var(--f,inherit);font-variant-numeric:tabular-nums;letter-spacing:.02em;vertical-align:middle;white-space:nowrap}
+.ctag svg{width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;color:#aab0bb}
+.f-id-b.f-id-tag b,.f-id-b.f-id-link b{font-size:17px}
+.f-id-b.f-id-link{background:var(--accent,#1f6bff)!important;color:#fff!important;border:0!important}
+.f-taglink{display:flex;align-items:center;gap:14px;width:100%;min-height:76px;margin:18px 0 6px;padding:12px 16px;border:0;border-radius:16px;background:var(--accent,#1f6bff);color:#fff;text-align:start;font:inherit;cursor:pointer}
+.f-taglink>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.f-taglink b{font-size:20px;font-weight:800}.f-taglink small{font-size:16px;font-weight:600;opacity:.92}
+.f-taglink.done{background:#15171c;box-shadow:inset 0 0 0 2px #2c313b;cursor:default}
+.f-taglink.done>svg{color:#7ee2a8}.f-taglink.done small{color:#b6bcc6;opacity:1}
+.f-taglink.done .xbtn{flex:none;min-height:52px}
+.tg-who{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:20px}
+.tg-note{display:flex;gap:10px;align-items:flex-start;margin:12px 0;padding:12px 14px;border-radius:12px;background:#15171c;color:#c9ced8;font-size:16px;line-height:1.45}
+.tg-note svg{flex:none;color:#6fb3ff;margin-top:1px}
+.tg-big{display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 4px;padding:22px;border-radius:16px;background:#fff;color:#0b0c0e;font:900 40px/1 var(--f,inherit);letter-spacing:.03em}
+.tg-warn{display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:14px;background:#2a1d08;color:#ffe2a8}
+.tg-warn svg{flex:none;color:#ffb020}.tg-warn b{display:block;font-size:19px;margin-bottom:4px}.tg-warn p{font-size:16px;line-height:1.45;margin:0}
+.bs-tags .bs-tag code{font-size:18px;font-weight:800}
+.bt-link{min-height:48px!important;padding:0 12px!important;margin-inline-end:6px}
+.bt-pn .ctag{margin-inline-start:0}
+.bo-tagnew .bo-actions,.bo-tagwarn .bo-actions{display:flex!important;flex-direction:column;gap:10px}
+.bo-tagnew .bo-actions .xbtn,.bo-tagwarn .bo-actions .xbtn{width:100%;min-height:60px;justify-content:flex-start;padding:0 18px;font-size:18px}
+.f-taglink.done{flex-wrap:wrap}
+.f-taglink.done>span{flex:1 1 0}
+.f-taglink.done .xbtn{flex:1 1 100%}
+.f-taglink.done bdi{white-space:nowrap}

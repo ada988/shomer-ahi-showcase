@@ -248,3 +248,7 @@ svg.ui-i{min-width:24px;min-height:24px}
 .bs-manual{min-width:0}.bs-manual input{min-width:0;width:100%}.bs-manual .xbtn{flex:none}
 /* SHELL2: in quick triage the answer buttons sit at the bottom, so the undo toast docks at the top there */
 #app:has(#qt) .undo-toast{top:calc(10px + env(safe-area-inset-top));bottom:auto!important}
+/* tap-to-measure: stack icon over label so long words never leave the button on narrow phones; no white outline */
+.f-tapbar button{flex-direction:column;gap:6px;border:0;min-width:0;text-align:center}
+.f-tapbar button span{overflow-wrap:anywhere;hyphens:auto}
+@media (max-width:360px){.f-tapbar button{font-size:17px;padding:8px 6px}}

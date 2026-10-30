@@ -1,0 +1,30 @@
+/* Guided tour: one precise spotlight, one calm card. Positioned in #app coordinates by tour.js. */
+.tr-dim{position:absolute;inset:0;z-index:100200;pointer-events:auto}
+.tr-dim.nospot{background:rgba(4,5,7,.74)}
+.tr-spot{position:absolute;border-radius:16px;box-shadow:0 0 0 2px rgba(255,255,255,.92),0 0 0 9999px rgba(4,5,7,.74);pointer-events:none;
+  transition:left .28s cubic-bezier(.2,.8,.2,1),top .28s cubic-bezier(.2,.8,.2,1),width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1)}
+.tr-card{position:absolute;inset-inline:12px;z-index:100210;padding:16px 16px 14px;border-radius:20px;background:#17191e;border:1px solid #2c2f37;color:#fff;
+  box-shadow:0 18px 48px rgba(0,0,0,.55);transition:top .28s cubic-bezier(.2,.8,.2,1),opacity .18s}
+.tr-card.busy{opacity:.55}
+.tr-card:focus{outline:none}
+.tr-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.tr-ic{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#262a33;color:#fff}
+.tr-count{flex:1;font-size:16px;font-weight:700;color:#aab0bb;font-variant-numeric:tabular-nums}
+.tr-skip{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:48px;padding:0 14px;border-radius:12px;border:0;background:transparent;color:#c9ced6;font:700 16px var(--f)}
+.tr-skip:hover{background:#262a33}
+.tr-card h5{margin:0 0 6px;font-size:22px;line-height:1.2;font-weight:800;letter-spacing:-.01em;color:#fff}
+[dir=rtl] .tr-card h5{letter-spacing:0}
+.tr-card p{margin:0;font-size:17px;line-height:1.45;color:#c9ced6}
+.tr-dots{display:flex;gap:6px;margin:14px 0 12px}
+.tr-dots i{flex:1;height:5px;border-radius:3px;background:#2c2f37}
+.tr-dots i.done{background:#5b6170}
+.tr-dots i.on{background:#4f8cff}
+.tr-nav{display:flex;gap:10px}
+.tr-back,.tr-next{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:60px;border-radius:14px;border:0;font:800 18px var(--f);cursor:pointer}
+.tr-back{flex:0 0 auto;padding:0 18px;background:#262a33;color:#fff}
+.tr-next{flex:1;padding:0 18px;background:#1f6bff;color:#fff}
+.tr-next:focus-visible,.tr-back:focus-visible,.tr-skip:focus-visible{outline:3px solid #fff;outline-offset:2px}
+/* the sample alert used by the alert step stays put under the app bar */
+#tour-rec{position:absolute;inset-inline:10px;z-index:100100}
+@media (prefers-reduced-motion:reduce){.tr-spot,.tr-card{transition:none}}
+.tr-next:focus:not(:focus-visible),.tr-back:focus:not(:focus-visible){outline:none!important;box-shadow:none!important}

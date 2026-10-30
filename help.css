@@ -1,0 +1,94 @@
+/* "How to use" guide: full-screen, dark, calm. Topic rows, then one page per topic with a picture and numbered steps. */
+.hp{position:absolute;inset:0;z-index:100150;display:flex;flex-direction:column;background:var(--bg,#0b0c0e);color:#fff}
+.hp-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:72px;padding:10px 14px;border-bottom:1px solid #23262d}
+.hp-bar h2{display:flex;align-items:center;gap:10px;margin:0;font-size:22px;font-weight:800}
+.hp-btn{display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 16px;border-radius:12px;border:0;background:#1d2028;color:#fff;font:700 17px var(--f);cursor:pointer}
+.hp-btn:hover{background:#262a33}
+.hp-scroll{flex:1;min-height:0;overflow-y:auto;padding:16px 16px 24px}
+.hp-intro{margin:0 0 14px;font-size:17px;line-height:1.45;color:#c9ced6}
+.hp-list{display:grid;gap:8px}
+.hp-topic{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;padding:10px 14px;border-radius:16px;border:0;background:#15171c;color:#fff;text-align:start;font:inherit;cursor:pointer}
+.hp-topic:hover{background:#1d2028}
+.hp-topic>.ui-i:last-child{flex:none;color:#7c8290}
+.hp-ti{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#262a33;color:#fff}
+.hp-ti.big{width:60px;height:60px;border-radius:18px}
+.hp-tt{flex:1;min-width:0}
+.hp-tt b{display:block;font-size:18px;font-weight:800;line-height:1.2}
+.hp-tt small{display:block;margin-top:2px;font-size:16px;color:#aab0bb;line-height:1.3}
+.hp-hero{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.hp-hero h3{margin:0;font-size:26px;font-weight:800;line-height:1.15}
+.hp-hero p{margin:4px 0 0;font-size:17px;color:#aab0bb}
+.hp-vis{padding:16px;border-radius:18px;background:#111317;border:1px solid #23262d;margin-bottom:16px}
+.hp-steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.hp-steps li{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border-radius:14px;background:#15171c;font-size:17px;line-height:1.35}
+.hp-steps li>.ui-i{flex:none;color:#c9ced6}
+.hp-n{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#1f6bff;color:#fff;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.hp-foot{flex:none;display:flex;gap:10px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #23262d}
+.hp-show,.hp-tour{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:60px;border-radius:14px;border:0;font:800 18px var(--f);cursor:pointer}
+.hp-show{flex:1;background:#1f6bff;color:#fff}
+.hp-tour{flex:0 0 auto;padding:0 18px;background:#262a33;color:#fff}
+.hp button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+/* pictures */
+.hv-cap{margin:10px 0 0;font-size:16px;color:#aab0bb;text-align:center}
+.hv-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.hv-tiles span{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:12px;text-align:center}
+.hv-tiles b{font-size:16px;line-height:1.1}
+.hv-tiles .t-red{background:#d4282c;color:#fff}.hv-tiles .t-yellow{background:#ffd400;color:#111}.hv-tiles .t-green{background:#1bbf73;color:#06180f}.hv-tiles .t-black{background:#000;color:#fff;box-shadow:inset 0 0 0 2px #5a606c}
+.hv-tiles svg{fill:currentColor}
+.hv-yn{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hv-yn span{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 8px;border-radius:16px;color:#fff}
+.hv-yn b{font-size:26px;font-weight:900}
+.hv-yn .y{background:#1f6bff}.hv-yn .n{background:#4b505c}
+.hv-id{display:flex;align-items:center;gap:12px}
+.hv-num{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:#fff;color:#0b0c0e;font-size:28px;font-weight:900}
+.hv-num.big{width:72px;height:72px;font-size:40px}
+.hv-id b{display:block;font-size:20px}.hv-id small{display:block;font-size:16px;color:#aab0bb}
+.hv-id>span:nth-child(2){flex:1;min-width:0}
+.hv-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;font-weight:800;font-size:16px}
+.hv-chip.t-red{background:#d4282c;color:#fff}.hv-chip svg{fill:currentColor}
+.hv-xc{display:grid;gap:6px}
+.hv-xc span{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 10px;border-radius:12px;background:#1b1e24;font-size:17px}
+.hv-xc span.done{opacity:.75}
+.hv-xc b{flex:1}
+.hv-xc i{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;font-style:normal;font-weight:900;color:#fff;background:#3a3f4a}
+.hv-xc i.l-X{background:#d4282c}.hv-xc i.l-C{background:#e5731a}.hv-xc i.l-A{background:#1f6bff}.hv-xc i.l-R{background:#139a5e}.hv-xc i.l-E{background:#7a5bd6}
+.hv-xc .ui-i{color:#3ddc84}
+.hv-vit{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.hv-vit span{padding:10px;border-radius:12px;background:#1b1e24;text-align:center}
+.hv-vit small{display:block;font-size:16px;color:#aab0bb}.hv-vit b{font-size:24px;font-variant-numeric:tabular-nums}
+.hv-alert{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#2a1416;border:2px solid #e5484d;color:#fff}
+.hv-alert b{display:block;font-size:17px}.hv-alert small{display:block;font-size:16px;color:#f2b8ba}
+.hv-alert>.ui-i{flex:none;color:#ff7a7e}
+.hv-body{display:block;width:120px;height:150px;margin:0 auto}
+.hv-chips{display:flex;flex-wrap:wrap;gap:8px}
+.hv-chips span{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:12px;background:#1b1e24;font-size:16px;font-weight:700}
+.hv-tl{display:grid;gap:6px}
+.hv-tl span{display:flex;align-items:center;gap:12px;min-height:52px;padding:6px 12px;border-radius:12px;background:#1b1e24}
+.hv-tl b{font-size:18px;font-variant-numeric:tabular-nums}.hv-tl em{flex:1;font-style:normal;font-size:16px}
+.hv-tl .ui-i{color:#7c8290}
+.hv-dec{display:grid;gap:6px;margin-bottom:12px}
+.hv-dec span{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 12px;border-radius:12px;background:#1b1e24}
+.hv-dec b{flex:none;font-size:16px}.hv-dec em{flex:1;min-width:0;font-style:normal;font-size:16px;color:#c9ced6}
+.hv-dec .g .ui-i{color:#6fd3ff}.hv-dec .c .ui-i{color:#f5b82e}.hv-dec .x .ui-i{color:#ff7a7e}
+.hv-syr{display:block;width:100%;height:auto}
+.hv-ev{display:grid;gap:6px}
+.hv-ev span{display:flex;align-items:center;gap:10px;min-height:44px;font-size:17px}
+.hv-ev .hv-tag{align-self:start;display:inline-flex;width:max-content;padding:6px 12px;border-radius:10px;background:#d4282c;color:#fff;font-weight:800}
+.hv-ev .hv-tag svg{fill:#fff}
+.hv-band{display:flex;align-items:center;gap:14px}
+.hv-qr{display:grid;place-items:center;width:84px;height:84px;border-radius:12px;background:#fff;color:#0b0c0e}
+.hv-band b{display:block;font-size:18px}.hv-band small{display:block;font-size:16px;color:#aab0bb}
+.hv-mist{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.hv-mist span{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:12px;background:#1b1e24}
+.hv-mist i{font-style:normal;font-size:28px;font-weight:900}.hv-mist b{font-size:16px}
+.hv-undo{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 12px;border-radius:14px;background:#1d2028;font-size:16px}
+.hv-undo b{display:inline-flex;align-items:center;gap:6px;flex:none;padding:10px 14px;border-radius:10px;background:#1f6bff}
+.hv-lang{display:flex;justify-content:center}
+.hv-lang span{min-width:110px;padding:12px;text-align:center;font-weight:800;font-size:17px;background:#1b1e24}
+.hv-lang span:first-child{border-radius:12px 0 0 12px}.hv-lang span:last-child{border-radius:0 12px 12px 0}
+.hv-lang span.on{background:#fff;color:#0b0c0e}
+.hv-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;color:#c9ced6}
+.hv-notice{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:2px solid #f5b82e;color:#fff;font-size:18px}
+.hv-notice .ui-i{flex:none;color:#f5b82e}
+@media (max-width:340px){.hv-tiles{grid-template-columns:1fr 1fr}.hv-mist{grid-template-columns:1fr 1fr}.hp-tour span{display:none}}

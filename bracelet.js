@@ -452,7 +452,7 @@ function mount(inner, cls, again){
   var f = overlay.querySelector('[data-autofocus]'); if (f) setTimeout(function(){ f.focus(); }, 30);
 }
 function close(silent){
-  clearInterval(W.__cardTick);
+  clearInterval(W.__cardTick); scanMode = null;
   if (stopScan){ try { stopScan(); } catch(e){} stopScan = null; }
   if (overlay){ overlay.remove(); overlay = null; }
   redo = null;
@@ -535,12 +535,14 @@ function loadJsQR(){
   });
 }
 function scan(){
+  scanMode = null;
   var samples = (W._incidentCasualties || []).map(function(c){ var tg = triageOf(c.triageColor); return '<button class="bs-sample" onclick="Bracelet.open(\'' + esc(c._docId) + '\')">' + W.TriageUI.chip(c.triageColor) + (W.casBadge ? W.casBadge(c) : '') + '<code>' + serialFor(c) + '</code><span class="bs-nm">' + esc(String(T(c.name)).split(' — ')[0]) + '</span></button>'; }).join('');
   mount(topbar(L('Scan a wristband','סריקת צמיד')) + '<div class="bo-body">'
     + '<div class="bs-view" id="bs-view"><video id="bs-video" playsinline muted></video><div class="bs-frame"></div><div class="bs-msg" id="bs-msg">' + L('Starting camera…','מפעיל מצלמה…') + '</div></div>'
     + '<div class="bs-or">' + L('Or tap a sample wristband:','או בחרו צמיד לדוגמה:') + '</div>'
     + '<div class="bs-samples">' + samples + '</div>'
-    + '<form class="bs-manual" onsubmit="return Bracelet.manual(this)"><input name="c" placeholder="' + L('Or type a number (#4) or a code','או הקלידו מספר (#4) או קוד') + '" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="xbtn">' + ico('search', 24) + L('Open','פתח') + '</button></form></div>', 'bo-scan', function(){ scan(); });
+    + '<div class="bs-or">' + L('Or a casualty tag:','או תג נפגע:') + '</div><div class="bs-samples bs-tags">' + tagSamples(false) + '</div>'
+    + '<form class="bs-manual" onsubmit="return Bracelet.manual(this)"><input name="c" placeholder="' + L('Number (#4), tag (SA-0427) or code','מספר (#4), תג (SA-0427) או קוד') + '" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="xbtn">' + ico('search', 24) + L('Open','פתח') + '</button></form></div>', 'bo-scan', function(){ scan(); });
   startCamera();
 }
 function startCamera(){
@@ -567,23 +569,24 @@ function startCamera(){
           }
           p.then(function(txt){
             if (!alive) return;
-            if (txt){ var s = parseScan(txt); if (s){ alive = false; stopScan(); showCard(s); return; } msg.textContent = L('Not a Shomer Ahi wristband — try again','זה לא צמיד של שומר אחי — נסה שוב'); }
+            if (txt){ alive = false; if (handle(txt)) return; alive = true; msg.textContent = scanMode ? L('That is not a casualty tag — try again','זה לא תג נפגע — נסו שוב') : L('Not a Shomer Ahi wristband — try again','זה לא צמיד של שומר אחי — נסה שוב'); }
             setTimeout(tick, 120);
           });
         } else setTimeout(tick, 120);
       })();
     }, function(){ alive = false; stopScan(); msg.textContent = L('The scanner could not load. Type the code below, or use a sample wristband.','לא ניתן לטעון את הסורק. הקלידו את הקוד למטה, או השתמשו בצמיד לדוגמה.'); });
-  }).catch(function(){ msg.textContent = L('Camera blocked or unavailable — use a sample wristband below','המצלמה חסומה או לא זמינה — השתמש בצמיד לדוגמה למטה'); });
+  }).catch(function(){ msg.textContent = scanMode ? L('Camera blocked or unavailable — tap a blank tag below or type its ID','המצלמה חסומה או לא זמינה — בחרו תג ריק למטה או הקלידו את מספרו') : L('Camera blocked or unavailable — use a sample wristband below','המצלמה חסומה או לא זמינה — השתמש בצמיד לדוגמה למטה'); });
 }
 function manual(form){
   var v = form.c.value.trim(), m = /^#?\s*(\d{1,4})$/.exec(v);
+  if (parseTag(v)){ handle(v); return false; }
+  if (scanMode){ W.toast(L('Type the tag ID, e.g. SA-0431','הקלידו את מספר התג, למשל SA-0431'), false); return false; }
   if (m && W.casNum){   // "4" or "#4": the casualty number
     var c = (W._incidentCasualties || []).filter(function(x){ return W.casNum(x) === +m[1]; })[0];
     if (c){ showCard(snapshot(c)); return false; }
     W.toast(L('No casualty number ' + m[1],'אין נפגע מספר ' + m[1]), false); return false;
   }
-  var s = parseScan(v);
-  if (s) showCard(s); else W.toast(L('No wristband with that code','לא נמצא צמיד עם הקוד הזה'), false);
+  if (!handle(v)) W.toast(L('No wristband or tag with that code','לא נמצא צמיד או תג עם הקוד הזה'), false);
   return false;
 }
 function openSerialOrDoc(id){
@@ -597,19 +600,19 @@ var selId = null;
 function renderTab(){
   var list = W._incidentCasualties || [];
   var cur = list.filter(function(c){ return c._docId === selId; })[0] || list[0];
-  var h = '<div class="bt-hero"><div><h2>' + L('Wristbands','צמידים') + '</h2><p>' + L('The QR carries the record. Any phone reads it, even offline.','ה-QR נושא את התיק. כל טלפון קורא אותו, גם בלי רשת.') + '</p></div>'
+  var h = '<div class="bt-hero"><div><h2>' + L('Tags and wristbands','תגים וצמידים') + '</h2><p>' + L('Each casualty wears a tag. Scan it at the end of Form 101 to link the record.','כל נפגע עונד תג. סורקים אותו בסוף טופס 101 כדי לקשר את התיק.') + '</p></div>'
     + '<div class="bt-cta"><button class="xbtn xbtn-primary xbtn-lg" onclick="Bracelet.scan()">' + ico('scan-line', 24) + L('Scan','סריקה') + '</button>'
-    + '<button class="xbtn xbtn-lg" onclick="Bracelet.print()">' + ico('printer', 24) + L('Print all','הדפסת הכל') + '</button></div></div>'
+    + '<button class="xbtn xbtn-lg" onclick="Bracelet.printTags(12)">' + ico('tag', 24) + L('Print blank tags','הדפסת תגים ריקים') + '</button></div></div>'
     + '<ol class="bt-steps2">'
-    +   '<li><i>1</i>' + ico('printer', 24) + '<b>' + L('Print','הדפסה') + '</b></li>'
-    +   '<li><i>2</i>' + ico('tag', 24) + '<b>' + L('Attach','חיבור') + '</b></li>'
-    +   '<li><i>3</i>' + ico('scan-line', 24) + '<b>' + L('Anyone scans','כל אחד סורק') + '</b></li>'
+    +   '<li><i>1</i>' + ico('tag', 24) + '<b>' + L('Tag on','תג על הנפגע') + '</b></li>'
+    +   '<li><i>2</i>' + ico('scan-line', 24) + '<b>' + L('Scan to link','סריקה לקישור') + '</b></li>'
+    +   '<li><i>3</i>' + ico('qr-code', 24) + '<b>' + L('Hand off','העברה') + '</b></li>'
     + '</ol>';
   if (!cur) return h + '<p class="bt-empty">' + L('No casualties yet.','אין עדיין נפגעים.') + '</p>';
   var id = esc(cur._docId);
   h += '<article class="bt-card" id="bt-sel">'
     + '<div class="bt-card-h">' + W.TriageUI.chip(cur.triageColor) + '<div><div class="bt-name">' + (W.casBadge ? W.casBadge(cur, true) + ' ' : '') + esc(String(T(cur.name)).split(' — ')[0]) + '</div>'
-    + '<div class="bt-sub">' + L('Wristband','צמיד') + ' <code dir="ltr">' + esc(serialFor(cur)) + '</code>' + (cur.formLevel === 'quick' ? ' · ' + L('Quick triage','מיון מהיר') : '') + '</div></div></div>'
+    + '<div class="bt-sub">' + (cur.tagId ? (W.casTag ? W.casTag(cur) : '') : '<button class="xbtn bt-link" onclick="Bracelet.scanTag(\'' + id + '\')">' + ico('link', 22) + L('Link to tag','קישור לתג') + '</button>') + ' ' + L('Handoff QR','QR להעברה') + ' <code dir="ltr">' + esc(serialFor(cur)) + '</code>' + (cur.formLevel === 'quick' ? ' · ' + L('Quick triage','מיון מהיר') : '') + '</div></div></div>'
     + '<div class="bt-band">' + braceletHtml(cur) + '</div>'
     + '<div class="bt-btns2"><button class="xbtn xbtn-primary" onclick="Bracelet.viewCard(\'' + id + '\')">' + ico('eye', 24) + L('What a scan shows','מה רואים בסריקה') + '</button>'
     + '<button class="xbtn" onclick="Bracelet.open(\'' + id + '\')">' + ico('printer', 24) + L('Print','הדפסה') + '</button></div>'
@@ -619,7 +622,7 @@ function renderTab(){
     var on = c === cur;
     h += '<button class="bt-pick' + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Bracelet.pick(\'' + esc(c._docId) + '\')">'
       + W.TriageUI.chip(c.triageColor)
-      + '<span class="bt-pn"><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + '</b><code dir="ltr">' + esc(serialFor(c)) + '</code></span>'
+      + '<span class="bt-pn"><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + '</b>' + (c.tagId && W.casTag ? W.casTag(c) : '<code dir="ltr">' + L('No tag','ללא תג') + '</code>') + '</span>'
       + (on ? '<em>' + ico('check', 22) + L('Shown','מוצג') + '</em>' : ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 26))
       + '</button>';
   });
@@ -633,6 +636,8 @@ function pick(docId){
 
 // ── Hash route: a scanned QR opens the card directly ───────────
 function route(){
+  var tg = /#t=/.test(location.hash) ? parseTag(location.hash) : null;
+  if (tg){ history.replaceState(null, '', location.pathname + location.search); (function t(){ if (document.querySelector('.dn')) return setTimeout(t, 400); openTag(tg); })(); return; }
   if (!/#b=/.test(location.hash)){ if (overlay && overlay.classList.contains('bo-card')) close(true); return; }
   var s = parseScan(location.hash);
   if (s) showCard(s); else { history.replaceState(null, '', location.pathname + location.search); (function t(){ if (document.querySelector('.dn')) return setTimeout(t, 400); W.toast(L('That wristband link is not valid. Open a wristband from the Wristbands tab, or scan one.','קישור הצמיד אינו תקין. פתחו צמיד מלשונית הצמידים, או סרקו אחד.'), false); })(); }
@@ -650,10 +655,149 @@ function take(){
   W._upsertOfflineCasualty(rec); close(); W._incidentTab = 'casualties';
   setTimeout(function(){ W.editCasualtyById(id); }, 60);
 }
-if (W.ShowcaseI18n && W.ShowcaseI18n.extend) W.ShowcaseI18n.extend({ 'נקלט מצמיד QR — לא מאומת':'Taken over from a QR wristband — unverified', 'נפגע מצמיד':'Casualty from wristband' });
+
+// ── Casualty tags ──────────────────────────────────────────────
+// A pre-printed tag carries only its own ID (big print + a small QR of https://…/#t=SA-0427). Scanning it at the end of Form 101
+// links that record to the tag; scanning it again anywhere opens the record. The tag never carries medical data: on another
+// phone it means nothing until the record arrives, which is what the Handoff QR (the record inside the code) is for.
+var TAG_FIRST_BLANK = 431, scanMode = null;
+function parseTag(text){
+  var t = String(text || '').trim().slice(0, 300), m = /^(?:https?:\/\/[^\s#]*)?#t=(SA-?\d{4})$/i.exec(t) || /^(SA)-?(\d{4})$/i.exec(t.replace(/\s+/g, ''));
+  if (!m) return null;
+  var d = /(\d{4})$/.exec(m[2] || m[1]); return d ? 'SA-' + d[1] : null;
+}
+function tagUrl(id){ return baseUrl() + '#t=' + id; }
+function casList(){ return W._incidentCasualties || []; }
+function byId(id){ return casList().filter(function(c){ return c._docId === id; })[0]; }
+function byTag(t){ return casList().filter(function(c){ return c.tagId === t; })[0]; }
+function nm(c){ return W.casLabel ? W.casLabel(c) : esc(String(T(c.name)).split(' — ')[0]); }
+function freeTags(n){
+  var used = {}, out = []; casList().forEach(function(c){ if (c.tagId) used[c.tagId] = 1; });
+  for (var k = TAG_FIRST_BLANK; out.length < n && k < 9999; k++){ var id = 'SA-' + ('000' + k).slice(-4); if (!used[id]) out.push(id); }
+  return out;
+}
+function tagSamples(blankOnly){
+  var linked = blankOnly ? [] : casList().filter(function(c){ return c.tagId; }).slice(0, 2).map(function(c){ return c.tagId; });
+  return linked.concat(freeTags(blankOnly ? 3 : 1)).map(function(t){
+    var c = byTag(t);
+    return '<button class="bs-sample bs-tag" onclick="Bracelet.handle(\'' + t + '\')">' + ico('tag', 24) + '<code dir="ltr">' + t + '</code><span class="bs-nm">' + (c ? nm(c) : L('Blank tag','תג ריק')) + '</span></button>';
+  }).join('');
+}
+// The one entry point for anything scanned or typed: camera, manual box, sample buttons and tests all come through here.
+function handle(txt){
+  var t = parseTag(txt);
+  if (t){ if (scanMode) linkTag(t); else openTag(t); return true; }
+  if (scanMode) return false;   // linking expects a tag, not a record QR
+  var s = parseScan(txt); if (s){ showCard(s); return true; }
+  return false;
+}
+function scanTag(docId, after){
+  var c = byId(docId);
+  mount(topbar(L('Link to tag','קישור לתג')) + '<div class="bo-body">'
+    + '<div class="tg-who">' + (c && W.TriageUI ? W.TriageUI.chip(c.triageColor) : '') + (c && W.casBadge ? W.casBadge(c, true) : '') + '<b>' + (c ? nm(c) : '') + '</b></div>'
+    + '<div class="bs-view" id="bs-view"><video id="bs-video" playsinline muted></video><div class="bs-frame"></div><div class="bs-msg" id="bs-msg">' + L('Starting camera…','מפעיל מצלמה…') + '</div></div>'
+    + '<p class="tg-note">' + ico('info', 22) + '<span>' + L('Scan the tag on this casualty. The tag holds only its ID; the record stays on this phone. To pass the record on, show the Handoff QR.','סרקו את התג שעל הנפגע. התג נושא רק את המספר שלו; התיק נשאר בטלפון הזה. כדי להעביר את התיק, הציגו את ה-QR להעברה.') + '</span></p>'
+    + '<div class="bs-or">' + L('No camera? Tap a blank tag:','אין מצלמה? בחרו תג ריק:') + '</div><div class="bs-samples bs-tags">' + tagSamples(true) + '</div>'
+    + '<form class="bs-manual" onsubmit="return Bracelet.manual(this)"><input name="c" placeholder="' + L('Or type the tag ID (SA-0431)','או הקלידו את מספר התג (SA-0431)') + '" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="xbtn">' + ico('link', 24) + L('Link','קישור') + '</button></form></div>', 'bo-scan bo-tag', function(){ scanTag(docId, after); });
+  scanMode = { docId: docId, after: after || null };   // set after mount: mount() closes the previous view
+  startCamera();
+}
+function tlPush(c, action){
+  if (W._casualtyEditMode && W._casualtyEditId === c._docId){
+    (W._casualtyTimeline || []).push({ time: new Date(), category:'triage', action: action, details:'' });   // not on the form's undo stack: the link has its own undo
+    if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave();
+    return 'form';
+  }
+  var tl = (c.timeline || []).slice(); tl.push({ time: new Date().toISOString(), category:'triage', action: action, details:'' });
+  W._upsertOfflineCasualty({ _docId: c._docId, timeline: tl }); return 'rec';
+}
+function tlPop(c, action, where){
+  if (where === 'form'){ var t = W._casualtyTimeline || []; for (var i = t.length - 1; i >= 0; i--) if (t[i].action === action){ t.splice(i, 1); break; } return; }
+  var cur = byId(c._docId); if (!cur) return;
+  var tl = (cur.timeline || []).slice(); for (var j = tl.length - 1; j >= 0; j--) if (tl[j].action === action){ tl.splice(j, 1); break; }
+  W._upsertOfflineCasualty({ _docId: c._docId, timeline: tl });
+}
+function linkTag(t){
+  var mode = scanMode, c = mode && byId(mode.docId); if (!c) return;
+  var other = byTag(t);
+  if (other && other._docId !== c._docId){
+    mount(topbar(L('Tag already in use','התג כבר בשימוש'), true) + '<div class="bo-body"><div class="tg-warn">' + ico('triangle-alert', 30)
+      + '<div><b dir="auto">' + L('Tag ' + t + ' is already on ' + nm(other),'התג ' + t + ' כבר מקושר ל' + nm(other)) + '</b><p>' + L('One tag, one casualty. Check the tag on the casualty in front of you.','תג אחד, נפגע אחד. בדקו את התג על הנפגע שמולכם.') + '</p></div></div>'
+      + '<div class="bo-actions"><button class="xbtn xbtn-primary" onclick="Bracelet.close();Demo.openCasualty(\'' + esc(other._docId) + '\')">' + ico('file-text', 24) + L('Open ' + nm(other),'פתיחת ' + nm(other)) + '</button>'
+      + '<button class="xbtn" onclick="Bracelet.scanTag(\'' + esc(c._docId) + '\')">' + ico('scan-line', 24) + L('Scan another tag','סריקת תג אחר') + '</button>'
+      + '<button class="xbtn" onclick="Bracelet.close()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div></div>', 'bo-card bo-tagwarn', null);
+    scanMode = null;
+    return;
+  }
+  scanMode = null; close(true);
+  if (other){ W.toast(L(nm(c) + ' is already on tag ' + t, nm(c) + ' כבר מקושר לתג ' + t), false); if (mode.after) mode.after(); return; }
+  var prev = c.tagId || '', action = 'קושר לתג ' + t;
+  W._upsertOfflineCasualty({ _docId: c._docId, tagId: t });
+  var where = tlPush(c, action);
+  if (W.renderIncidentPage) W.renderIncidentPage();
+  var msg = L(nm(c) + ' linked to tag ' + t, nm(c) + ' קושר לתג ' + t);
+  var undo = function(){ W._upsertOfflineCasualty({ _docId: c._docId, tagId: prev }); tlPop(c, action, where); if (W.renderIncidentPage) W.renderIncidentPage(); W.toast(L('Undone: link to tag ' + t,'בוטל: קישור לתג ' + t), false); };
+  if (W.Field && W.Field.toast) W.Field.toast(msg, undo); else W.toast(msg, false);
+  if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+  if (mode.after) mode.after();
+}
+// Link the casualty open in Form 101 (saving a brand-new one first so it has an id).
+function linkForm(){
+  var go = function(id){ if (id) scanTag(id); };
+  if (W._casualtyEditId && byId(W._casualtyEditId)) return go(W._casualtyEditId);
+  Promise.resolve(W.saveCasualtyData && W.saveCasualtyData()).then(function(id){ go(id || W._casualtyEditId); });
+}
+function openTag(t){
+  var c = byTag(t);
+  if (c){ close(true); if (W.Demo && W.Demo.openCasualty) W.Demo.openCasualty(c._docId); else if (W.editCasualtyById) W.editCasualtyById(c._docId); return; }
+  mount(topbar(L('Tag ' + t,'תג ' + t), true) + '<div class="bo-body"><div class="tg-big" dir="ltr">' + ico('tag', 34) + t + '</div>'
+    + '<p class="tg-note">' + ico('info', 22) + '<span>' + L('Not linked on this phone. If another medic treated this casualty, the record is on their phone: scan their Handoff QR.','לא מקושר בטלפון הזה. אם חובש אחר טיפל בנפגע, התיק נמצא בטלפון שלו: סרקו את ה-QR להעברה שלו.') + '</span></p>'
+    + '<div class="bo-actions"><button class="xbtn xbtn-primary" onclick="Bracelet.newWithTag(\'' + t + '\')">' + ico('plus', 26) + L('New casualty with this tag','נפגע חדש עם התג הזה') + '</button>'
+    + '<button class="xbtn" onclick="Bracelet.scan()">' + ico('qr-code', 24) + L('Scan a Handoff QR','סריקת QR להעברה') + '</button>'
+    + '<button class="xbtn" onclick="Bracelet.close()">' + ico('x', 24) + L('Close','סגירה') + '</button></div></div>', 'bo-card bo-tagnew', function(){ openTag(t); });
+}
+function newWithTag(t){
+  close(true);
+  if (byTag(t)) return openTag(t);
+  if (W.Demo && W.Demo.newFull) W.Demo.newFull(); else if (W.newCasualty) W.newCasualty();
+  setTimeout(function(){
+    Promise.resolve(W.saveCasualtyData && W.saveCasualtyData()).then(function(id){
+      id = id || W._casualtyEditId; var c = byId(id); if (!c) return;
+      W._upsertOfflineCasualty({ _docId: id, tagId: t }); tlPush(byId(id), 'קושר לתג ' + t);
+      if (W.renderIncidentPage) W.renderIncidentPage();
+      if (W.Field && W.Field.toast) W.Field.toast(L(nm(c) + ' linked to tag ' + t, nm(c) + ' קושר לתג ' + t), null);
+    });
+  }, 80);
+}
+function tagHtml(id, print){
+  return '<div class="tg-card"><div class="tg-qr">' + qrSvg(tagUrl(id), print ? 96 : 120) + '</div>'
+    + '<div class="tg-txt"><span class="tg-brand">' + L('Shomer Ahi · casualty tag','שומר אחי · תג נפגע') + '</span><b dir="ltr">' + id + '</b>'
+    + '<span class="tg-line">' + L('Casualty no.','נפגע מס׳') + ' <i></i></span></div></div>';
+}
+function printTags(n){
+  n = n || 12;
+  var he = lang() === 'he', ids = freeTags(n);
+  var css = '*{box-sizing:border-box;margin:0}body{font-family:Inter,Heebo,Arial,sans-serif;background:#eceff3;color:#111;padding:20px}'
+    + '.bar{max-width:210mm;margin:0 auto 14px;background:#fff;border-radius:10px;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between}.bar b{display:block;font-size:15px}.bar span{font-size:12px;color:#555}.bar button{background:#111;color:#fff;border:0;border-radius:8px;padding:11px 18px;font:600 14px inherit;cursor:pointer}'
+    + '.sheet{max-width:210mm;margin:0 auto;background:#fff;padding:10mm;display:grid;grid-template-columns:repeat(2,1fr);gap:6mm}'
+    + '.tg-card{display:flex;gap:4mm;align-items:center;border:1px dashed #888;border-radius:3mm;padding:4mm;break-inside:avoid}.tg-qr svg{width:26mm;height:26mm;display:block}'
+    + '.tg-txt{display:flex;flex-direction:column;gap:1.5mm}.tg-brand{font-size:9pt;color:#555}.tg-txt b{font-size:24pt;letter-spacing:.02em}.tg-line{font-size:11pt;display:flex;gap:2mm;align-items:flex-end}.tg-line i{display:inline-block;width:22mm;border-bottom:1.5px solid #111;height:7mm}'
+    + '@media print{body{background:#fff;padding:0}.bar{display:none}.sheet{padding:8mm;max-width:none}@page{size:A4;margin:0}}';
+  var html = '<!DOCTYPE html><html lang="' + (he ? 'he' : 'en') + '" dir="' + (he ? 'rtl' : 'ltr') + '"><head><meta charset="UTF-8"><title>' + L('Blank casualty tags','תגי נפגע ריקים') + '</title><style>' + css + '</style></head><body>'
+    + '<div class="bar"><div><b>' + L('Blank casualty tags','תגי נפגע ריקים') + '</b><span>' + L('Print at 100% on A4. Write the casualty number on the tag, attach it, then scan it at the end of Form 101.','הדפיסו ב-100% על A4. כתבו על התג את מספר הנפגע, הצמידו, וסרקו בסוף טופס 101.') + '</span></div>'
+    + '<button onclick="window.print()">' + L('Print / Save as PDF','הדפס / שמור כ-PDF') + '</button></div>'
+    + '<div class="sheet">' + ids.map(function(id){ return tagHtml(id, true); }).join('') + '</div></body></html>';
+  var w = W.open('', '_blank');
+  if (!w){ W.toast(L('Allow pop-ups to print','אפשר חלונות קופצים כדי להדפיס'), false); return null; }
+  w.document.open(); w.document.write(html); w.document.close();
+  try { w.opener = null; } catch (e) {}
+  return w;
+}
+W.casTag = function(c){ return c && c.tagId ? '<span class="ctag" dir="ltr">' + ico('tag', 24) + esc(c.tagId) + '</span>' : ''; };
+if (W.ShowcaseI18n && W.ShowcaseI18n.extend) W.ShowcaseI18n.extend({ 'קושר לתג':'Linked to tag', 'נקלט מצמיד QR — לא מאומת':'Taken over from a QR wristband — unverified', 'נפגע מצמיד':'Casualty from wristband' });
 W.Bracelet = { take: take, pack: pack, unpack: unpack, decode: decodeSnap, parse: parseScan, linkFor: linkFor,  serialFor: serialFor, snapshot: snapshot, braceletHtml: braceletHtml, renderTab: renderTab, route: route,
   open: showBracelet, pick: pick, viewCard: viewCard, copy: copy, print: print, scan: scan, manual: manual, close: close,
-  openCardFor: openSerialOrDoc, relang: function(){ if (overlay && redo) redo(); }, css: brcCss };
+  openCardFor: openSerialOrDoc, handle: handle, parseTag: parseTag, tagUrl: tagUrl, scanTag: scanTag, linkForm: linkForm, openTag: openTag, newWithTag: newWithTag, printTags: printTags, freeTags: freeTags, tagHtml: tagHtml, relang: function(){ if (overlay && redo) redo(); }, css: brcCss };
 
 // Hooks used by the shared form (pair wristband / find by code / export).
 W.openBraceletFromCard = function(docId){ showBracelet(docId); };

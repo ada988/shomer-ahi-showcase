@@ -208,7 +208,7 @@ function renderPatients(){
     var inj = (c.injuries || []).slice(0, 3).map(function(i){ return esc(T(w.bodyLabelOut ? w.bodyLabelOut(i.region) : ((w.BODY_LABELS || {})[i.region] || i.region))); }).join(' · ');
     var onVeh = !unassigned(c);
     h += '<button class="pl-card" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">' + chip(c.triageColor, true)
-      + '<span class="pl-main"><b>' + (w.casBadge ? w.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + (w.casDesc && w.casDesc(c) ? ' <small class="cdesc">' + esc(w.casDesc(c)) + '</small>' : '') + '</b>' + lvl(c)
+      + '<span class="pl-main"><b>' + (w.casBadge ? w.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + (w.casTag ? w.casTag(c) : '') + (w.casDesc && w.casDesc(c) ? ' <small class="cdesc">' + esc(w.casDesc(c)) + '</small>' : '') + '</b>' + lvl(c)
       + '<span class="pl-sub">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="pl-vit">'
       + (v.pulse === 0 ? '<em><i>' + L('No pulse','אין דופק') + '</i></em>' : v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('High','גבוה'), v.pulse > 120) + '</em>' : '')
@@ -235,7 +235,7 @@ function renderBoard(){
   var f = w._bdFilter, q = String(w._bdQuery || '').trim().toLowerCase();
   var serial = function(c){ return w.Bracelet && w.Bracelet.serialFor ? w.Bracelet.serialFor(c) : ''; };
   var qn = /^#?\s*(\d+)$/.exec(q);
-  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (qn ? (w.casNum && w.casNum(c) === +qn[1]) : (String(T(c.name)) + ' ' + c.name + ' ' + serial(c)).toLowerCase().indexOf(q) >= 0)); });
+  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (qn ? (w.casNum && w.casNum(c) === +qn[1]) : (String(T(c.name)) + ' ' + c.name + ' ' + serial(c) + ' ' + (c.tagId || '')).toLowerCase().indexOf(q) >= 0)); });
   var h = '<div class="seg-tabs" role="tablist"><button role="tab" aria-selected="false" onclick="Demo.casView(\'list\')">' + ico('list-checks', 22) + L('List','רשימה') + '</button><button class="on" role="tab" aria-selected="true" onclick="Demo.casView(\'board\')">' + ico('layout-dashboard', 22) + L('Board','לוח פיקוד') + '</button></div>';
   // next action
   var next = all.filter(function(c){ return (c.triageColor === 'red' || c.triageColor === 'yellow') && unassigned(c); })[0];
@@ -272,7 +272,7 @@ function renderBoard(){
         else if (rv.spo2 != null && rv.spo2 < 92) bits.push('<span class="bad">' + ico('wind', 20) + 'SpO₂ ' + rv.spo2 + '%</span>');
         else if (rv.pulse != null && rv.pulse > 120) bits.push('<span class="warn">' + ico('heart-pulse', 20) + L('HR ','דופק ') + rv.pulse + '</span>');
       }
-      h += '<button class="bd-row" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">' + chip(c.triageColor) + '<b>' + (w.casBadge ? w.casBadge(c) + ' ' : '') + esc(rn) + '</b><span class="bd-row-v">' + bits.slice(0, 2).join('') + '</span>' + ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 22) + '</button>';
+      h += '<button class="bd-row" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">' + chip(c.triageColor) + '<b>' + (w.casBadge ? w.casBadge(c) + ' ' : '') + esc(rn) + (w.casTag ? w.casTag(c) : '') + '</b><span class="bd-row-v">' + bits.slice(0, 2).join('') + '</span>' + ico(lang() === 'he' ? 'chevron-left' : 'chevron-right', 22) + '</button>';
       return;
     }
     var v = lastVit(c), tq = openTq(c), veh = w.findVehicleForCasualty ? w.findVehicleForCasualty(c) : null, age = minsSinceTs(c.timestamp), dead = c.triageColor === 'black';
@@ -291,7 +291,7 @@ function renderBoard(){
     if (serial(c)) tags += '<span class="bd-tag code">' + ico('qr-code', 20) + '<bdi>' + esc(serial(c)) + '</bdi></span>';
     h += '<button class="bd-card t-' + (c.triageColor || 'none') + '" onclick="editCasualtyById(\'' + esc(c._docId) + '\')">'
       + '<span class="bd-top">' + chip(c.triageColor, true) + (age != null ? '<span class="bd-age">' + ico('clock', 20) + L(age + ' min',age + ' דק׳') + '</span>' : '') + '</span>'
-      + '<b class="bd-name">' + (w.casBadge ? w.casBadge(c, true) + ' ' : '') + esc(name[0]) + ((w.casDesc && w.casDesc(c)) ? '<small>' + esc(w.casDesc(c)) + '</small>' : '') + '</b>'
+      + '<b class="bd-name">' + (w.casBadge ? w.casBadge(c, true) + ' ' : '') + esc(name[0]) + (w.casTag ? w.casTag(c) : '') + ((w.casDesc && w.casDesc(c)) ? '<small>' + esc(w.casDesc(c)) + '</small>' : '') + '</b>'
       + (vits ? '<span class="bd-vits">' + vits + '</span>' : '')
       + '<span class="bd-inj">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="bd-tags">' + tags + '</span>'
@@ -412,7 +412,10 @@ var Demo = w.Demo = {
   },
   bdFilter: function(c){ w._bdFilter = (c && w._bdFilter !== c) ? c : null; w.renderIncidentPage(); },
   bdRows: function(on){ w._bdRows = !!on; w.renderIncidentPage(); },
-  bdSearch: function(v, clear){ w._bdQuery = v || ''; if (clear){ var i = document.querySelector('.bd-search input'); if (i) i.value = ''; } w.renderIncidentPage(); },
+  bdSearch: function(v, clear){
+    var tg = w.Bracelet && w.Bracelet.parseTag && w.Bracelet.parseTag(v || '');   // a scanned or typed tag opens that casualty straight away
+    if (tg && !clear){ w._bdQuery = ''; return w.Bracelet.openTag(tg); }
+    w._bdQuery = v || ''; if (clear){ var i = document.querySelector('.bd-search input'); if (i) i.value = ''; } w.renderIncidentPage(); },
   casView: function(v){ w._casView = v; if (v === 'board') w._mciMode = 'manage'; w.renderIncidentPage(); var c = document.getElementById('incident-content'); c.scrollTop = 0; },
   filter: function(color){ w._plFilter = color; w._casView = 'list'; w._incidentTab = 'casualties'; w.renderIncidentPage(); document.getElementById('incident-content').scrollTop = 0; },
   newFull: function(){ closeOverlays(); w._incidentTab = 'casualties'; w.newCasualty(); },
@@ -436,7 +439,8 @@ var Demo = w.Demo = {
     var row = function(icon, title, sub, fn){ return '<button class="sheet-row" onclick="' + fn + '"><span class="gi">' + ico(icon, 28) + '</span><span><b>' + title + '</b><small>' + sub + '</small></span></button>'; };
     s.innerHTML = '<div class="sheet-dim" onclick="Demo.closeMenu()"></div><div class="sheet" role="dialog" aria-label="' + L('Menu','תפריט') + '"><div class="sheet-grab"></div><h3>' + L('Menu','תפריט') + '</h3>'
       + '<div class="lang-pick"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\');Demo.closeMenu()">' + ico('languages', 22) + 'English</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\');Demo.closeMenu()">' + ico('languages', 22) + 'עברית</button></div>'
-      + row('play', L('Guided tour','סיור מודרך'), L('About 60 seconds, 8 steps','כ-60 שניות, 8 שלבים'), 'Demo.closeMenu();Tour.start()')
+      + row('circle-help', L('How to use','איך משתמשים'), L('Every screen explained, step by step','כל מסך מוסבר, שלב אחר שלב'), 'Demo.closeMenu();Help.open()')
+      + row('play', L('Guided tour','סיור מודרך'), L('About 60 seconds, 11 steps','כ-60 שניות, 11 שלבים'), 'Demo.closeMenu();Tour.start()')
       + row('triangle-alert', L('Important notice','הודעה חשובה'), L('Early beta. Do not use on real patients.','בטא מוקדמת. אין להשתמש בנפגעים אמיתיים.'), 'Demo.closeMenu();Disclaimer.open()')
       + row('rotate-ccw', L('Reset demo','איפוס הדמו'), L('Restore the original six casualties','החזרת ששת הנפגעים המקוריים'), 'Demo.closeMenu();Demo.reset()')
       + '</div>';
@@ -515,12 +519,12 @@ document.addEventListener('input', function(e){
 });
 
 // ── Modal behaviour for every overlay/sheet: focus moves in, Tab stays inside (background is inert), Esc closes, focus returns ──
-var OVERLAY = '#f-kp,#f-sheet,#fs-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
+var OVERLAY = '#help-sheet,#f-kp,#f-sheet,#fs-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
 var _ret = null;
 function topOverlay(){ var l = document.querySelectorAll(OVERLAY); return l.length ? l[l.length - 1] : null; }
 function syncModal(){
   var top = topOverlay(), app = document.getElementById('app'); if (!app) return;
-  var bg = [].slice.call(app.children).filter(function(c){ return !c.matches(OVERLAY + ',.tour-dim,.tour-card,.undo-toast,.tst,.skip-link'); });
+  var bg = [].slice.call(app.children).filter(function(c){ return !c.matches(OVERLAY + ',.tr-dim,.tr-card,#tour-rec,.undo-toast,.tst,.skip-link'); });
   bg.forEach(function(c){ if (top) c.setAttribute('inert', ''); else c.removeAttribute('inert'); });
   if (top){
     if (!_ret) _ret = document.activeElement;
@@ -530,7 +534,7 @@ function syncModal(){
 new MutationObserver(syncModal).observe(document.getElementById('app'), { childList:true });
 document.addEventListener('keydown', function(e){
   if (e.key !== 'Escape') return;
-  if (document.querySelector('.tour-card')) return;           // tour handles its own Esc
+  if (document.querySelector('.tr-card')) return;             // tour handles its own Esc
   var bm = document.getElementById('body-tap-overlay');       // body-map menu lives inside the page: close it through its own state
   if (bm && !topOverlay()){ w._selectedRegion = null; w._bodyMenuStep = 0; w.MedHost.renderIncidentPage(); return; }
   var t = topOverlay(); if (!t) return;
@@ -545,7 +549,7 @@ document.addEventListener('keydown', function(e){
 
 // Tab wraps inside the open overlay (inert background would otherwise hand focus to the browser chrome)
 document.addEventListener('keydown', function(e){
-  if (e.key !== 'Tab') return;
+  if (e.key !== 'Tab' || document.querySelector('.tr-card')) return;   // the tour keeps focus in its own card
   var t = topOverlay(); if (!t) return;
   var f = [].slice.call(t.querySelectorAll('button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])')).filter(function(x){ return !x.disabled && x.offsetParent !== null; });
   if (!f.length) return;

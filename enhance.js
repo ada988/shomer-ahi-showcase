@@ -185,7 +185,7 @@ function hoBlocks(text){
   var rank = function(k){ return k === 'M' ? 1 : k === 'I' ? 2 : k === 'S' ? 3 : /^(Consciousness|הכרה)/.test(k) ? 4 : k === 'T' ? 5 : /^(Tourniquet|TQ|ח״ע|חוסם|Drugs|Medications|תרופות|Blood|דם)/.test(k) ? 6 : 7; };
   lines.forEach(function(ln, n){
     var clean = ln.replace(/[\u2066-\u2069]/g, '');
-    if (n === 0){ var hp = clean.split(' | '); out += '<div class="ho-title">' + (W.casBadge ? W.casBadge({ name: W._casualtyName }, true) + ' ' : '') + iso(hp[0].replace(/^MIST\+\s*—\s*/, '')) + (hp[1] ? '<small>' + iso(hp[1]) + '</small>' : '') + '</div>'; return; }
+    if (n === 0){ var hp = clean.split(' | '); var hoC = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0]; out += '<div class="ho-title">' + (W.casBadge ? W.casBadge({ name: W._casualtyName }, true) + ' ' : '') + iso(hp[0].replace(/^MIST\+\s*—\s*/, '')) + (W.casTag && hoC ? W.casTag(hoC) : '') + (hp[1] ? '<small>' + iso(hp[1]) + '</small>' : '') + '</div>'; return; }
     if (n === 1 && / \| /.test(clean)){ out += '<div class="ho-chips">' + clean.split(' | ').map(function(c){ return '<span>' + iso(c) + '</span>'; }).join('') + '</div>'; return; }
     var m = /^([^:]{1,40}):\s+(.*)$/.exec(clean);
     if (!m){ out += '<div class="ho-alert">' + iso(clean) + '</div>'; return; }

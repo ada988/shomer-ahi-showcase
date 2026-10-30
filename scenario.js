@@ -110,7 +110,7 @@
   f.d.pupils = { left:{ size:6, reactive:false }, right:{ size:6, reactive:false } };
 
   var list = [
-    { _docId:'demo_c1', id:'demo_c1', name:'נפגע 1', num:1, desc:'גבר, כבן 30', idNumber:'', triageColor:'red', moi:'gsw',
+    { _docId:'demo_c1', id:'demo_c1', name:'נפגע 1', num:1, tagId:'SA-0427', desc:'גבר, כבן 30', idNumber:'', triageColor:'red', moi:'gsw',
       injuredRegions:['r_thigh','chest_r','pelvis'],
       injuries:[{region:'r_thigh',side:'front',type:'hemorrhage',severity:'severe',notes:''},
                 {region:'chest_r',side:'front',type:'penetrating',severity:'severe',notes:''},
@@ -133,7 +133,7 @@
                 tl(5,'e','קטמין 25mg IV','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(16) },
 
-    { _docId:'demo_c2', id:'demo_c2', name:'נפגע 2', num:2, desc:'אישה, כבת 45', idNumber:'', triageColor:'red', moi:'gsw',
+    { _docId:'demo_c2', id:'demo_c2', name:'נפגע 2', num:2, tagId:'SA-0428', desc:'אישה, כבת 45', idNumber:'', triageColor:'red', moi:'gsw',
       injuredRegions:['head'],
       injuries:[{region:'head',side:'front',type:'penetrating',severity:'severe',notes:''}],
       treatments:[], xabcde:b, evacPriority:'immediate', painScore:null, avpu:'P', pulse:96, spo2:98, rr:20, bpSys:128, bpDia:84, temp:36.1,
@@ -150,7 +150,7 @@
                 tl(2,'b','EtCO₂ ירד מ-48 ל-38 mmHg (הנשמה 20/דק׳)','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(12) },
 
-    { _docId:'demo_c3', id:'demo_c3', name:'נפגע 3', num:3, desc:'גבר, כבן 22', idNumber:'', triageColor:'yellow', moi:'gsw',
+    { _docId:'demo_c3', id:'demo_c3', name:'נפגע 3', num:3, tagId:'SA-0429', desc:'גבר, כבן 22', idNumber:'', triageColor:'yellow', moi:'gsw',
       injuredRegions:['l_forearm','abdomen_l'],
       injuries:[{region:'l_forearm',side:'front',type:'hemorrhage',severity:'moderate',notes:''},
                 {region:'abdomen_l',side:'front',type:'penetrating',severity:'moderate',notes:''}],
@@ -167,7 +167,7 @@
                 tl(6,'e','קטמין 25mg IV','')],
       secondarySurvey:sec(), examsHistory:[], timestamp:ts(16) },
 
-    { _docId:'demo_c4', id:'demo_c4', name:'נפגע 4', num:4, desc:'גבר, כבן 60', idNumber:'', triageColor:'yellow', moi:'vehicle',
+    { _docId:'demo_c4', id:'demo_c4', name:'נפגע 4', num:4, tagId:'SA-0430', desc:'גבר, כבן 60', idNumber:'', triageColor:'yellow', moi:'vehicle',
       injuredRegions:['r_shin'],
       injuries:[{region:'r_shin',side:'front',type:'fracture',severity:'moderate',notes:'סגור'}],
       treatments:[{region:'r_shin',side:'front',type:'splint',time:hhmm(6)}], xabcde:d, evacPriority:'urgent', painScore:5, avpu:'A', pulse:92, spo2:98, rr:18, bpSys:142, bpDia:90, temp:36.8,

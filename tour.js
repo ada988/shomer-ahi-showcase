@@ -1,126 +1,217 @@
-/* 60-second guided tour (8 steps): navigates the real app and spotlights the real controls. */
+/* Guided tour: walks the real app, one screen per step, and spotlights the real control.
+   Lives inside #app, so it works full-screen on a phone and inside the scaled desktop phone (rects are divided by the scale). */
 (function(){
 'use strict';
 var W = window;
 function lang(){ return (W.ShowcaseI18n && W.ShowcaseI18n.lang) || 'en'; }
 function L(en, he){ return lang() === 'he' ? he : en; }
 function ico(n, s){ return W.Icon ? W.Icon(n, s) : ''; }
-
-function ensureForm(){ return W._casualtyEditMode ? Promise.resolve() : W.Demo.go('casualty'); }
-
-var STEPS = [
-  { pre: function(){ W.Bracelet.close(true); return W.Demo.tab('status'); }, target:'.ov-tiles', pos:'bottom',
-    en:['A live mass-casualty scene','Casualties from a bus-stop attack. Each block is a triage group: shape, word and colour.'],
-    he:['זירת אר״ן חיה','נפגעי פיגוע בתחנת אוטובוס. כל בלוק הוא קבוצת מיון: צורה, מילה וצבע.'] },
-  { pre: function(){ return W.Demo.tab('status').then(function(){ W.Quick.open(); }); }, target:'.qt-yn', pos:'top',
-    en:['Quick triage in seconds','Big YES and NO buttons, one question at a time. A colour in seconds.'],
-    he:['מיון מהיר תוך שניות','כפתורי כן ולא גדולים, שאלה אחת בכל פעם. צבע תוך שניות.'] },
-  { pre: function(){ if (W.Quick) W.Quick.close(); return W.Demo.go('casualty'); }, target:'.f-id', pos:'bottom', scroll:'start',
-    en:['One patient: the full Form 101','Casualty 1 is in shock. Their number, triage and wristband on one strip.'],
-    he:['נפגע אחד: טופס 101 מלא','נפגע 1 בהלם. המספר, המיון והצמיד בשורה אחת.'] },
-  { pre: ensureForm, target:'.xc-tabs', pos:'bottom', scroll:'center',
-    en:['X-CARE, step by step','The IDF 2026 protocol as big rows. Tap a row to tick it, tap the button to act: tourniquet, blood, TXA. Every time is recorded.'],
-    he:['X-CARE שלב אחר שלב','פרוטוקול צה״ל 2026 כשורות גדולות. לוחצים על שורה לסימון, ועל הכפתור לביצוע: חוסם עורקים, דם, TXA. כל זמן נרשם.'] },
-  { pre: ensureForm, target:'[data-tour=handoff]', pos:'top', scroll:'center',
-    en:['Hand off in one tap','A short report with the time-critical items first, a radio script, or a printable Form 101.'],
-    he:['העברה בלחיצה','דוח קצר עם הפריטים הקריטיים קודם, תסריט רדיו או טופס 101 להדפסה.'] },
-  { pre: function(){ W.Evac.close(); return W.Demo.tab('evac'); }, target:'.next-out, .ev-road', pos:'bottom',
-    en:['Load and go','Who goes next, on which ambulance, where, how long. One tap.'],
-    he:['העמסה ויציאה','מי יוצא, באיזה אמבולנס, לאן, תוך כמה זמן. לחיצה אחת.'] },
-  { pre: function(){ W.Evac && W.Evac.close(); return W.Demo.tab('bracelets'); }, target:'.bt-band .brc2, .bt-band', pos:'bottom',
-    en:['A wristband for every casualty','The QR code carries the record. Print it and fasten it to the casualty.'],
-    he:['צמיד לכל נפגע','קוד ה-QR נושא את התיק. מדפיסים וחוברים לנפגע.'] },
-  { pre: function(){ W.Bracelet.viewCard('demo_c1'); }, target:'.cc-banner', pos:'bottom',
-    en:['Anyone can scan it','Any phone camera: triage, what was done and when. No app, no login, no network.'],
-    he:['כל אחד יכול לסרוק','כל מצלמת טלפון: מיון, מה בוצע ומתי. בלי אפליקציה, בלי התחברות, בלי רשת.'] }
-];
-
-var i = 0, root = null, spot = null, card = null;
+function rtl(){ return document.documentElement.dir === 'rtl'; }
 function app(){ return document.getElementById('app'); }
 
-function rectIn(el){
-  var a = app().getBoundingClientRect(), r = el.getBoundingClientRect();
-  return { x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height, aw: a.width, ah: a.height };
+function home(){ return W.Demo.tab('status'); }
+function form(){ return W.Demo.go('casualty'); }
+function later(fn, ms){ return new Promise(function(res){ setTimeout(function(){ res(fn && fn()); }, ms || 0); }); }
+
+// A sample of the alert the form raises after an action, so the step can show it without faking a tap.
+function demoAlert(){
+  var a = document.createElement('div'); a.id = 'tour-rec'; a.className = 'rec-alert next in no-polish no-tr';
+  var ab = document.querySelector('.appbar'), r = app().getBoundingClientRect(), s = scale();
+  a.style.top = ((ab ? (ab.getBoundingClientRect().bottom - r.top) / s : 72) + 8) + 'px';
+  a.innerHTML = '<div class="rec-go"><span class="rec-i">' + ico('droplet', 30) + '</span><span class="rec-t"><b>' + L('Suspected shock — IV and blood','חשד להלם — עירוי ודם') + '</b><small>' + L('Tap for the full recommendation','לחצו להמלצה המלאה') + '</small></span></div>';
+  app().appendChild(a);
 }
-function clean(){ if (W.Bracelet) W.Bracelet.close(true); if (W.Evac) W.Evac.close(); if (W.Demo && W.Demo.closeOverlays) W.Demo.closeOverlays(); }
-var tok = 0;
-function find(sel){ return (document.querySelector('.bo') && document.querySelector('.bo ' + sel)) || document.querySelector(sel); }
+function dropDemo(){ var a = document.getElementById('tour-rec'); if (a) a.remove(); }
+
+var STEPS = [
+  { icon:'layout-dashboard', pre: home, target:'.ov-tiles',
+    en:['The scene at a glance','Every casualty counted by triage group: colour, shape and word.'],
+    he:['כל הזירה במבט','כל הנפגעים לפי קבוצת מיון: צבע, צורה ומילה.'] },
+  { icon:'zap', pre: function(){ return home().then(function(){ W.Quick.open(); }); }, target:'.qt-yn',
+    en:['Quick triage','One question at a time. YES is always blue, NO always grey, in the same place.'],
+    he:['מיון מהיר','שאלה אחת בכל פעם. כן תמיד כחול, לא תמיד אפור, באותו מקום.'] },
+  { icon:'file-text', pre: form, target:'.f-id',
+    en:['Casualty 1: Form 101','A number, never a name. Triage and wristband on one strip.'],
+    he:['נפגע 1: טופס 101','מספר, אף פעם לא שם. מיון וצמיד בשורה אחת.'] },
+  { icon:'list-checks', pre: form, target:'.xc-list, .xc-tabs',
+    en:['X-CARE in order','The next step from the IDF book. Rows tick themselves from what you record.'],
+    he:['X-CARE לפי הסדר','הצעד הבא לפי ספר צה״ל. השורות מסומנות לבד לפי מה שתיעדת.'] },
+  { icon:'clock', pre: form, target:'#fs-time',
+    en:['Automatic timeline','Every treatment, drug and vital is logged with its time. Tap a row to edit it.'],
+    he:['ציר זמן אוטומטי','כל טיפול, תרופה ומדד נרשמים עם השעה. לחיצה על שורה לעריכה.'] },
+  { icon:'syringe', pre: function(){ return form().then(function(){ W.Field.doseOpen('now'); }); }, target:'.dz-dec', off:96,
+    en:['Dose calculator','Reads the findings, then: give now, changed dose, do not give. Every syringe is drawn.'],
+    he:['מחשבון מינונים','קורא את הממצאים, ואז: לתת עכשיו, מינון משתנה, לא לתת. כל מזרק מצויר.'] },
+  { icon:'triangle-alert', pre: function(){ return form().then(function(){ return later(demoAlert, 60); }); }, target:'#tour-rec', leave: dropDemo,
+    en:['Alerts after each action','New findings pop up as “Suspected…”, never a diagnosis. Tap for the full advice.'],
+    he:['התראה אחרי כל פעולה','ממצא חדש קופץ כ״חשד ל…״, אף פעם לא אבחנה. לחיצה להמלצה המלאה.'] },
+  { icon:'ambulance', pre: function(){ if (W.Evac) W.Evac.close(); return W.Demo.tab('evac'); }, target:'.next-out, .ev-road',
+    en:['Evacuation','Who goes next, on which ambulance, to which hospital, and when it arrives.'],
+    he:['פינוי','מי יוצא הבא, באיזה אמבולנס, לאיזה בית חולים, ומתי מגיע.'] },
+  { icon:'qr-code', pre: function(){ return W.Demo.tab('bracelets'); }, target:'.bt-band',
+    en:['A wristband for every casualty','The whole record is inside the QR code.'],
+    he:['צמיד לכל נפגע','כל התיק נמצא בתוך קוד ה-QR.'] },
+  { icon:'scan-line', pre: function(){ return W.Demo.tab('bracelets').then(function(){ W.Bracelet.viewCard('demo_c1'); }); }, target:'.cc-banner, .bo .cc-name, .bo',
+    en:['Any phone can read it','At the hospital door: triage, what was done and when. No app, no network.'],
+    he:['כל טלפון קורא','בפתח בית החולים: מיון, מה בוצע ומתי. בלי אפליקציה, בלי רשת.'] },
+  { icon:'circle-help', pre: home, target:'#menu-btn',
+    en:['That’s the tour','Every screen is explained step by step in Menu → How to use.'],
+    he:['זה הסיור','כל מסך מוסבר שלב אחר שלב בתפריט ← איך משתמשים.'] }
+];
+
+var i = 0, root = null, spot = null, card = null, tok = 0;
+function scale(){ var a = app(); return a && a.offsetWidth ? (a.getBoundingClientRect().width / a.offsetWidth) || 1 : 1; }
+function rectIn(el){
+  var a = app().getBoundingClientRect(), r = el.getBoundingClientRect(), s = scale();
+  return { x:(r.left - a.left) / s, y:(r.top - a.top) / s, w:r.width / s, h:r.height / s, aw:a.width / s, ah:a.height / s };
+}
+function visible(el){ var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
+function find(sel){
+  var top = document.querySelector('.bo') || document.querySelector('.dz-wrap') || document.getElementById('qt');
+  var list = sel.split(',').map(function(x){ return x.trim(); });
+  for (var k = 0; k < list.length; k++){
+    var el = (top && top.querySelector(list[k])) || document.querySelector(list[k]);
+    if (el && visible(el)) return el;
+  }
+  return null;
+}
+function clean(){
+  dropDemo();
+  if (W.Quick && document.getElementById('qt')) W.Quick.close();
+  if (W.Bracelet) W.Bracelet.close(true);
+  if (W.Evac) W.Evac.close();
+  if (W.Demo && W.Demo.closeOverlays) W.Demo.closeOverlays();
+}
+// bring the target into view by scrolling its own scroller only (never the page around the desktop phone)
+function reveal(t, off){
+  var p = t.parentElement;
+  while (p && p !== app()){
+    var cs = getComputedStyle(p);
+    if (/(auto|scroll)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight + 4){
+      var pr = p.getBoundingClientRect(), tr = t.getBoundingClientRect(), s = scale();
+      var th = tr.height / s, tall = th > p.clientHeight * .4;
+      // tall targets: show their start; short ones: about a third of the way down
+      var jb = p.querySelector(':scope > .jb, .jb'), sticky = jb && visible(jb) && getComputedStyle(jb).position === 'sticky' ? jb.offsetHeight : 0;
+      var want = (tr.top - pr.top) / s - sticky - (tall ? (off || 12) : Math.max(16, (p.clientHeight - sticky - th) * .3));
+      p.scrollTop += want;
+      return;
+    }
+    p = p.parentElement;
+  }
+}
+// sticky jump tabs at the top of the form scroller: targets must sit below them
+function stickyBottom(t){
+  var sc = document.getElementById('incident-content'), jb = document.querySelector('#incident-content .jb');
+  if (!sc || !jb || !sc.contains(t) || !visible(jb)) return 0;
+  var a = app().getBoundingClientRect(), r = jb.getBoundingClientRect();
+  return (r.bottom - a.top) / scale();
+}
+function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
 function show(n){
+  if (!root) return;
+  var prev = STEPS[i]; if (prev && prev.leave) prev.leave();
   i = Math.max(0, Math.min(STEPS.length - 1, n));
   var s = STEPS[i], my = ++tok;
+  card.classList.add('busy');
   clean();
-  if (card) card.style.opacity = '.6';
-  var go = s.pre ? s.pre() : null;
-  var after = function(){
+  Promise.resolve(s.pre ? s.pre() : null).then(function(){
     var tries = 0;
-    (function attempt(){
-      if (my !== tok || !root) return;
-      var t = s.target ? find(s.target) : null;
-      if (!t && s.target && tries++ < 8) return setTimeout(attempt, 100);
-      if (t){
-        var sc = document.getElementById('incident-content');
-        if (sc && sc.contains(t)){
-          var cr = sc.getBoundingClientRect(), tr = t.getBoundingClientRect();
-          sc.scrollTop += s.scroll === 'start' ? tr.top - cr.top - 60 : tr.top - cr.top - (cr.height - tr.height) / 2;
-        }
-      }
-      setTimeout(function(){ if (my === tok && root){ card.style.opacity = ''; draw(find(s.target || '#none'), s); } }, 360);
+    return (function look(){
+      if (my !== tok) return null;
+      var t = find(s.target);
+      if (t || tries++ > 25) return t;
+      return wait(80).then(look);
     })();
-  };
-  if (go && go.then) go.then(after); else setTimeout(after, 60);
+  }).then(function(t){
+    if (my !== tok || !root) return;
+    if (t) reveal(t, s.off);
+    return wait(260).then(function(){ if (my === tok && root) draw(t ? find(s.target) : null, s); });
+  }).catch(function(e){ console.error(e); if (my === tok && root) draw(null, s); });
 }
+
 function draw(t, s){
-  if (!root) return;
-  var txt = lang() === 'he' ? s.he : s.en;
+  var txt = lang() === 'he' ? s.he : s.en, last = i === STEPS.length - 1, A = app(), sc = scale();
+  var aw = A.offsetWidth, ah = A.offsetHeight;
+  var tab = document.getElementById('incident-tabs'), bar = document.querySelector('.appbar');
+  var cardH;
+  card.innerHTML = '<div class="tr-head"><span class="tr-ic">' + ico(s.icon, 26) + '</span><span class="tr-count"><bdi dir="ltr">' + (i + 1) + ' / ' + STEPS.length + '</bdi></span>'
+    + '<button class="tr-skip" onclick="Tour.stop()">' + ico('x', 22) + '<span>' + L('Skip','דלג') + '</span></button></div>'
+    + '<h5>' + txt[0] + '</h5><p>' + txt[1] + '</p>'
+    + '<div class="tr-dots" aria-hidden="true">' + STEPS.map(function(_, k){ return '<i class="' + (k === i ? 'on' : k < i ? 'done' : '') + '"></i>'; }).join('') + '</div>'
+    + '<div class="tr-nav">'
+    + (i > 0 ? '<button class="tr-back" onclick="Tour.go(' + (i - 1) + ')">' + ico(rtl() ? 'arrow-right' : 'arrow-left', 24) + '<span>' + L('Back','הקודם') + '</span></button>' : '')
+    + '<button class="tr-next" onclick="' + (last ? 'Tour.finish()' : 'Tour.go(' + (i + 1) + ')') + '">' + (last ? ico('check', 24) + '<span>' + L('Done','סיום') + '</span>' : '<span>' + L('Next','הבא') + '</span>' + ico(rtl() ? 'arrow-left' : 'arrow-right', 24)) + '</button></div>';
+  card.classList.remove('busy');
+  card.style.top = card.style.bottom = '';
+  cardH = card.offsetHeight;
+  var topLimit = t ? Math.max(8, stickyBottom(t) + 4) : 8, botLimit = ah - 8;
   if (t){
-    var r = rectIn(t), pad = 6;
-    if (r.h > r.ah * .5) r.h = r.ah * .5;   // very tall targets: highlight the top part only
+    var r = rectIn(t), pad = 8, br = parseFloat(getComputedStyle(t).borderTopLeftRadius) || 12;
+    var x = Math.max(4, r.x - pad), y = r.y - pad, w = Math.min(aw - 8, r.w + pad * 2), h = r.h + pad * 2;
+    if (x + w > aw - 4) w = aw - 4 - x;
+    // keep the spotlight on screen and below the form's sticky tabs
+    var sb = stickyBottom(t), floor = Math.max(4, sb ? sb + 4 : 4);
+    if (y < floor){ h += y - floor; y = floor; }
+    if (y + h > ah - 4) h = ah - 4 - y;
+    var above = y - topLimit, below = botLimit - (y + h);
+    var gap = 12, place;
+    if (below >= cardH + gap) place = 'below';
+    else if (above >= cardH + gap) place = 'above';
+    else {
+      // not enough room either side: put the card on the larger side and trim the spotlight so they never overlap
+      place = (below >= above || h > ah * .4) ? 'below' : 'above';
+      if (place === 'below'){ var cut = (y + h) - (botLimit - cardH - gap); h = Math.max(56, h - cut); }
+      else { var cut2 = (topLimit + cardH + gap) - y; y += cut2; h = Math.max(56, h - cut2); }
+    }
     spot.style.display = 'block';
-    spot.style.left = (r.x - pad) + 'px'; spot.style.top = (r.y - pad) + 'px';
-    spot.style.width = (r.w + pad * 2) + 'px'; spot.style.height = (r.h + pad * 2) + 'px';
-    var below = r.y + r.h / 2 < r.ah / 2;
-    card.className = 'tour-card' + (below ? '' : ' top');
-    // Put the card on the opposite half of the screen from the spotlight.
-    card.style.top = below ? 'auto' : '62px'; card.style.bottom = below ? '70px' : 'auto';
-  } else { spot.style.display = 'none'; card.className = 'tour-card'; card.style.top = 'auto'; card.style.bottom = '70px'; }
-  var last = i === STEPS.length - 1;
-  card.innerHTML = '<div class="tour-step">' + L('Step ','שלב ') + (i + 1) + ' / ' + STEPS.length + '</div><h5>' + txt[0] + '</h5><p>' + txt[1] + '</p>'
-    + '<div class="tour-prog">' + STEPS.map(function(_, k){ return '<i class="' + (k <= i ? 'on' : '') + '"></i>'; }).join('') + '</div>'
-    + '<div class="tour-nav"><button class="skip" onclick="Tour.stop()">' + W.Icon('x', 22) + L('Skip tour','דלג') + '</button>'
-    + (i > 0 ? '<button class="xbtn" onclick="Tour.go(' + (i - 1) + ')">' + W.Icon(document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left', 22) + L('Back','הקודם') + '</button>' : '')
-    + '<button class="xbtn xbtn-primary" onclick="' + (last ? 'Tour.finish()' : 'Tour.go(' + (i + 1) + ')') + '">' + (last ? W.Icon('check', 22) + L('Try it yourself','נסו בעצמכם') : L('Next','הבא') + W.Icon(document.documentElement.dir === 'rtl' ? 'arrow-left' : 'arrow-right', 22)) + '</button></div>';
-  // A tall target must not run underneath the card: trim the highlight to the part that stays visible.
-  if (t && spot.style.display !== 'none'){
-    var a = app().getBoundingClientRect(), cr = card.getBoundingClientRect(), cTop = cr.top - a.top, cBot = cr.bottom - a.top, sTop = parseFloat(spot.style.top), sH = parseFloat(spot.style.height);
-    if (card.style.top === 'auto'){ if (sTop < cTop && sTop + sH > cTop - 8) spot.style.height = Math.max(60, cTop - 8 - sTop) + 'px'; }
-    else if (sTop < cBot + 8 && sTop + sH > cBot + 8){ var nt = cBot + 8; spot.style.top = nt + 'px'; spot.style.height = Math.max(60, sTop + sH - nt) + 'px'; }
+    spot.style.left = x + 'px'; spot.style.top = y + 'px'; spot.style.width = w + 'px'; spot.style.height = h + 'px';
+    spot.style.borderRadius = Math.min(28, br + 6) + 'px';
+    if (place === 'below') card.style.top = Math.min(botLimit - cardH, y + h + gap) + 'px';
+    else card.style.top = Math.max(topLimit, y - gap - cardH) + 'px';
+    root.classList.remove('nospot');
+  } else {
+    spot.style.display = 'none'; root.classList.add('nospot');
+    card.style.top = Math.max(topLimit, (ah - cardH) / 2) + 'px';
   }
-  if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
-  try { card.focus({ preventScroll:true, focusVisible:false }); } catch(e){ card.focus({ preventScroll:true }); }
+  var nx = card.querySelector('.tr-next');
+  try { nx.focus({ preventScroll:true, focusVisible:false }); } catch (e) { nx.focus({ preventScroll:true }); }
 }
-function start(){
+
+function start(at){
   stop(true);
-  root = document.createElement('div'); root.className = 'tour-dim no-polish'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Guided tour');
-  spot = document.createElement('div'); spot.className = 'tour-spot'; root.appendChild(spot);
-  card = document.createElement('div'); card.className = 'tour-card'; card.style.pointerEvents = 'auto';
+  if (W.Help && W.Help.close) W.Help.close();
+  root = document.createElement('div'); root.className = 'tr-dim no-polish no-tr'; root.setAttribute('aria-hidden', 'true');
+  spot = document.createElement('div'); spot.className = 'tr-spot'; root.appendChild(spot);
+  card = document.createElement('div'); card.className = 'tr-card no-polish no-tr'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true');
+  card.setAttribute('aria-label', L('Guided tour','סיור מודרך')); card.setAttribute('aria-live', 'polite');
   app().appendChild(root); app().appendChild(card);
-  card.style.zIndex = 100030; root.style.zIndex = 100020;
   document.addEventListener('keydown', onKey, true);
-  show(0);
+  i = 0; show(at || 0);
 }
 function stop(silent){
   document.removeEventListener('keydown', onKey, true);
-  if (!silent) clean();
+  tok++;
   if (root){ root.remove(); root = null; }
   if (card){ card.remove(); card = null; }
+  if (!silent) clean();
 }
-function finish(){ stop(); W.Bracelet.close(true); W.Demo.tab('status'); }
+function finish(){ stop(); home(); }
 function onKey(e){
-  if (e.key === 'Escape'){ stop(); e.stopPropagation(); }
-  var rtl = document.documentElement.dir === 'rtl', fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
-  if (e.key === fwd && i < STEPS.length - 1){ show(i + 1); }
-  else if (e.key === back && i > 0){ show(i - 1); }
+  if (!root) return;
+  var fwd = rtl() ? 'ArrowLeft' : 'ArrowRight', back = rtl() ? 'ArrowRight' : 'ArrowLeft';
+  if (e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); stop(); }
+  else if (e.key === fwd){ e.preventDefault(); if (i < STEPS.length - 1) show(i + 1); else finish(); }
+  else if (e.key === back && i > 0){ e.preventDefault(); show(i - 1); }
+  else if (e.key === 'Tab'){ // keep focus in the card
+    var f = card.querySelectorAll('button'); if (!f.length) return;
+    var first = f[0], lastB = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); lastB.focus(); }
+    else if (!e.shiftKey && document.activeElement === lastB){ e.preventDefault(); first.focus(); }
+  }
 }
-W.addEventListener('resize', function(){ if (root) show(i); });
-W.Tour = { start: start, stop: stop, go: show, finish: finish, active: function(){ return !!root; }, redraw: function(){ if (root) show(i); } };
+var rz = null;
+W.addEventListener('resize', function(){ if (!root) return; clearTimeout(rz); rz = setTimeout(function(){ var t = find(STEPS[i].target); draw(t, STEPS[i]); }, 150); });
+W.Tour = { start: start, stop: stop, go: show, finish: finish, active: function(){ return !!root; }, redraw: function(){ if (root) show(i); },
+  steps: function(){ return STEPS.length; }, step: function(){ return i; } };
 })();
