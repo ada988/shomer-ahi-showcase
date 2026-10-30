@@ -479,11 +479,13 @@ function generateMISTPlusReport(){
   const evac=evacOutName(typeof _casualtyEvacPriority!=='undefined'?_casualtyEvacPriority:null);
   const it=injuryTimeOut(x);
   const who=(e.ageYears==null&&!(typeof _getPatientWeight==='function'&&_getPatientWeight()))?'':[e.ageYears!=null?'גיל '+e.ageYears:'',sexOutName(e.sex),(typeof _getPatientWeight==='function'&&_getPatientWeight())?_getPatientWeight()+' ק"ג':'',(e.sex==='F'&&e.ageYears!=null&&e.ageYears>=12&&e.ageYears<=50)?'היריון: '+(e.pregnant===true?'כן':e.pregnant===false?'לא':'לא ידוע'):''].filter(Boolean).join(' · ');
-  const L=['MIST+ — '+name+(who?' | '+who:''),
-    'שעה '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' | טריאז\': '+triageOutName(triageCol)+(evac?' | פינוי: '+evac:'')];
-  tqL.forEach(l=>L.push(S(l)));
-  if(medL)L.push('תרופות: '+S(medL));
-  if(flL)L.push('דם/נוזלים: '+S(flL));
+  const L=['\u2068MIST+\u2069 — '+name+(who?' | '+who:''),
+    'שעה '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' | טריאז׳: '+triageOutName(triageCol)+(evac?' | פינוי: '+evac:'')];
+  const iso=t=>String(t).split(' · ').map(x=>'\u2068'+x+'\u2069').join(' · ');
+  try{const cx=buildCasualtyContext();if(cx.deepShock&&triageCol!=='black')L.push('הלם עמוק');else if(cx.shock&&triageCol!=='black')L.push('סימני הלם');}catch(_e){}
+  tqL.forEach(l=>L.push('\u2068'+S(l)+'\u2069'));
+  if(medL)L.push('תרופות: '+iso(S(medL)));
+  if(flL)L.push('דם/נוזלים: '+iso(S(flL)));
   L.push('M: '+moiText+(it?' | שעת פציעה '+fmtHM(it.t)+(it.approx?' (משוער, מסימון)':''):''));
   L.push('I: '+injuries);
   L.push('S: '+vitalsText);
@@ -741,8 +743,9 @@ function _buildDetailedForm101HTML(){
   H+=rowSec('סיבוכים',x.e?.complications||'אין');
   H+=`</table></section>`;
   // Section: Secondary survey — every checklist item + status + structured fields
-  H+=`<section class="page-break"><h2>6 · סקר שניוני (C-A-R-E)</h2>`;
-  const secSchema=(typeof _SECONDARY_SCHEMA!=='undefined')?_SECONDARY_SCHEMA:[];
+  H+=`<section class="page-break"><h2>6 · X-CARE</h2>`;
+  if(window.Field&&Field.xcarePrintHtml)H+=Field.xcarePrintHtml();
+  const secSchema=(window.Field&&Field.xcarePrintHtml)?[]:((typeof _SECONDARY_SCHEMA!=='undefined')?_SECONDARY_SCHEMA:[]);
   secSchema.forEach(sec=>{
     const pdone=sec.items.filter(i=>checklist[i.id]?.done).length;
     H+=`<h3 style="color:${sec.color}">${esc(sec.title)} (${pdone}/${sec.items.length})</h3>`;
@@ -806,9 +809,9 @@ function _buildDetailedForm101HTML(){
     H+=`</tbody></table>`;
     // Totals by drug
     const totals={};
-    meds.forEach(m=>{const k=m.drug||m.name||'';const mg=parseFloat(String(m.dose||'').replace(/[^\d.]/g,''))||0;totals[k]=(totals[k]||0)+mg;});
+    meds.forEach(m=>{const k=m.drug||m.name||'';(totals[k]=totals[k]||[]).push(String(m.dose||'').trim());});
     H+=`<h3 style="margin-top:10px">סיכום מצטבר</h3><table class="kv">`;
-    Object.entries(totals).forEach(([k,v])=>{H+=rowSec(k,'× '+v);});
+    Object.entries(totals).forEach(([k,v])=>{H+=rowSec(k,v.length+(v.length===1?' מנה':' מנות')+' · '+v.filter(Boolean).join(' + '));});
     H+=`</table>`;
   } else H+=`<p class="empty">לא ניתנו תרופות</p>`;
   H+=`</section>`;
@@ -1118,7 +1121,7 @@ function placeTreatmentOnBody(regionId,type){
   }
   _casualtyTreatments.push({region:regionId,side,type,time:new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})});
   _mirrorBodyTreatmentToX(type,regionId,iso);
-  addTimestampedAction('treatment','טיפול '+_txHe(type)+' — '+BODY_LABELS[regionId],type);
+  addTimestampedAction(['tourniquet','pressureDressing','hemostatic','woundPacking'].includes(type)?'x':'treatment','טיפול '+_txHe(type)+' — '+BODY_LABELS[regionId],type);
   if(navigator.vibrate)navigator.vibrate(15);
 }
 function _mirrorBodyTreatmentToX(type,regionId,iso){
@@ -1308,7 +1311,7 @@ function _isDeepShock(){
   const sbpLow=(sys!==null&&sys<_sbpMinFor(age));
   const rpAbsent=rp==='absent';
   const avpu=(_casualtyXABCDE?.d?.avpu||'').toUpperCase();
-  const altered=avpu==='P'||avpu==='U';
+  const altered=avpu==='V'||avpu==='P'||avpu==='U';
   const cleanAltered=altered&&!_headPenetrating()&&!_recentSedation();
   // IDF: SBP under the limit, OR no measurable BP together with no radial pulse / altered consciousness not caused by head injury or sedation.
   return sbpLow||(sys===null&&(rpAbsent||cleanAltered));

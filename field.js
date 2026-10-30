@@ -64,8 +64,9 @@ function idStrip(){
 }
 function shockHtml(){
   var ctx = W.buildCasualtyContext ? W.buildCasualtyContext() : {};
-  if (!ctx.deepShock && !ctx.shock) return '';
-  return '<div class="f-shock" role="alert">' + ico('triangle-alert', 30) + '<span><b>' + (ctx.deepShock ? L('DEEP SHOCK','הלם עמוק') : L('SIGNS OF SHOCK','סימני הלם')) + '</b><small>' + L('Whole blood first, TXA within 3 h of injury, keep warm, evacuate now.','קודם דם מלא, TXA תוך 3 שעות מהפציעה, חימום, פינוי עכשיו.') + '</small></span></div>';
+  if ((!ctx.deepShock && !ctx.shock) || W._casualtyTriageColor === 'black') return '';
+  var ii = injuryInfo(), txaTxt = lastMed(/^TXA/i) ? L('TXA given', 'TXA ניתן') : (ii && ii.left <= 0) ? L('TXA window closed', 'חלון TXA נסגר') : L('TXA within 3 h of injury', 'TXA תוך 3 שעות מהפציעה');
+  return '<div class="f-shock" role="alert">' + ico('triangle-alert', 30) + '<span><b>' + (ctx.deepShock ? L('DEEP SHOCK','הלם עמוק') : L('SIGNS OF SHOCK','סימני הלם')) + '</b><small>' + L('Whole blood first · ' + txaTxt + ' · keep warm · evacuate now.','קודם דם מלא · ' + txaTxt + ' · חימום · פינוי עכשיו.') + '</small></span></div>';
 }
 function html(){
   var c = ctx(), tqs = c.x.tourniquets || [], cur = W._casualtyTriageColor, h = idStrip() + quickBanner();
@@ -76,6 +77,7 @@ function html(){
     h += '<button class="f-tbtn t-' + t[0] + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Field.triage(\'' + t[0] + '\')">' + W.TriageUI.shapeSvg(T.shape, 32) + '<b>' + L(t[1], t[2]) + '</b>' + (on ? '<i>' + ico('check', 22) + L('SET','נקבע') + '</i>' : '') + '</button>';
   });
   h += '</div>';
+  if (cur === 'black') h += '<p class="f-dead">' + L('Only a doctor declares death. In a mass-casualty event, treat everyone with signs of life first.','רק רופא קובע מוות. באר״ן מטפלים קודם בכל מי שיש לו סימני חיים.') + '</p>';
   h += shockHtml() + injuryHtml();
   h += (Field.xcareHtml ? Field.xcareHtml() : '');
   var top = h; h = '';
@@ -97,16 +99,16 @@ function html(){
   var v = { pulse:lastVal('pulse'), bpSys:lastVal('bpSys'), bpDia:lastVal('bpDia'), spo2:lastVal('spo2'), rr:lastVal('rr') };
   var num = function(x){ return x == null ? '—' : x; };
   h += '<div class="f-h">' + L('VITALS — TAP TO ENTER','מדדים — לחצו להזנה') + '</div><div class="f-vit">'
-    + vt('HR', num(v.pulse), '/min', 0, v.pulse > 120 || (v.pulse != null && v.pulse < 50))
-    + vt('BP', v.bpSys ? v.bpSys + '/' + (v.bpDia || '–') : '—', '', 1, v.bpSys && v.bpSys < 90)
-    + vt('SpO₂', num(v.spo2), '%', 3, v.spo2 != null && v.spo2 < 92)
-    + vt(L('BREATHS','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 30 || v.rr < 10))
+    + vt('HR', num(v.pulse), '/min', 0, v.pulse > 120 || (v.pulse != null && v.pulse < 50), v.pulse > 120 ? L('HIGH','גבוה') : L('LOW','נמוך'))
+    + vt('BP', v.bpSys ? v.bpSys + '/' + (v.bpDia || '–') : '—', '', 1, v.bpSys && v.bpSys < 90, L('LOW','נמוך'))
+    + vt('SpO₂', num(v.spo2), '%', 3, v.spo2 != null && v.spo2 < 92, L('LOW','נמוך'))
+    + vt(L('BREATHS','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 30 || v.rr < 10), v.rr > 30 ? L('HIGH','גבוה') : L('LOW','נמוך'))
     + '</div>'
     + '<div class="f-tapbar"><button onclick="Field.tapStart(\'pulse\')">' + ico('heart-pulse', 30) + '<span>' + L('TAP THE HEARTBEAT','הקישו את הדופק') + '</span></button><button onclick="Field.tapStart(\'rr\')">' + ico('wind', 30) + '<span>' + L('TAP THE BREATHS','הקישו את הנשימות') + '</span></button></div>';
   return '<section class="field" id="field" data-tour="field">' + top + '</section><section class="field fmon" id="fs-more"><div class="fs-h-wrap"><h2 class="fs-h">' + L('Monitor','ניטור') + '<small>' + L('Clocks, tourniquet, vitals','שעונים, חוסם עורקים, מדדים') + '</small></h2></div>' + h + '</section>';
 }
-function vt(label, val, unit, idx, bad){
-  return '<button class="f-v' + (bad ? ' bad' : '') + '" onclick="Field.keypad(' + idx + ')"><small>' + label + '</small><b>' + val + '</b><span>' + unit + '</span></button>';
+function vt(label, val, unit, idx, bad, word){
+  return '<button class="f-v' + (bad ? ' bad' : '') + '" onclick="Field.keypad(' + idx + ')"><small>' + label + (bad && word ? ' <em>' + word + '</em>' : '') + '</small><b>' + val + '</b><span>' + unit + '</span></button>';
 }
 
 // latest MEASURED value of one vital (a later reading of only the pulse keeps the last BP on screen)
@@ -148,6 +150,7 @@ var Field = {
     else { var m = /^(\d{1,2}):(\d{2})$/.exec(val || ''); if (!m) return; d.setHours(+m[1], +m[2], 0, 0); if (d.getTime() > Date.now() + 60000) d.setDate(d.getDate() - 1); }
     snapshot();
     X.e.timeOfInjury = d.toISOString();
+    var tl0 = W._casualtyTimeline || []; for (var j = tl0.length - 1; j >= 0; j--){ if (/^שעת פציעה /.test(String(tl0[j].action || ''))) tl0.splice(j, 1); }
     if (W.addTimestampedAction) W.addTimestampedAction('injury', 'שעת פציעה ' + hm(d.getTime()), '');
     W.MedHost.triggerAutoSave(); render();
     undoToast(L('Time of injury: ' + hm(d.getTime()), 'שעת פציעה: ' + hm(d.getTime())), doUndo);

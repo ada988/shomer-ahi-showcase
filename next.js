@@ -170,8 +170,8 @@ Field.tapSave = function(){
   if (W.pushMedHistory) W.pushMedHistory();
   var vi = (W._casualtyVitalsInput = W._casualtyVitalsInput || {}), X = W._casualtyXABCDE;
   ['pulse','rr','spo2','bpSys','bpDia','temp','etco2','radialPulse','bp'].forEach(function(k){ vi[k] = ''; });
-  if (kind === 'rr'){ X.b.respiratoryRate = rate; vi.rr = String(rate); W.addTimestampedAction('b', 'קצב נשימה: ' + rate + '/דקה (tap×' + n + ')', ''); }
-  else { X.c.pulseRate = rate; vi.pulse = String(rate); W.addTimestampedAction('c', 'דופק: ' + rate + '/דקה (tap×' + n + ')', ''); }
+  if (kind === 'rr'){ X.b.respiratoryRate = rate; vi.rr = String(rate); W.addTimestampedAction('vitals', 'קצב נשימה: ' + rate + '/דקה (tap×' + n + ')', ''); }
+  else { X.c.pulseRate = rate; vi.pulse = String(rate); W.addTimestampedAction('vitals', 'דופק: ' + rate + '/דקה (tap×' + n + ')', ''); }
   if (W._pushVitalsRowFromInputs) W._pushVitalsRowFromInputs('tap-rate');
   W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage();
   if (Field.toast) Field.toast(kind === 'rr' ? L('Breathing saved: ' + rate + '/min','נשימות נשמרו: ' + rate + '/דק׳') : L('Heart rate saved: ' + rate + '/min','דופק נשמר: ' + rate + '/דק׳'), function(){ W.medUndo(); });

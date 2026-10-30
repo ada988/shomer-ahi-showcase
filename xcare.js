@@ -20,7 +20,7 @@ var PRIMARY = [
   { k:'X', en:'EXTRACT', he:'חילוץ', sub:['Stop massive bleeding. Safe place first.','עצירת דימום מסכן חיים. קודם מקום בטוח.'], items:[
     ['p_x1','Safe place reached','הגענו למקום בטוח','Cover, fire superiority, casualty and medic safe.','מחסה, עליונות באש, הפצוע והמטפל מאובטחים.'],
     ['p_x2','First look and tactical report','מבט ראשון ודיווח אג״מי','Mechanism, location, how many, urgency.','מנגנון, מיקום, כמה פצועים, דחיפות.'],
-    ['p_x3','Massive bleeding stopped','דימום פורץ נעצר','Tourniquet or packing. Check it worked.','חוסם עורקים או אריזה. ודאו שעבד.','TOURNIQUET','חוסם עורקים','Field.tq()']
+    ['p_x3','Massive bleeding stopped','דימום פורץ נעצר','Tourniquet or packing. Check it worked.','חוסם עורקים או אריזה. ודאו שעבד.','TOURNIQUET','חוסם עורקים','Field.tq()', function(){ var q = X().x || {}; return (q.tourniquets || []).length || (q.hemostatic || []).length || (q.woundPacking || []).length || q.noMassiveHemorrhage; }]
   ]},
   { k:'C', en:'CIRCULATION', he:'מחזור דם', sub:['Hidden bleeding, shock check, blood.','דימום נסתר, בדיקת הלם, דם.'], items:[
     ['p_c1','Find and stop other bleeding','איתור ועצירת דימומים נוספים','Strip and roll: head, chest, armpits, back, groin.','הפשטה והפיכה: ראש, חזה, בתי שחי, גב, מפשעה.'],
@@ -68,7 +68,7 @@ var SECONDARY = [
   ]},
   { k:'E', en:'EVERYTHING ELSE', he:'כל השאר', sub:['Pain, infection, head to toe, splints, 101.','כאב, זיהום, מראש עד רגל, קיבועים, 101.'], items:[
     ['s_e1','Pain assessed and treated','כאב הוערך וטופל','Ketamine 25 mg IV first. Morphine 5 mg (2 mg in shock). Pills if they can swallow.','קטמין 25 מ״ג IV קודם. מורפין 5 מ״ג (2 בהלם). כדורים אם יכולים לבלוע.','KETAMINE','קטמין',"Field.give('ket')", function(){ return medGiven(/קטמין|פנטניל|מורפין|אופטלגין|פרצטמול/); }],
-    ['s_e2','Wounds washed, dressed, antibiotic','פצעים נשטפו, נחבשו, אנטיביוטיקה','Irrigate. Ceftriaxone 2 g IV if evacuation over 1 h; belly or head: add metronidazole.','שטיפה. צפטריאקסון 2 גרם IV אם פינוי מעל שעה; בטן או ראש: הוסיפו מטרונידזול.','CEFTRIAXONE','צפטריאקסון',"Field.give('cef')", function(){ return medGiven(/צפטריאקסון|ceftriaxone/i); }],
+    ['s_e2','Wounds washed, dressed, antibiotic','פצעים נשטפו, נחבשו, אנטיביוטיקה','Irrigate. Ceftriaxone 2 g IV if evacuation over 1 h; belly or head: add metronidazole.','שטיפה. צפטריאקסון 2 גרם IV אם פינוי מעל שעה; בטן או ראש: הוסיפו מטרונידזול.','CEFTRIAXONE','צפטריאקסון',"Field.give('cef')"],
     ['s_e3','GCS, limb movement, pupils','GCS, תנועת גפיים, אישונים','Record eye, verbal, motor separately.','רשמו עיניים, דיבור ומוטורי בנפרד.',null,null,null, function(){ return (X().d || {}).gcs != null; }],
     ['s_e4','Head to toe exam, treat as you go','סריקה מראש עד רגל, טיפול תוך כדי','Every injury found is treated.','כל פציעה שנמצאת מטופלת.'],
     ['s_e5','Fractures splinted, all splints checked','שברים קובעו, כל הקיבועים נבדקו','SAM splint. Re-check the circulation line.','סד SAM. בדקו שוב את קו הזרימה.'],
@@ -96,7 +96,7 @@ function avpuHtml(){
   var cur = ((X().d || {}).avpu || '').toUpperCase();
   return '<div class="xc-avpu" role="group" aria-label="AVPU">' + AVPU.map(function(a){
     var on = cur === a[0];
-    return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Field.setAvpu(\'' + a[0] + '\')"><b>' + a[0] + '</b><span>' + L(a[1], a[2]) + '</span></button>';
+    return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Field.setAvpu(\'' + a[0] + '\')">' + (on ? ico('check', 24) : '') + '<b>' + a[0] + '</b><span>' + L(a[1], a[2]) + '</span></button>';
   }).join('') + '</div>';
 }
 var RADIAL = [['normal','STRONG','חזק'], ['weak','WEAK','חלש'], ['absent','NONE','אין']];
@@ -104,7 +104,7 @@ function radialHtml(){
   var v = (W._casualtyVitals || []).filter(function(r){ return r.radialPulse; }).slice(-1)[0] || {}, cur = v.radialPulse || '';
   return '<div class="xc-rad" role="group" aria-label="' + L('Radial pulse','דופק רדיאלי') + '"><small>' + L('RADIAL PULSE','דופק רדיאלי') + '</small><div>' + RADIAL.map(function(r){
     var on = cur === r[0];
-    return '<button class="' + (on ? 'on' : '') + (r[0] !== 'normal' ? ' bad' : '') + '" aria-pressed="' + on + '" onclick="Field.setRadial(\'' + r[0] + '\')">' + L(r[1], r[2]) + '</button>';
+    return '<button class="' + (on ? 'on' : '') + (r[0] !== 'normal' ? ' bad' : '') + '" aria-pressed="' + on + '" onclick="Field.setRadial(\'' + r[0] + '\')">' + (on ? ico('check', 24) : '') + L(r[1], r[2]) + '</button>';
   }).join('') + '</div></div>';
 }
 function groupsHtml(sec){
@@ -128,7 +128,7 @@ function groupsHtml(sec){
       g.items.forEach(function(it){
         var d = done(it), manual = (X().xcare || {})[it[0]], auto = d && !manual;
         h += '<div class="xc-i' + (d ? ' done' : '') + '"><button class="xc-row" role="checkbox" aria-checked="' + !!d + '" onclick="Field.xcToggle(\'' + it[0] + '\')"><span class="xc-box">' + (d ? ico('check', 26) : '') + '</span><span class="xc-t"><b>' + L(it[1], it[2]) + '</b><small>' + L(it[3], it[4]) + '</small>' + (manual && manual !== true ? '<em>' + L('DONE ','בוצע ') + hhmm(manual) + '</em>' : (auto ? '<em>' + L('FROM THE RECORD','מתוך התיק') + '</em>' : '')) + '</span></button>'
-          + (it[7] ? '<button class="xc-act" onclick="' + it[7] + '">' + L(it[5], it[6]) + '</button>' : '')
+          + (it[7] ? '<button class="xc-act" onclick="' + it[7] + '">' + (it[0] === 'p_x3' && ((X().x || {}).tourniquets || []).length ? L('ANOTHER TOURNIQUET','חוסם עורקים נוסף') : L(it[5], it[6])) + '</button>' : '')
           + (it[0] === 'p_c2' ? avpuHtml() : '') + (it[0] === 'p_c4' ? radialHtml() : '') + '</div>';
       });
       h += '</div>';
@@ -138,12 +138,28 @@ function groupsHtml(sec){
   return h + '</div>';
 }
 Field.xcareGroups = groupsHtml;
+Field.xcarePrintHtml = function(){
+  var e = function(s){ return W.escapeHtml ? W.escapeHtml(s) : String(s); }, h = '';
+  [[PRIMARY, L('PRIMARY SURVEY','סקר ראשוני')], [SECONDARY, L('SECONDARY SURVEY','סקר שניוני')]].forEach(function(st){
+    h += '<h3>' + st[1] + '</h3>';
+    st[0].forEach(function(g){
+      var n = g.items.filter(done).length;
+      h += '<h4>' + (g.k === 'P' ? 'PFC' : g.k) + ' · ' + e(L(g.en, g.he)) + ' (' + n + '/' + g.items.length + ')</h4><table class="data"><tbody>';
+      g.items.forEach(function(it){
+        var d = done(it), mt = (X().xcare || {})[it[0]];
+        h += '<tr><td style="width:40px">' + (d ? '&#10003;' : '&#8212;') + '</td><td>' + e(L(it[1], it[2])) + '</td><td style="width:90px">' + (mt && mt !== true ? hhmm(mt) : (d ? L('record','מהתיק') : '')) + '</td></tr>';
+      });
+      h += '</tbody></table>';
+    });
+  });
+  return h;
+};
 Field.xcareHtml = function(){
   var sec = Field._xs === 'secondary';
   var tabs = '<div class="xc-tabs" role="tablist">'
     + '<button role="tab" aria-selected="' + !sec + '" class="' + (!sec ? 'on' : '') + '" onclick="Field.xcStage(\'primary\')"><b>' + L('PRIMARY SURVEY','סקר ראשוני') + '</b><small>X·C·A·R·E</small></button>'
     + '<button role="tab" aria-selected="' + sec + '" class="' + (sec ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C·A·R·E·PFC</small></button></div>';
-  return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + '<p class="xc-src">' + L('Source: IDF Trauma and Operational Medicine Book, January 2026, chapter 1.','מקור: ספר הטראומה והרפואה המבצעית של צה״ל, ינואר 2026, פרק 1.') + '</p>' + groupsHtml(sec);
+  return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + groupsHtml(sec);
 };
 Field.setRadial = function(v){
   var vi = (W._casualtyVitalsInput = W._casualtyVitalsInput || {});
@@ -163,7 +179,8 @@ Field.setAvpu = function(v){
   Xo.d.avpu = v;
   if (W.addTimestampedAction) W.addTimestampedAction('d', 'AVPU: ' + v, '');
   W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage();
-  if (W.Field && W.Field.toast) W.Field.toast(L('Consciousness: ', 'הכרה: ') + v, function(){ W.medUndo(); });
+  var AV = { A:L('ALERT','ער'), V:L('responds to VOICE','מגיב לקול'), P:L('responds to PAIN','מגיב לכאב'), U:L('NO RESPONSE','ללא תגובה') };
+  if (W.Field && W.Field.toast) W.Field.toast(L('Consciousness: ', 'הכרה: ') + v + ' — ' + AV[v], function(){ W.medUndo(); });
 };
 Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; Field._xfo = {}; W.MedHost.renderIncidentPage(); };
 Field.xcOpen = function(key, v){ Field._xo[key] = !!v; W.MedHost.renderIncidentPage(); };

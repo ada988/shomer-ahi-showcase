@@ -212,3 +212,24 @@ body.in-form .appbar .ttl b{-webkit-line-clamp:1!important;font-size:19px!import
 #incident-content[data-enh=board] .b-kpis div[style*="font-size:9px"],#incident-content[data-enh=board] .b-kpis div[style*="font-size:10px"]{font-size:15px!important;line-height:1.1}
 #incident-content[data-enh=board] .b-modes button{font-size:15px!important;white-space:normal!important;line-height:1.1}
 .mci-card-vitals span{white-space:nowrap}
+
+/* ═══ Round 2 (form) ═══ */
+.f-tri .f-tbtn:not(.on){filter:none}
+.f-tri:has(.on) .f-tbtn:not(.on){filter:saturate(.55) brightness(.75)}
+.f-tri .f-tbtn.on i{white-space:normal;text-align:center}
+.f-dead{margin:0 0 12px;padding:12px 14px;border-radius:14px;border:3px solid #fff;background:#000;color:#fff;font-size:17px;font-weight:800;line-height:1.35}
+.f-v small em{font-style:normal;margin-inline-start:6px;padding:0 6px;border-radius:6px;background:#fff;color:#8f1219;font-weight:900}
+.xc-avpu button svg,.xc-rad button svg{width:22px!important;height:22px!important;min-width:22px!important}
+.xc-avpu span{font-size:15px!important}
+.xc-rad small{font-size:16px!important}
+.xc-rad button.on.bad{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+.xc-rad button{display:flex;align-items:center;justify-content:center;gap:6px}
+.body-tap-menu .btm-btn.btm-on{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+.body-tap-menu .btm-btn.btm-on .btm-txt{color:#0b0c0e!important}
+.body-tap-menu .btm-btn .btm-txt{font-size:17px!important}
+.ho-sheet{display:flex;flex-direction:column;max-height:92%!important}
+.ho-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ho-top .xbtn{min-height:56px;display:flex;gap:6px;align-items:center;font-size:17px;font-weight:900}
+.ho-sheet pre.mist{flex:1 1 auto;min-height:120px;max-height:50vh;overflow:auto}
+.ho-sheet .bo-actions{position:sticky;bottom:0;background:var(--c1,#14161b);padding-top:10px;margin-top:8px}
+@media (max-width:360px){.jb button{font-size:14px!important;letter-spacing:-.01em}}

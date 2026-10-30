@@ -28,7 +28,7 @@ function list(){
 }
 Field.timelineHtml = function(){
   var all = list(), show = Field._tlAll ? all : all.slice(0, 8), now = Date.now();
-  var h = '<section class="fs tl" id="fs-time"><h2 class="fs-h">' + L('Timeline','ציר זמן') + '<small>' + L(all.length + ' entries · newest first · every time is recorded','' + all.length + ' רשומות · החדש למעלה · כל זמן נרשם') + '</small></h2>'
+  var h = '<section class="fs tl" id="fs-time"><h2 class="fs-h">' + L('Timeline','ציר זמן') + '<small>' + L(all.length + (all.length === 1 ? ' entry' : ' entries') + ' · newest first · every time is recorded','' + all.length + ' רשומות · החדש למעלה · כל זמן נרשם') + '</small></h2>'
     + '<button class="xbtn tl-add" onclick="Field.tlNote()">' + ico('plus', 26) + L('ADD A NOTE','הוספת הערה') + '</button>';
   if (!all.length) return h + '<p class="tl-empty">' + L('Nothing recorded yet. Every action you take appears here with its time.','עדיין לא נרשם דבר. כל פעולה מופיעה כאן עם השעה.') + '</p></section>';
   h += '<ol class="tl-list">';
@@ -57,7 +57,10 @@ Field.tlDel = function(i){
     var fl = (X.c || {}).fluids || [], fi = fl.findIndex(function(m){ return m.type && act.indexOf(m.type) >= 0 && near(m); });
     if (!linked && fi >= 0){ linked = fl[fi].type; fl.splice(fi, 1); }
     var tq = (X.x || {}).tourniquets || [], ti = tq.findIndex(function(m){ return /ח"ע|חוסם/.test(act) && near(m); });
-    if (!linked && ti >= 0){ linked = 'TQ'; tq.splice(ti, 1); }
+    if (!linked && ti >= 0){ var site = tq[ti].site; linked = 'TQ'; tq.splice(ti, 1); var bt = W._casualtyTreatments || [], bi = bt.findIndex(function(b){ return b.type === 'tourniquet' && b.region === site; }); if (bi >= 0) bt.splice(bi, 1); }
+    if (!linked && /^שעת פציעה /.test(act) && X.e){ X.e.timeOfInjury = null; linked = 'time'; }
+    if (!linked && e.category === 'injury' && e.details){ var inj = W._casualtyInjuries || [], ii = inj.findIndex(function(j){ return j.type === e.details && act.indexOf(W.BODY_LABELS ? (W.BODY_LABELS[j.region] || '') : '') >= 0; }); if (ii >= 0){ inj.splice(ii, 1); linked = 'injury'; } }
+    if (!linked && e.details && /^טיפול /.test(act)){ var bt2 = W._casualtyTreatments || [], b2 = bt2.findIndex(function(b){ return b.type === e.details && act.indexOf(W.BODY_LABELS ? (W.BODY_LABELS[b.region] || '') : '') >= 0; }); if (b2 >= 0){ bt2.splice(b2, 1); linked = 'treatment'; } }
   } finally { Promise.resolve().then(function(){ W._medPushLock = false; }); }
   if (W.deleteTimelineEntry) W.deleteTimelineEntry(i); else { if (W.pushMedHistory) W.pushMedHistory(); tl.splice(i, 1); W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage(); }
   if (Field.toast) Field.toast(L('Deleted: ','נמחק: ') + esc(T(String(e.action || '')).slice(0, 40)) + (linked ? L(' (and its record)',' (וגם הרשומה)') : ''), function(){ W.medUndo(); });
@@ -75,7 +78,7 @@ Field.tlNoteClose = function(){ var s = document.getElementById('tl-sheet'); if 
 Field.tlNoteSave = function(){
   var ta = document.getElementById('tl-note'); var txt = ta ? ta.value : '';
   txt = String(txt).replace(/[\u0000-\u001f\u202a-\u202e\u2066-\u2069]/g, ' ').trim().slice(0, 300);
-  Field.tlNoteClose(); if (!txt) return;
+  Field.tlNoteClose(); if (!txt){ if (Field.toast) Field.toast(L('Empty note, nothing saved','הערה ריקה, לא נשמר דבר'), null); return; }
   if (W.addTimestampedAction) W.addTimestampedAction('note', txt, '');
   W.MedHost.renderIncidentPage();
   if (Field.toast) Field.toast(L('Note added','הערה נוספה'), function(){ W.medUndo(); });

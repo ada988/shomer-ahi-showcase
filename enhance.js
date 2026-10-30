@@ -190,10 +190,10 @@ W.FormUI = {
   handoff: function(){
     var app = document.getElementById('app'); if (document.getElementById('fs-sheet')) return;
     var raw = W.generateMISTPlusReport ? W.generateMISTPlusReport() : '';
-    var text = W.Polish ? W.Polish.strip(W.ShowcaseI18n ? W.ShowcaseI18n.tr(raw) : raw) : raw;
+    var text = W.Polish ? W.Polish.strip((W.ShowcaseI18n ? W.ShowcaseI18n.tr(raw) : raw).replace(/→/g, L(' then ', ' ואז '))) : raw;
     var s = document.createElement('div'); s.id = 'fs-sheet'; s.className = 'sheet-wrap';
-    s.innerHTML = '<div class="sheet-dim" onclick="FormUI.closeSheet()"></div><div class="sheet" role="dialog" aria-label="MIST+"><div class="sheet-grab"></div>'
-      + '<h3>' + L('Handoff report (MIST+)','דוח העברה (MIST+)') + '</h3><pre class="mist" dir="auto">' + W.escapeHtml(text) + '</pre><p class="mist-warn">' + W.escapeHtml(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
+    s.innerHTML = '<div class="sheet-dim" onclick="FormUI.closeSheet()"></div><div class="sheet ho-sheet" role="dialog" aria-label="MIST+"><div class="sheet-grab"></div>'
+      + '<div class="ho-top"><h3>' + L('Handoff report (MIST+)','דוח העברה (MIST+)') + '</h3><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('CLOSE','סגור') + '</button></div><pre class="mist" dir="auto">' + W.escapeHtml(text) + '</pre><p class="mist-warn">' + W.escapeHtml(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
       + '<div class="bo-actions"><button class="xbtn" onclick="FormUI.closeSheet();FormUI.sheet()">' + ico('share-2', 24) + L('SHARE / PRINT','שיתוף / הדפסה') + '</button><button class="xbtn" onclick="showRadioReadout();FormUI.closeSheet()">' + ico('radio', 24) + L('RADIO SCRIPT','תסריט רדיו') + '</button>'
       + '<button class="xbtn xbtn-primary" onclick="copyMISTPlus()">' + ico('copy', 24) + L('COPY','העתק') + '</button></div></div>';
     app.appendChild(s);
