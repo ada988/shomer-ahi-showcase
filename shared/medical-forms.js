@@ -1886,7 +1886,7 @@ function addMedication(name,dose,route){
   if(name==='מורפין' && _inProfoundShock()){
     const mgVal=parseFloat(String(dose).replace(/[^\d.]/g,''))||0;
     if(mgVal>2){
-      if(!confirm(`⚠️ הלם עמוק (ל"ד<90 או דופק>130).\nהפרוטוקול קובע מורפין 2mg בלבד (לא ${dose}).\nלהמשיך בכל זאת?`))return;
+      if(!window._fieldConfirmed&&!confirm(`⚠️ הלם עמוק (ל"ד<90 או דופק>130).\nהפרוטוקול קובע מורפין 2mg בלבד (לא ${dose}).\nלהמשיך בכל זאת?`))return;
       addTimestampedAction('e','⚠ חריגה מפרוטוקול: מורפין '+dose+' בהלם עמוק','');
     }
   }
@@ -1901,7 +1901,7 @@ function addMedication(name,dose,route){
     });
     if(recent.length){
       const others=recent.map(m=>m.drug).join(' + ');
-      if(!confirm(`🚨 אינטראקציה — ${name} מעל ${others} ב-30 דק' האחרונות.\nסיכון לדיכוי נשימה. להמשיך?`))return;
+      if(!window._fieldConfirmed&&!confirm(`🚨 אינטראקציה — ${name} מעל ${others} ב-30 דק' האחרונות.\nסיכון לדיכוי נשימה. להמשיך?`))return;
       addTimestampedAction('e','⚠ אינטראקציה: '+name+' מעל '+others,'');
     }
   }
@@ -1909,7 +1909,7 @@ function addMedication(name,dose,route){
   // Redose alerts — persisted to localStorage so they survive tab
   // evict / service worker restart. On re-open we rehydrate pending
   // alerts for this casualty and reschedule the setTimeout.
-  if(name==='קטמין'){const mins=(route==='IV'||route==='IO')?20:30;_scheduleRedose('קטמין',mins);}
+  if(name==='קטמין'){const mins=45;_scheduleRedose('קטמין',mins);}
   if(name==='פנטניל'){_scheduleRedose('פנטניל',15);}
   if(name==='TXA'){const injuryTime=_incidentData?.timestamp?.toDate?.();if(injuryTime&&(Date.now()-injuryTime.getTime())>3*3600000)MedHost.toast('⚠️ TXA ניתן >3 שעות מהפציעה — בדוק התוויה',false);}
   MedHost.renderIncidentPage();}

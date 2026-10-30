@@ -17,3 +17,5 @@ Object.assign(window.SHOWCASE_DICT, {'פינוי אחרון':'Evacuate last','�
 Object.assign(window.SHOWCASE_DICT, {'מינון':'Dose'});
 
 Object.assign(window.SHOWCASE_DICT, {'משקל:':'Weight:'});
+
+Object.assign(window.SHOWCASE_DICT, {'סולו-מדרול':'Solu-Medrol','פרמין':'Metoclopramide (Pramin)'});
