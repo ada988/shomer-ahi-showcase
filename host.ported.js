@@ -990,7 +990,7 @@ function _renderVehiclePicker(){
         h+=`<button onclick="assignToVehicleByDocId('${escapeHtml(String(c._docId||''))}',${i});closeVehiclePicker()" style="width:100%;display:flex;align-items:center;gap:8px;padding:12px;border-radius:10px;border:1.5px solid ${col};background:${col}12;color:var(--tx);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--f);margin-bottom:6px;min-height:52px;text-align:right">`;
         h+=`<span style="font-size:16px;font-weight:900;color:${col};min-width:24px">${prio}</span>`;
         h+=`<span style="flex:1">${escapeHtml(c.name||'ללא שם')}</span>`;
-        h+=`<span style="font-size:11px;color:${col};font-weight:700">${({red:'דחוף',yellow:'לא-דחוף',green:'קל',gray:'ממתין',black:'חלל'})[tc]||''}</span>`;
+        h+=`<span style="font-size:11px;color:${col};font-weight:700">${({red:'דחוף',yellow:'לא-דחוף',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[tc]||''}</span>`;
         h+=`</button>`;
       });
     }

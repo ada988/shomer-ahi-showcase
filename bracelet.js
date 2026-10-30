@@ -18,7 +18,7 @@ function ago(sec){ var m = Math.max(0, Math.round((Date.now()/1000 - sec) / 60))
 
 var TRIAGE = {
   red:    { c:'#cc1820', en:'URGENT', he:'דחוף', code:'T1', sh:'oct', tx:'#fff' },
-  yellow: { c:'#f5b82e', en:'DELAYED', he:'דחוי', code:'T2', sh:'tri', tx:'#111' },
+  yellow: { c:'#f5b82e', en:'DELAYED', he:'עדיפות שנייה', code:'T2', sh:'tri', tx:'#111' },
   green:  { c:'#19a463', en:'NOT URGENT', he:'לא דחוף', code:'T3', sh:'circ', tx:'#fff' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', code:'T4', sh:'hex', tx:'#111' },
   black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים', code:'T0', sh:'sqx', tx:'#fff' }
@@ -279,7 +279,7 @@ function braceletHtml(c, opts){
   var tq = s.tq[0], meds = s.md.slice(-3);
   var who = [T(s.n) || L('Unnamed casualty','נפגע ללא שם'), s.ag != null ? s.ag + L(' y',' שנים') : '', (s.sx === 'M' || s.sx === 'male') ? L('M','ז') : (s.sx === 'F' || s.sx === 'female') ? L('F','נ') : ''].filter(Boolean).join(' · ');
   return '<div class="brc2' + (opts.print ? ' brc-print' : '') + (opts.list ? ' brc-list' : '') + '" style="--tg:' + tg.c + ';--tgt:' + tg.tx + '">'
-    + '<div class="b2-tri">' + sh + '<b>' + esc(L(tg.en, tg.he)) + '</b><i>' + tg.code + '</i></div>'
+    + '<div class="b2-tri">' + sh + '<b>' + esc(L(tg.en, tg.he)) + '</b></div>'
     + '<div class="b2-main">'
     +   '<div class="b2-top"><span>' + L('SHOMER AHI · CASUALTY ID','שומר אחי · זיהוי נפגע') + '</span><em>' + L('DEMO','דמו') + '</em></div>'
     +   '<div class="b2-no"><small>' + L('NO.','מס׳') + '</small><b dir="ltr">' + esc(s.s) + '</b></div>'
@@ -287,11 +287,11 @@ function braceletHtml(c, opts){
     +   '<div class="b2-grid">'
     +     (tq ? '<div class="b2-box set"><small>' + L('TQ','חוסם') + '</small><b>' + hhmm(tq[1]) + '</b><span>' + esc(regionName(tq[0])) + '</span></div>' : '<div class="b2-box blank"><small>' + L('TQ','חוסם') + '</small><b>__ : __</b></div>')
     +     (meds.length ? '<div class="b2-box set"><small>' + L('DRUGS','תרופות') + '</small>' + meds.map(function(m){ return '<span><b style="font-size:1em">' + hhmm(m[3]) + '</b> ' + esc(T(m[0])) + '</span>'; }).join('') + '</div>' : '<div class="b2-box blank"><small>' + L('DRUGS + TIME','תרופות + שעה') + '</small></div>')
-    +     '<div class="b2-box blank"><small>' + L('EVAC ORDER','סדר פינוי') + '</small><b>#</b></div>'
+    +     '<div class="b2-box blank"><small>' + L('EVAC ORDER','סדר פינוי') + '</small></div>'
     +   '</div>'
     +   '<div class="b2-grid">'
     +     '<div class="b2-box ' + (s.np ? 'set' : 'blank') + '"><small>' + L('NIL BY MOUTH','צום') + '</small><b>' + (s.np ? L('YES','כן') : '☐') + '</b></div>'
-    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('ALLERGY','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 14)) + '</span>' : '') + '</div>'
+    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('ALLERGY','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 28)) + '</span>' : '') + '</div>'
     +     '<div class="b2-box blank"><small>' + L('BLOOD TYPE','סוג דם') + '</small></div>'
     +   '</div>'
     +   '<div class="b2-foot">' + L('DEMO. NOT FOR CLINICAL USE. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
@@ -475,7 +475,7 @@ function showBracelet(docId){
   mount(topbar(L('Wristband','צמיד')) + '<div class="bo-body">'
     + '<div class="bo-hint">' + L('This is the bracelet as it prints. The QR carries the casualty’s medical summary — scan it with any phone camera.','כך הצמיד נראה בהדפסה. ה-QR נושא את תמצית המידע הרפואי — סרוק בכל מצלמת טלפון.') + '</div>'
     + braceletHtml(c)
-    + '<div class="bo-bigqr"><div>' + qrSvg(link, 220) + '</div><p>' + L('Scan this from another phone to try it — no app needed.','סרקו מטלפון אחר כדי לנסות — בלי אפליקציה.') + '</p></div>'
+    + '<p class="bo-hint">' + L('Scan the QR on the wristband with any phone camera to open this record.','סרקו את ה-QR שעל הצמיד בכל מצלמת טלפון כדי לפתוח את התיק.') + '</p>'
     + '<div class="bo-actions">'
     + '<button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(docId) + '\')">' + ico('eye', 18) + L('Preview scan result','תצוגת תוצאת סריקה') + '</button>'
     + '<button class="xbtn" onclick="Bracelet.copy(\'' + esc(docId) + '\')">' + ico('link', 18) + L('Copy link','העתק קישור') + '</button>'
@@ -497,9 +497,9 @@ function print(docId){
   var list = docId ? (W._incidentCasualties || []).filter(function(x){ return x._docId === docId; }) : (W._incidentCasualties || []);
   if (!list.length) return;
   var he = lang() === 'he';
-  var html = '<!DOCTYPE html><html lang="' + (he ? 'he' : 'en') + '" dir="' + (he ? 'rtl' : 'ltr') + '"><head><meta charset="UTF-8"><title>' + L('Casualty bracelets','צמידי נפגעים') + '</title>'
+  var html = '<!DOCTYPE html><html lang="' + (he ? 'he' : 'en') + '" dir="' + (he ? 'rtl' : 'ltr') + '"><head><meta charset="UTF-8"><title>' + L('Casualty wristbands','צמידי נפגעים') + '</title>'
     + '<style>' + printCss() + '</style></head><body>'
-    + '<div class="bar"><div><b>' + L('Casualty bracelets','צמידי נפגעים') + '</b><span>' + L('Print at 100% on A4. Cut along the dashed line, fold over the strap, secure.','הדפס ב-100% על A4. גזור לאורך הקו המקווקו, קפל סביב הרצועה, הדק.') + '</span></div>'
+    + '<div class="bar"><div><b>' + L('Casualty wristbands','צמידי נפגעים') + '</b><span>' + L('Print at 100% on A4. Cut along the dashed line, fold over the strap, secure.','הדפס ב-100% על A4. גזור לאורך הקו המקווקו, קפל סביב הרצועה, הדק.') + '</span></div>'
     + '<button onclick="window.print()">' + L('Print / Save as PDF','הדפס / שמור כ-PDF') + '</button></div>'
     + '<div class="sheet">' + list.map(function(c){ return braceletHtml(c, { print:true }); }).join('') + '</div></body></html>';
   var w = W.open('', '_blank');
@@ -578,8 +578,8 @@ function openSerialOrDoc(id){
 // ── Bracelets tab ──────────────────────────────────────────────
 function renderTab(){
   var list = W._incidentCasualties || [];
-  var h = '<div class="bt-hero"><div><h2>' + L('Bracelets','צמידים') + '</h2><p>' + L('Every casualty gets a bracelet. Its QR code carries their medical summary — any responder can scan it with a phone and see what was done, and when.','לכל נפגע צמיד. קוד ה-QR נושא את תמצית המידע הרפואי — כל מגיב יכול לסרוק בטלפון ולראות מה בוצע ומתי.') + '</p></div>'
-    + '<div class="bt-cta"><button class="xbtn xbtn-primary xbtn-lg" onclick="Bracelet.scan()">' + ico('scan-line', 20) + L('Scan a bracelet','סרוק צמיד') + '</button>'
+  var h = '<div class="bt-hero"><div><h2>' + L('Wristbands','צמידים') + '</h2><p>' + L('Every casualty gets a bracelet. Its QR code carries their medical summary — any responder can scan it with a phone and see what was done, and when.','לכל נפגע צמיד. קוד ה-QR נושא את תמצית המידע הרפואי — כל מגיב יכול לסרוק בטלפון ולראות מה בוצע ומתי.') + '</p></div>'
+    + '<div class="bt-cta"><button class="xbtn xbtn-primary xbtn-lg" onclick="Bracelet.scan()">' + ico('scan-line', 20) + L('Scan a wristband','סריקת צמיד') + '</button>'
     + '<button class="xbtn xbtn-lg" onclick="Bracelet.print()">' + ico('printer', 20) + L('Print all','הדפס הכל') + '</button></div></div>'
     + '<ol class="bt-steps"><li><b>1</b>' + L('Print','הדפס') + '</li><li><b>2</b>' + L('Attach to the casualty','חבר לנפגע') + '</li><li><b>3</b>' + L('Anyone scans — full picture, offline','כל אחד סורק — תמונה מלאה, גם בלי רשת') + '</li></ol>'
     + '<div class="bt-list">';
@@ -597,7 +597,7 @@ function renderTab(){
 function route(){
   if (!/#b=/.test(location.hash)){ if (overlay && overlay.classList.contains('bo-card')) close(true); return; }
   var s = parseScan(location.hash);
-  if (s) showCard(s); else { history.replaceState(null, '', location.pathname + location.search); W.toast(L('That wristband link is not valid','קישור הצמיד אינו תקין'), false); }
+  if (s) showCard(s); else { history.replaceState(null, '', location.pathname + location.search); (function t(){ if (document.querySelector('.dn')) return setTimeout(t, 400); W.toast(L('That wristband link is not valid. Open a wristband from the Wristbands tab, or scan one.','קישור הצמיד אינו תקין. פתחו צמיד מלשונית הצמידים, או סרקו אחד.'), false); })(); }
 }
 W.addEventListener('hashchange', route);
 W.addEventListener('pagehide', function(){ if (stopScan){ try { stopScan(); } catch (e) {} stopScan = null; } });

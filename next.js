@@ -169,6 +169,7 @@ Field.tapSave = function(){
   Field.tapClose();
   if (W.pushMedHistory) W.pushMedHistory();
   var vi = (W._casualtyVitalsInput = W._casualtyVitalsInput || {}), X = W._casualtyXABCDE;
+  ['pulse','rr','spo2','bpSys','bpDia','temp','etco2','radialPulse','bp'].forEach(function(k){ vi[k] = ''; });
   if (kind === 'rr'){ X.b.respiratoryRate = rate; vi.rr = String(rate); W.addTimestampedAction('b', 'קצב נשימה: ' + rate + '/דקה (tap×' + n + ')', ''); }
   else { X.c.pulseRate = rate; vi.pulse = String(rate); W.addTimestampedAction('c', 'דופק: ' + rate + '/דקה (tap×' + n + ')', ''); }
   if (W._pushVitalsRowFromInputs) W._pushVitalsRowFromInputs('tap-rate');

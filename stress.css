@@ -185,7 +185,7 @@ html[dir=rtl] .tabnum,html[dir=rtl] [style*="monospace"],html[dir=rtl] time,html
 /* ── Tablet: scale everything up ──────────────────────────── */
 @media (min-width:600px) and (max-width:900px){
   /* zoom grows the box: shrink it first so the bottom bar and sheets stay on screen */
-  .device,.is-app .device.device{zoom:1.18;width:calc(100% / 1.18)!important;height:calc(100dvh / 1.18)!important}
+  .device,.is-app .device.device{zoom:1;width:100%!important;height:100dvh!important}
 }
 @media (prefers-contrast:more){:root{--line:#fff;--sep:#fff;--t3:#fff;--t4:#fff}}
 

@@ -718,7 +718,6 @@ function _buildDetailedForm101HTML(){
   H+=`<h3 style="color:#16a085">R — נשימה</h3><table class="kv">`;
   H+=rowSec('קצב נשימה',x.b?.respiratoryRate!=null?x.b.respiratoryRate+' /דקה':'—');
   H+=rowSec('חמצן משלים',x.b?.o2Lpm?x.b.o2Lpm+' L/min @ '+fmtT(x.b?.o2StartTime):'לא');
-  H+=rowSec('דקירת מחט',x.b?.needleDecompression?`✓ ${outLR(x.b.needleDecompression.side||'')} @ ${fmtT(x.b.needleDecompression.time)}`:'לא');
   H+=rowSec('נקז חזה',x.b?.tubeThora?`✓ ${outLR(x.b.tubeThora.side||'')} (tube ${x.b.tubeThora.tubeSize||'—'}) @ ${fmtT(x.b.tubeThora.time)} — ${x.b.tubeThora.outcome||'—'}`:'לא');
   H+=rowSec('BVM',x.b?.bvm?'✓ מ-'+fmtT(x.b.bvm.time):'לא');
   const vent=x.b?.vent;
@@ -940,17 +939,18 @@ function renderBodyMap(){
     const isSelected=_selectedRegion===r.id;
     const cls='body-region'+(injury?' '+injury.type:'')+(isSelected?' selected':'');
     const ariaLabel=r.label+(injury?' — פציעה: '+injury.type:'')+(treatment?' — טיפול: '+treatment.type:'');
-    svg+=`<path d="${r.d}" class="${cls}"><title>${_esc(ariaLabel)}</title></path>`;
+    svg+=`<path d="${r.d}" class="${cls}" onclick="handleRegionTap('${r.id}')" style="cursor:pointer"><title>${_esc(ariaLabel)}</title></path>`;
     const c=getPathCenter(r.d);
     if(treatment){
-      svg+=`<text x="${c.x}" y="${c.y+4}" text-anchor="middle" font-size="14" style="pointer-events:none">${TREATMENT_ICONS[treatment.type]||'💊'}</text>`;
+      svg+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="#0b0c0e" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${({tourniquet:'TQ',pressureDressing:'PD',hemostatic:'HG',woundPacking:'WP',bandage:'D',splint:'S',pelvicBinder:'PB',tubeThora:'CT',custom:'+'})[treatment.type]||'+'}</text>`;
       if(injury){
         const dotCol={hemorrhage:'#e74c3c',fracture:'#f1c40f',burn:'#e67e22',penetrating:'#9b59b6',other:'#3498db'}[injury.type]||'#3498db';
         svg+=`<circle cx="${c.x+9}" cy="${c.y-6}" r="3" fill="${dotCol}" style="pointer-events:none"/>`;
       }
     } else if(injury){
-      const ic={hemorrhage:'🩸',fracture:'🦴',burn:'🔥',penetrating:'⊕',other:'✏'}[injury.type]||'●';
-      svg+=`<text x="${c.x}" y="${c.y+4}" text-anchor="middle" font-size="13" style="pointer-events:none">${ic}</text>`;
+      const ic={hemorrhage:'B',fracture:'F',burn:'BU',penetrating:'P',other:'+'}[injury.type]||'+';
+      const icc={hemorrhage:'#d01a20',fracture:'#c08a00',burn:'#b8420a',penetrating:'#6d3fc0',other:'#3b4656'}[injury.type]||'#3b4656';
+      svg+=`<circle cx="${c.x}" cy="${c.y}" r="11" fill="${icc}" stroke="#fff" stroke-width="2" style="pointer-events:none"/><text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="#fff" style="pointer-events:none">${ic}</text>`;
     }
   });
   regions.forEach(r=>{
@@ -977,12 +977,13 @@ function renderBodyMap(){
   const usedTreatments=new Set(_casualtyTreatments.filter(t=>t.side===side).map(t=>t.type));
   const usedInjuries=new Set(_casualtyInjuries.filter(i=>i.side===side).map(i=>i.type));
   if(usedTreatments.size||usedInjuries.size){
-    svg+=`<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px;font-size:8px;color:var(--t3)">`;
-    if(usedInjuries.has('hemorrhage'))svg+=`<span>🩸 דימום</span>`;
-    if(usedInjuries.has('fracture'))svg+=`<span>⚡ שבר</span>`;
-    if(usedInjuries.has('burn'))svg+=`<span>🔥 כוויה</span>`;
-    if(usedInjuries.has('penetrating'))svg+=`<span>⊕ חודר</span>`;
-    usedTreatments.forEach(t=>{svg+=`<span>${TREATMENT_ICONS[t]} ${_txHe(t)}</span>`;});
+    svg+=`<div class="bm-legend">`;
+    const lg=(code,col,txt)=>`<span><i style="background:${col}">${code}</i>${txt}</span>`;
+    if(usedInjuries.has('hemorrhage'))svg+=lg('B','#d01a20','דימום');
+    if(usedInjuries.has('fracture'))svg+=lg('F','#c08a00','שבר');
+    if(usedInjuries.has('burn'))svg+=lg('BU','#b8420a','כוויה');
+    if(usedInjuries.has('penetrating'))svg+=lg('P','#6d3fc0','חודר');
+    usedTreatments.forEach(t=>{svg+=lg(({tourniquet:'TQ',pressureDressing:'PD',hemostatic:'HG',woundPacking:'WP',bandage:'D',splint:'S',pelvicBinder:'PB',tubeThora:'CT',custom:'+'})[t]||'+','#0b0c0e',_txHe(t));});
     svg+=`</div>`;
   }
   return svg;
@@ -1004,7 +1005,7 @@ function renderFloatingRegionMenu(regionId){
   let txOpts=[];
   if(extremities.includes(regionId))txOpts=[{t:'tourniquet',e:'🔴',l:'חסם עורקים'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'hemostatic',e:'🟧',l:'גזה המוסטטית'},{t:'woundPacking',e:'🟫',l:'אריזת פצע'},{t:'splint',e:'🪵',l:'קיבוע שבר'}];
   // IDF protocol: no needle decompression and no chest seal. Open chest wound = 3-side dressing; chest drain only on indication.
-  else if(chestRegions.includes(regionId))txOpts=[{t:'bandage',e:'🩹',l:'חבישה (3 צדדים)'},{t:'tubeThora',e:'🩻',l:'נקז חזה'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'}];
+  else if(chestRegions.includes(regionId))txOpts=[{t:'bandage',e:'🩹',l:'חבישה (3 צדדים)'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'}];
   else if(headRegions.includes(regionId))txOpts=[{t:'bandage',e:'🩹',l:'חבישה'},{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'hemostatic',e:'🟧',l:'המוסטטי'}];
   else txOpts=[{t:'pressureDressing',e:'⬜',l:'תחבושת לחץ'},{t:'woundPacking',e:'🟫',l:'אריזת פצע'},{t:'hemostatic',e:'🟧',l:'המוסטטי'}];
   const steps=['סוג פציעה','טיפול','הערות'];
@@ -1267,9 +1268,11 @@ function addTimestampedAction(category,action,details){
 // Vitals the shock logic reads: the live input form if filled in, otherwise the last recorded reading.
 function _shockInputs(){
   const inp=(typeof _casualtyVitalsInput!=='undefined'&&_casualtyVitalsInput)||{};
-  const last=(typeof _casualtyVitals!=='undefined'&&_casualtyVitals.length)?_casualtyVitals[_casualtyVitals.length-1]:{};
+  // each vital = its most recent measured value (a later reading of only the pulse must not erase a low BP)
+  const rows=(typeof _casualtyVitals!=='undefined'&&_casualtyVitals)||[];
+  const lastOf=k=>{for(let i=rows.length-1;i>=0;i--){const v=rows[i]&&rows[i][k];if(v!==null&&v!==undefined&&v!=='')return v;}return null;};
   const pn=(a,b)=>{const x=parseInt(a);if(!isNaN(x))return x;const y=parseInt(b);return isNaN(y)?null:y;};
-  return{sys:pn(inp.bpSys,last.bpSys)||null,hr:pn(inp.pulse,last.pulse),rp:(inp.radialPulse||last.radialPulse||'')};
+  return{sys:pn(inp.bpSys,lastOf('bpSys'))||null,hr:pn(inp.pulse,lastOf('pulse')),rp:(inp.radialPulse||lastOf('radialPulse')||'')};
 }
 // Age-adjusted minimum systolic BP: adults 90 mmHg; children under 12: 70 + 2 x age (max 90).
 function _sbpMinFor(age){return(age!=null&&age<12)?Math.min(90,70+2*age):90;}
@@ -3647,7 +3650,7 @@ function triageAnswer(yes){
 
 function renderTriageBar(){
   if(!_casualtyTriageColor)return`<button onclick="startTriageWizard()" style="width:100%;padding:12px;border-radius:12px;border:2px dashed var(--sep);background:none;color:var(--t3);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f);margin-bottom:8px;min-height:48px">🏷 הפעל טריאז' START</button>`;
-  const labels={red:'🔴 מיידי — IMMEDIATE',yellow:'🟡 דחוי — DELAYED',green:'🟢 קל — MINIMAL',gray:'🔘 ציפייה — EXPECTANT',black:'⬛ ללא סימני חיים — NO SIGNS OF LIFE'};
+  const labels={red:'🔴 דחוף — IMMEDIATE',yellow:'🟡 עדיפות שנייה — DELAYED',green:'🟢 לא דחוף — MINIMAL',gray:'🔘 ממתין — EXPECTANT',black:'⬛ ללא סימני חיים — NO SIGNS OF LIFE'};
   const txtColor=_casualtyTriageColor==='yellow'?'#000':'#fff';
   return`<div style="width:100%;padding:14px;border-radius:12px;background:${TRIAGE_COLORS[_casualtyTriageColor]};color:${txtColor};font-size:14px;font-weight:900;text-align:center;margin-bottom:8px;letter-spacing:.5px">${labels[_casualtyTriageColor]}<button onclick="startTriageWizard()" style="display:block;margin:4px auto 0;background:${txtColor}30;border:none;border-radius:6px;color:${txtColor};font-size:9px;padding:3px 10px;cursor:pointer;font-family:var(--f)">שנה טריאז'</button></div>`;
 }
@@ -4480,7 +4483,7 @@ function renderCommanderDashboard(){
   const openTqs=active.reduce((n,c)=>n+((c.treatments||[]).filter(t=>t.type==='tourniquet').length),0);
   const volumeWaiting=active.filter(c=>c.triageColor==='red' && !((c.xabcde?.c?.ivAccess||[]).length)).length;
   const readyToEvac=active.filter(c=>!!c.triageColor && c.triageColor!=='black' && c.triageColor!=='gray' && !isCasualtyAssignedToVehicle(c)).length;
-  const evacuated=_incidentCasualties.filter(c=>c.evacStatus==='evacuated').length;
+  const evacuated=_mciVehicles.filter(v=>v.status==='evacuating'||v.status==='athospital').reduce((s,v)=>s+v.casualties.length,0)+_incidentCasualties.filter(c=>c.evacStatus==='evacuated'&&!isCasualtyAssignedToVehicle(c)).length;
   // Tier 18a: tiles are buttons that filter/route. 13px label / 28px
   // value. Tap an active tile → set MCI filter or scroll to action.
   let h=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">`;
@@ -4531,7 +4534,7 @@ function openEvacuatedArchive(){
       const meds=(c.xabcde?.e?.medications||[]).length;
       h+=`<div class="cas-section" style="padding:12px;margin-bottom:8px;border-right:4px solid ${col};background:var(--c2)">`;
       h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">`;
-      h+=`<span style="background:${col};color:#fff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:900">${({red:'דחוף',yellow:'דחוי',green:'קל',gray:'ציפייה',black:'חלל'})[tc]||tc}</span>`;
+      h+=`<span style="background:${col};color:#fff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:900">${({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[tc]||tc}</span>`;
       h+=`<span style="font-size:14px;font-weight:800;color:var(--tx);flex:1">${escapeHtml(c.name||'ללא שם')}</span>`;
       h+=`<span style="font-size:11px;color:var(--t3);font-family:monospace">${escapeHtml(evTime)}</span>`;
       h+=`</div>`;
@@ -4573,7 +4576,7 @@ function renderMCIBanner(){
   const counts={red:0,yellow:0,green:0,gray:0,black:0,total:0};
   _incidentCasualties.forEach(c=>{if(c.triageColor&&counts[c.triageColor]!==undefined)counts[c.triageColor]++;counts.total++;});
   let h=`<div class="mci-banner">`;
-  [{c:'red',l:'מיידי'},{c:'yellow',l:'דחוי'},{c:'green',l:'קל'},{c:'gray',l:'ציפייה'},{c:'black',l:'נפטר'}].forEach(t=>{
+  [{c:'red',l:'דחוף'},{c:'yellow',l:'עדיפות שנייה'},{c:'green',l:'לא דחוף'},{c:'gray',l:'ממתין'},{c:'black',l:'ללא סימני חיים'}].forEach(t=>{
     const active=_mciTriageFilter===t.c;
     const col=TRIAGE_COLORS[t.c];
     h+=`<button class="mci-banner-btn${active?' active':''}" onclick="_mciTriageFilter=_mciTriageFilter==='${t.c}'?null:'${t.c}';MedHost.renderIncidentPage()" style="border-color:${col};background:${active?col+'30':col+'10'};color:${col}">`;
@@ -4586,7 +4589,7 @@ function renderMCIBanner(){
 }
 function renderMCIStatsBar(){
   const total=_incidentCasualties.length;
-  const evaced=_mciVehicles.reduce((s,v)=>s+v.casualties.length,0);
+  const evaced=_mciVehicles.filter(v=>v.status==='evacuating'||v.status==='athospital').reduce((s,v)=>s+v.casualties.length,0)+_incidentCasualties.filter(c=>c.evacStatus==='evacuated'&&!isCasualtyAssignedToVehicle(c)).length;
   const reds=_incidentCasualties.filter(c=>c.triageColor==='red').length;
   // Count reds waiting >15min without evac assignment
   const redsOverdue=_incidentCasualties.filter(c=>{
@@ -4599,7 +4602,7 @@ function renderMCIStatsBar(){
   if(_incidentData?.timestamp?.toDate){const elapsed=Date.now()-_incidentData.timestamp.toDate().getTime();const mins=Math.floor(elapsed/60000),hrs=Math.floor(mins/60);timer=`⏱ ${hrs>0?hrs+'ש '+mins%60+'ד':mins+'ד'}`;}
   let h='';
   if(redsOverdue>0){
-    h+=`<div role="alert" style="background:rgba(231,76,60,.18);border:1.5px solid var(--re-hi);border-radius:10px;padding:8px 12px;margin-bottom:8px;text-align:center;font-size:12px;font-weight:800;color:var(--re-hi);animation:pulse 1.5s infinite">⚠️ ${redsOverdue} נפגע${redsOverdue>1?'ים':''} אדום${redsOverdue>1?'ים':''} ממתינ${redsOverdue>1?'ים':'ה'} לפינוי מעל 15 דק'!</div>`;
+    h+=`<div role="alert" style="background:rgba(231,76,60,.18);border:1.5px solid var(--re-hi);border-radius:10px;padding:8px 12px;margin-bottom:8px;text-align:center;font-size:12px;font-weight:800;color:var(--re-hi);animation:pulse 1.5s infinite">⚠️ ${redsOverdue} ${redsOverdue>1?'נפגעים דחופים ממתינים':'נפגע דחוף ממתין'} לפינוי מעל 15 דק׳</div>`;
   }
   h+=`<div style="display:flex;gap:8px;justify-content:center;padding:6px 0;font-size:11px;color:var(--t2);margin-bottom:6px;font-weight:600">`;
   h+=`<span>${total} נפגעים</span>`;
@@ -4717,8 +4720,8 @@ function renderMCICasualtyCard(c,realIdx,displayNum,expanded){
   // in dim light / red night-vision. Add a high-contrast letter so the
   // triage category is parseable without hue.
   // Tier 19: short Hebrew text label instead of abstract letters.
-  const triageLetter=needsTriage?'❓ סווג':({red:'דחוף',yellow:'דחוי',green:'קל',gray:'ציפייה',black:'חלל'})[tc]||'?';
-  const triageLabel=needsTriage?'טרם סווג':({red:'מיידי',yellow:'דחוי',green:'קל',gray:'ציפייה',black:'נפטר'})[tc]||'';
+  const triageLetter=needsTriage?'❓ סווג':({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[tc]||'?';
+  const triageLabel=needsTriage?'טרם סווג':({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[tc]||'';
   const ariaLabel=`נפגע מספר ${displayNum}, ${c.name||'ללא שם'}, טריאז\' ${triageLabel}${waitStr?', ממתין '+waitStr:''}`;
   // Tier 20b: casualties without triage get a distinct purple dashed
   // border + tap-to-triage-now behavior. Tapping the card opens SABC
@@ -4807,8 +4810,8 @@ function renderMCICasualtyCard(c,realIdx,displayNum,expanded){
     // Quick triage change (5 colors) — Tier 19: text labels inside each
     // swatch (דחוף / לא-דחוף / קל / ממתין / חלל) instead of abstract
     // letters. Long-press still required for gray/black (forcing fn).
-    const tLet={red:'דחוף',yellow:'דחוי',green:'קל',gray:'ציפייה',black:'חלל'};
-    const tLab={red:'מיידי',yellow:'דחוי',green:'קל',gray:'ציפייה',black:'נפטר'};
+    const tLet={red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'};
+    const tLab={red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'};
     h+=`<div style="display:flex;gap:4px;margin-top:6px">`;
     ['red','yellow','green','gray','black'].forEach(color=>{
       const on=tc===color;
@@ -5021,7 +5024,7 @@ async function sabcCommitCasualty(overrideColor){
         {triageColor:color,evacPriority:color==='red'?'immediate':color==='yellow'?'urgent':color==='gray'?'expectant':color==='black'?'deceased':'routine'},
         {merge:true}
       );
-      MedHost.toast('סווג: '+({red:'מיידי',yellow:'דחוי',green:'קל',gray:'ציפייה',black:'ללא סימני חיים'})[color],false);
+      MedHost.toast('סווג: '+({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ללא סימני חיים'})[color],false);
       if(navigator.vibrate)navigator.vibrate(20);
     }catch(e){MedHost.toast('שגיאה בסיווג',false);}
   } else {
@@ -5123,7 +5126,7 @@ function renderSabcWizard(){
     h+=`<input class="fi" type="number" min="0" max="250" placeholder="110" value="${f.c.bp||''}" oninput="_sabcFindings.c.bp=this.value" style="font-size:14px;padding:10px;min-height:44px">`;
   } else if(step==='classify'){
     const auto=_sabcAutoClassify();
-    const labels={red:'🔴 מיידי',yellow:'🟡 דחוי',green:'🟢 קל',gray:'🔘 ציפייה',black:'⬛ ללא סימני חיים'};
+    const labels={red:'🔴 דחוף',yellow:'🟡 עדיפות שנייה',green:'🟢 לא דחוף',gray:'🔘 ממתין',black:'⬛ ללא סימני חיים'};
     h+=`<div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:6px">סיווג — המערכת ממליצה, אתה מחליט</div>`;
     h+=`<div style="background:${TRIAGE_COLORS[auto]||'#888'}30;border:2px solid ${TRIAGE_COLORS[auto]||'#888'};border-radius:12px;padding:10px;margin-bottom:10px;text-align:center">`;
     h+=`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">המלצה אוטומטית:</div>`;
@@ -5177,7 +5180,7 @@ function renderRapidTriageWizard(){
     // casualty who turns out to be stable-ambulatory can be assigned
     // without backing out to sort.
     h+='<div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:6px;text-align:center">שלב 2: הערכה</div>';
-    [{c:'red',l:'🔴 מיידי',desc:'נשימה >30 / דופק חלש / לא ממלא פקודות'},{c:'yellow',l:'🟡 דחוי',desc:'ממלא פקודות / נשימה תקינה / ללא סימני הלם'},{c:'green',l:'🟢 קל',desc:'ממלא פקודות, יכול ללכת / ממשיך בכוחות עצמו'},{c:'gray',l:'🔘 ציפייה',desc:'פגיעה לא הישרדותית / משאבים מוגבלים'},{c:'black',l:'⬛ נפטר',desc:'לא נושם גם אחרי פתיחת נתיב אוויר'}].forEach(t=>{
+    [{c:'red',l:'🔴 דחוף',desc:'נשימה >30 / דופק חלש / לא ממלא פקודות'},{c:'yellow',l:'🟡 עדיפות שנייה',desc:'ממלא פקודות / נשימה תקינה / ללא סימני הלם'},{c:'green',l:'🟢 קל',desc:'ממלא פקודות, יכול ללכת / ממשיך בכוחות עצמו'},{c:'gray',l:'🔘 ציפייה',desc:'פגיעה לא הישרדותית / משאבים מוגבלים'},{c:'black',l:'⬛ נפטר',desc:'לא נושם גם אחרי פתיחת נתיב אוויר'}].forEach(t=>{
       h+=`<button class="trg-btn" onclick="_saltStep='sort';quickTriageCasualty('${t.c}')" style="width:100%;padding:14px;border-radius:12px;border:2.5px solid ${TRIAGE_COLORS[t.c]};background:${TRIAGE_COLORS[t.c]}12;color:${TRIAGE_COLORS[t.c]};cursor:pointer;font-family:var(--f);text-align:center;margin-bottom:6px;min-height:60px;touch-action:manipulation"><div style="font-size:16px;font-weight:900">${t.l}</div><div style="font-size:10px;margin-top:3px;opacity:.8">${t.desc}</div></button>`;
     });
     h+=`<button onclick="_saltStep='sort';MedHost.renderIncidentPage()" style="background:none;border:none;color:var(--t4);font-size:11px;cursor:pointer;font-family:var(--f);display:block;width:100%;text-align:center;margin-top:4px;min-height:36px">← חזור למיון</button>`;

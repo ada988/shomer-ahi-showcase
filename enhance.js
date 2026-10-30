@@ -109,7 +109,7 @@ function enhanceForm(c){
   var fieldWrap = document.createElement('div'); fieldWrap.innerHTML = W.Field ? W.Field.html() : '';
   var topSec = fieldWrap.querySelector('#field'), monSec = fieldWrap.querySelector('#fs-more');
   var jb = document.createElement('nav'); jb.className = 'jb'; jb.setAttribute('aria-label', L('Jump to','קפיצה אל'));
-  [['field', L('101 FORM','טופס 101')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-time', L('TIMELINE','ציר זמן')], ['fs-more', L('VITALS + MORE','מדדים ועוד')]].forEach(function(q){
+  [['field', L('101 FORM','טופס 101')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-time', L('TIMELINE','ציר זמן')], ['fs-more', L('VITALS + RECORD','מדדים ותיק')]].forEach(function(q){
     var bt = document.createElement('button'); bt.textContent = q[1]; bt.dataset.t = q[0]; bt.className = (W.FormUI.cur || 'field') === q[0] ? 'on' : ''; if (bt.className) bt.setAttribute('aria-current', 'true'); bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
   });
   if (monSec) { monSec.appendChild(sCare); if (recs) monSec.appendChild(sSug); monSec.appendChild(sRec); }   // no suggestions yet = no empty box
@@ -118,6 +118,7 @@ function enhanceForm(c){
   frag.appendChild(sBody);
   if (W.Field && W.Field.timelineHtml){ var tw = document.createElement('div'); tw.innerHTML = W.Field.timelineHtml(); while (tw.firstChild) frag.appendChild(tw.firstChild); }
   if (monSec) frag.appendChild(monSec);
+  var disc = document.createElement('p'); disc.className = 'fs-disc'; disc.textContent = L('Early beta demo · fictional patients · not for clinical use. Software suggestions can be wrong; a medical professional decides.','דמו בטא מוקדמת · נפגעים בדויים · לא לשימוש קליני. הצעות התוכנה עלולות לטעות; איש צוות רפואי מחליט.'); frag.appendChild(disc);
   var spacer = document.createElement('div'); spacer.className = 'fs-foot'; frag.appendChild(spacer); frag.appendChild(hand); frag.appendChild(bar);
   c.innerHTML = ''; c.appendChild(frag);
   c.querySelectorAll('button[aria-label]').forEach(function(bt){ if (!/[A-Za-z0-9א-ת]/.test(bt.textContent) && !bt.querySelector('svg') && /delete|remove|מחק|הסר/i.test(bt.getAttribute('aria-label'))) { bt.innerHTML = ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span>'; bt.classList.add('del-btn'); } });

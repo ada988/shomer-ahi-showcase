@@ -133,7 +133,7 @@ function render(){
   var waiting = casualties().filter(function(c){ return c.triageColor === 'red' && !W.isCasualtyAssignedToVehicle(c); }).length;
   if (waiting) h += '<div class="b-alert ev-alert">' + ico('triangle-alert', 30) + '<span>' + L(waiting + ' URGENT ' + (waiting > 1 ? 'CASUALTIES' : 'CASUALTY') + ' STILL ON SCENE', waiting + ' נפגעים דחופים עדיין בזירה') + '</span></div>';
   var rp = rushPlan();
-  if (rp) h += '<button class="ev-rush" onclick="Evac.rush()">' + ico('ambulance', 34) + '<span><b>' + L('LOAD AND GO','העמסה ויציאה') + '</b><small>' + esc(T(rp.c.name)) + L(' on ',' על ') + name(rp.v) + L(' · nearest trauma centre',' · מרכז הטראומה הקרוב') + '</small></span></button>';
+  if (rp) h += '<button class="ev-rush" onclick="Evac.rush()">' + ico('ambulance', 34) + '<span><b>' + L('LOAD AND GO','העמסה ויציאה') + '</b><small>' + esc(T(rp.c.name)) + L(' on ',' על ') + name(rp.v) + L(' · nearest trauma center',' · מרכז הטראומה הקרוב') + '</small></span></button>';
   road.forEach(function(v){ h += transportCard(v); });
   fleet.forEach(function(v){ h += fleetCard(v); });
   done.forEach(function(v){ h += '<section class="ev-card done"><b>' + name(v) + '</b><span>' + L('AT HOSPITAL — handed over','בבית חולים — נמסרו') + ' (' + (v.casualties || []).length + ')</span></section>'; });
@@ -212,7 +212,7 @@ var Evac = {
     undoToast(L('Status: ', 'סטטוס: ') + L(STATUS.filter(function(x){ return x.v === s; })[0].en, STATUS.filter(function(x){ return x.v === s; })[0].he), function(){ v.status = prev; v.etaMinutes = prevEta[0]; v.etaStartAt = prevEta[1]; if (prevEv) restoreEvac(prevEv); rerender(); });
     if (s === 'evacuating') setTimeout(function(){ Evac.open(id); }, 250);
   },
-  hospital: function(id, hid){ var v = veh(id); if (!v) return; var hh = HOSPITALS.filter(function(x){ return x.id === hid; })[0]; if (hh && !hh.ready && !window.confirm(L(hh.en + ' is BUSY. Send casualties there anyway?', hh.he + ' עמוס. לשלוח לשם בכל זאת?'))) return; v.hospitalId = hid; var h = hospital(v); v.destination = h ? h.he : ''; if (v.status !== 'evacuating' && h) { v.etaMinutes = h.eta; v.etaStartAt = null; } rerender(); },
+  hospital: function(id, hid){ var v = veh(id); if (!v) return; var ot = document.getElementById('undo-toast'); if (ot) ot.remove(); var hh = HOSPITALS.filter(function(x){ return x.id === hid; })[0]; if (hh && !hh.ready && !window.confirm(L(hh.en + ' is BUSY. Send casualties there anyway?', hh.he + ' עמוס. לשלוח לשם בכל זאת?'))) return; v.hospitalId = hid; var h = hospital(v); v.destination = h ? h.he : ''; if (v.status !== 'evacuating' && h) { v.etaMinutes = h.eta; v.etaStartAt = null; } rerender(); },
   eta: function(id, d){
     var v = veh(id); if (!v) return;
     var r = remaining(v); var newMin = Math.max(1, Math.round(((r != null ? r : (v.etaMinutes || 10) * 60) / 60) + d));

@@ -20,7 +20,7 @@ var PRIMARY = [
   { k:'X', en:'EXTRACT', he:'חילוץ', sub:['Stop massive bleeding. Safe place first.','עצירת דימום מסכן חיים. קודם מקום בטוח.'], items:[
     ['p_x1','Safe place reached','הגענו למקום בטוח','Cover, fire superiority, casualty and medic safe.','מחסה, עליונות באש, הפצוע והמטפל מאובטחים.'],
     ['p_x2','First look and tactical report','מבט ראשון ודיווח אג״מי','Mechanism, location, how many, urgency.','מנגנון, מיקום, כמה פצועים, דחיפות.'],
-    ['p_x3','Massive bleeding stopped','דימום פורץ נעצר','Tourniquet or packing. Check it worked.','חוסם עורקים או אריזה. ודאו שעבד.','TOURNIQUET','חוסם עורקים','Field.tq()', function(){ var x = X().x || {}; return (x.tourniquets || []).length || (x.pressureDressings || []).length || (x.hemostatic || []).length || (x.woundPacking || []).length || x.noMassiveHemorrhage; }]
+    ['p_x3','Massive bleeding stopped','דימום פורץ נעצר','Tourniquet or packing. Check it worked.','חוסם עורקים או אריזה. ודאו שעבד.','TOURNIQUET','חוסם עורקים','Field.tq()']
   ]},
   { k:'C', en:'CIRCULATION', he:'מחזור דם', sub:['Hidden bleeding, shock check, blood.','דימום נסתר, בדיקת הלם, דם.'], items:[
     ['p_c1','Find and stop other bleeding','איתור ועצירת דימומים נוספים','Strip and roll: head, chest, armpits, back, groin.','הפשטה והפיכה: ראש, חזה, בתי שחי, גב, מפשעה.'],
@@ -101,7 +101,7 @@ function avpuHtml(){
 }
 var RADIAL = [['normal','STRONG','חזק'], ['weak','WEAK','חלש'], ['absent','NONE','אין']];
 function radialHtml(){
-  var v = (W._casualtyVitals || []).slice(-1)[0] || {}, cur = v.radialPulse || '';
+  var v = (W._casualtyVitals || []).filter(function(r){ return r.radialPulse; }).slice(-1)[0] || {}, cur = v.radialPulse || '';
   return '<div class="xc-rad" role="group" aria-label="' + L('Radial pulse','דופק רדיאלי') + '"><small>' + L('RADIAL PULSE','דופק רדיאלי') + '</small><div>' + RADIAL.map(function(r){
     var on = cur === r[0];
     return '<button class="' + (on ? 'on' : '') + (r[0] !== 'normal' ? ' bad' : '') + '" aria-pressed="' + on + '" onclick="Field.setRadial(\'' + r[0] + '\')">' + L(r[1], r[2]) + '</button>';
@@ -111,7 +111,7 @@ function groupsHtml(sec){
   var all = sec ? SECONDARY : PRIMARY, pf = sec ? 's' : 'p', firstOpen = null, h = '<div class="xc-list">';
   // Open/closed state belongs to ONE casualty: switching patient resets it. The default open group is chosen once
   // (so ticking the last row of a group does not collapse it under the medic's thumb).
-  if (Field._xcid !== W._casualtyEditId){ Field._xcid = W._casualtyEditId; Field._xo = {}; Field._xfo = {}; }
+  if (Field._xcid !== W._casualtyEditId){ var fresh = Field._xcid == null || Field._xcid === ''; Field._xcid = W._casualtyEditId; if (!fresh){ Field._xo = {}; Field._xfo = {}; } }
   Field._xfo = Field._xfo || {};
   if (Field._xfo[pf] === undefined){
     all.forEach(function(g){ if (firstOpen == null && g.items.some(function(it){ return !done(it); })) firstOpen = g.k; });

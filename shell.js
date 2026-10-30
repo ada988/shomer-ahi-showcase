@@ -74,7 +74,7 @@ Object.assign(w.MedHost, {
 // ── Triage language: SHAPE + WORD + COLOUR, always ─────────────
 var TG = {
   red:    { c:'#d01a20', en:'URGENT', he:'דחוף',  shape:'oct' },
-  yellow: { c:'#ffd400', en:'DELAYED',   he:'דחוי',   shape:'tri' },
+  yellow: { c:'#ffd400', en:'DELAYED',   he:'עדיפות שנייה',   shape:'tri' },
   green:  { c:'#19c37d', en:'NOT URGENT', he:'לא דחוף',     shape:'circ' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', shape:'hex' },
   black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים',   shape:'sqx' }

@@ -12,7 +12,7 @@ function hhmm(iso){ var d = new Date(iso); return String(d.getHours()).padStart(
 function minsAgo(iso){ return Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); }
 function app(){ return document.getElementById('app'); }
 
-var TRI = [['red','URGENT','דחוף'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['yellow','DELAYED','דחוי'], ['black','NO SIGNS OF LIFE','ללא סימני חיים']];
+var TRI = [['red','URGENT','דחוף'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['yellow','DELAYED','עדיפות שנייה'], ['black','NO SIGNS OF LIFE','ללא סימני חיים']];
 var EVAC = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant', black:'' };
 if (W.ShowcaseI18n && W.ShowcaseI18n.extend){ var _td = {}; TRI.forEach(function(t){ _td['טריאז׳ — ' + t[2]] = 'Triage — ' + t[1]; }); _td['הלם — קטמין קו ראשון; מורפין 2mg בלבד; ללא Actiq / פנטניל'] = 'Shock: ketamine first line; morphine 2 mg only; no Actiq or fentanyl'; _td['מורפין 2mg IV (הלם)'] = 'Morphine 2 mg IV (shock)'; _td['הערכה חוזרת: ללא החמרה, הולכת'] = 'Reassessment: no deterioration, walking'; _td['אדום — דחוף'] = 'Red — URGENT'; _td['צהוב — דחוי'] = 'Yellow — DELAYED'; _td['ירוק — לא דחוף'] = 'Green — NOT URGENT'; _td['אפור — ממתין'] = 'Gray — WAITING'; _td['שחור — ללא סימני חיים'] = 'Black — NO SIGNS OF LIFE'; W.ShowcaseI18n.extend(_td); }
 var SITES = [['r_upper_arm','RIGHT ARM','יד ימין'], ['l_upper_arm','LEFT ARM','יד שמאל'], ['r_thigh','RIGHT LEG (THIGH)','רגל ימין (ירך)'], ['l_thigh','LEFT LEG (THIGH)','רגל שמאל (ירך)'], ['r_shin','RIGHT LOWER LEG','שוק ימין'], ['l_shin','LEFT LOWER LEG','שוק שמאל']];
@@ -46,7 +46,7 @@ function doUndo(){ if (W.medUndo) W.medUndo(); }
 function quickBanner(){
   var c = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0];
   if (!c || c.formLevel !== 'quick') return '';
-  return '<div class="f-quick"><span class="f-qi">' + ico('zap', 30) + '</span><span><b>' + L('QUICK TRIAGE RECORD','רשומת מיון מהיר') + '</b><small>' + L('Only the triage colour was recorded. Complete the full Form 101 when you have time to give care.','נרשם רק צבע המיון. השלימו את טופס 101 המלא כשיש זמן לטיפול.') + '</small></span><button onclick="Field.upgrade()">' + L('START FULL FORM 101','התחילו טופס 101 מלא') + '</button></div>';
+  return '<div class="f-quick"><span class="f-qi">' + ico('zap', 30) + '</span><span><b>' + L('STARTED AS QUICK TRIAGE','נפתח כמיון מהיר') + '</b><small>' + L('Everything below is the full Form 101. Fill it in as you treat, then mark it complete.','כל מה שלמטה הוא טופס 101 המלא. מלאו תוך כדי טיפול, ואז סמנו כמלא.') + '</small></span><button onclick="Field.upgrade()">' + L('MARK AS FULL FORM 101','סמנו כטופס 101 מלא') + '</button></div>';
 }
 function idStrip(){
   var c = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0];
@@ -58,9 +58,14 @@ function idStrip(){
   var live = (W._casualtyName || '').trim(), name = live ? esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(live) : live) : L('No name yet','עדיין ללא שם');
   return '<div class="f-id' + (dark ? ' dark' : '') + '" style="--tg:' + (tg ? tg.c : '#3a3f4a') + '">'
     + '<span class="f-id-i">' + (tg ? W.TriageUI.shapeSvg(tg.shape, 44) : ico('circle-help', 44)) + '</span>'
-    + '<span class="f-id-t"><b>' + (tg ? L(tg.en, tg.he) : L('NOT TRIAGED','טרם סווג')) + '</b><em>' + name + '</em>' + (who ? '<small>' + who + '</small>' : '') + '</span>'
+    + '<span class="f-id-t"><b>' + (tg ? L(tg.en, tg.he) : L('NOT TRIAGED','טרם סווג')) + '</b><em>' + name + '</em>' + (who && !/\d/.test(name) ? '<small>' + who + '</small>' : '') + '</span>'
     + (serial ? '<button class="f-id-b" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Wristband','צמיד') + '"><small>' + L('NO.','מס׳') + '</small><b dir="ltr">' + esc(serial) + '</b><span>' + ico('qr-code', 24) + L('WRISTBAND','צמיד') + '</span></button>' : '')
     + '</div>';
+}
+function shockHtml(){
+  var ctx = W.buildCasualtyContext ? W.buildCasualtyContext() : {};
+  if (!ctx.deepShock && !ctx.shock) return '';
+  return '<div class="f-shock" role="alert">' + ico('triangle-alert', 30) + '<span><b>' + (ctx.deepShock ? L('DEEP SHOCK','הלם עמוק') : L('SIGNS OF SHOCK','סימני הלם')) + '</b><small>' + L('Whole blood first, TXA within 3 h of injury, keep warm, evacuate now.','קודם דם מלא, TXA תוך 3 שעות מהפציעה, חימום, פינוי עכשיו.') + '</small></span></div>';
 }
 function html(){
   var c = ctx(), tqs = c.x.tourniquets || [], cur = W._casualtyTriageColor, h = idStrip() + quickBanner();
@@ -71,6 +76,7 @@ function html(){
     h += '<button class="f-tbtn t-' + t[0] + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Field.triage(\'' + t[0] + '\')">' + W.TriageUI.shapeSvg(T.shape, 32) + '<b>' + L(t[1], t[2]) + '</b>' + (on ? '<i>' + ico('check', 22) + L('SET','נקבע') + '</i>' : '') + '</button>';
   });
   h += '</div>';
+  h += shockHtml() + injuryHtml();
   h += (Field.xcareHtml ? Field.xcareHtml() : '');
   var top = h; h = '';
   // 2 · clocks
@@ -88,7 +94,7 @@ function html(){
     h += '<div class="f-tqlist">' + tqs.map(function(q, i){ var nm = W.bodyLabelOut ? W.bodyLabelOut(q.site) : ((W.BODY_LABELS || {})[q.site] || q.site); return '<div class="f-tqrow"><span><b>' + esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(nm) : nm) + '</b><small>' + L('on at ','הונח ב-') + hhmm(q.time) + '</small></span><strong>' + minsAgo(q.time) + ' ' + L('MIN','ד׳') + '</strong></div>'; }).join('') + '</div>';
   }
   // 5 · vitals
-  var v = lv || {};
+  var v = { pulse:lastVal('pulse'), bpSys:lastVal('bpSys'), bpDia:lastVal('bpDia'), spo2:lastVal('spo2'), rr:lastVal('rr') };
   var num = function(x){ return x == null ? '—' : x; };
   h += '<div class="f-h">' + L('VITALS — TAP TO ENTER','מדדים — לחצו להזנה') + '</div><div class="f-vit">'
     + vt('HR', num(v.pulse), '/min', 0, v.pulse > 120 || (v.pulse != null && v.pulse < 50))
@@ -103,7 +109,8 @@ function vt(label, val, unit, idx, bad){
   return '<button class="f-v' + (bad ? ' bad' : '') + '" onclick="Field.keypad(' + idx + ')"><small>' + label + '</small><b>' + val + '</b><span>' + unit + '</span></button>';
 }
 
-function lastVal(k){ var v = (W._casualtyVitals || []).slice(-1)[0]; return v && v[k] != null ? v[k] : null; }
+// latest MEASURED value of one vital (a later reading of only the pulse keeps the last BP on screen)
+function lastVal(k){ var r = W._casualtyVitals || []; for (var i = r.length - 1; i >= 0; i--){ var x = r[i] && r[i][k]; if (x != null && x !== '') return x; } return null; }
 // ── Actions ────────────────────────────────────────────────────
 function render(){ W.MedHost.renderIncidentPage(); }
 function injuryInfo(){
@@ -115,7 +122,8 @@ function injuryInfo(){
 function hm(t){ var d = new Date(t); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 function injuryHtml(){
   var ii = injuryInfo(), val = ii ? hm(ii.t) : '';
-  var note = !ii ? L('Needed for the TXA 3-hour window','נדרש לחלון TXA של 3 שעות')
+  var txaG = lastMed(/^TXA/i);
+  var note = txaG ? L('TXA given at ' + hm(Date.parse(txaG.time)) + (ii ? ' · injury ' + ii.mins + ' min ago' : ''), 'TXA ניתן ב-' + hm(Date.parse(txaG.time)) + (ii ? ' · פציעה לפני ' + ii.mins + ' דק׳' : '')) : !ii ? L('Needed for the TXA 3-hour window','נדרש לחלון TXA של 3 שעות')
     : ii.left > 0 ? L(ii.mins + ' min ago · TXA window: ' + ii.left + ' min left', 'לפני ' + ii.mins + ' דק׳ · חלון TXA: נותרו ' + ii.left + ' דק׳')
     : L(ii.mins + ' min ago · TXA window closed (over 3 h)', 'לפני ' + ii.mins + ' דק׳ · חלון TXA נסגר (מעל 3 שעות)');
   return '<div class="f-inj' + (ii && ii.left <= 0 ? ' late' : !ii ? ' unset' : '') + '"><label for="pat-inj">' + L('TIME OF INJURY','שעת הפציעה') + '</label>'
@@ -125,7 +133,7 @@ function injuryHtml(){
 function patientHtml(){
   var e = ctx().e, sx = e.sex === 'M' || e.sex === 'male' ? 'M' : (e.sex === 'F' || e.sex === 'female' ? 'F' : '');
   var v = function(x){ return x == null || x === '' ? '' : esc(String(x)); };
-  return injuryHtml() + '<div class="f-pat"><div class="f-pat-f"><label for="pat-age">' + L('AGE (YEARS)','גיל (שנים)') + '</label><input id="pat-age" data-k="age" class="fi" type="number" inputmode="numeric" min="0" max="120" placeholder="—" value="' + v(e.ageYears) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
+  return '<div class="f-pat"><div class="f-pat-f"><label for="pat-age">' + L('AGE (YEARS)','גיל (שנים)') + '</label><input id="pat-age" data-k="age" class="fi" type="number" inputmode="numeric" min="0" max="120" placeholder="—" value="' + v(e.ageYears) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
     + '<div class="f-pat-f"><label for="pat-wt">' + L('WEIGHT (KG)','משקל (ק״ג)') + '</label><input id="pat-wt" data-k="wt" class="fi" type="number" inputmode="decimal" min="1" max="250" placeholder="—" value="' + v(e.weightKg) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
     + '<div class="f-pat-sex" role="group" aria-label="' + L('Sex','מין') + '"><button class="' + (sx === 'M' ? 'on' : '') + '" aria-pressed="' + (sx === 'M') + '" onclick="Field.setSex(this.dataset.s)" data-s="M">' + (sx === 'M' ? ico('check', 24) : '') + L('MALE','זכר') + '</button><button class="' + (sx === 'F' ? 'on' : '') + '" aria-pressed="' + (sx === 'F') + '" onclick="Field.setSex(this.dataset.s)" data-s="F">' + (sx === 'F' ? ico('check', 24) : '') + L('FEMALE','נקבה') + '</button></div></div>';
 }
@@ -239,7 +247,7 @@ var Field = {
       var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
       el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet" role="dialog" aria-label="' + L('Check before giving','בדקו לפני מתן') + '"><div class="sheet-grab"></div><h3>' + L(g.en + ': CHECK FIRST', g.he + ': בדקו קודם') + '</h3>'
         + w.map(function(t){ return '<p class="sheet-p f-warn"><b>' + esc(t) + '</b></p>'; }).join('')
-        + '<button class="xbtn f-cancel" onclick="Field.closeSheet()">' + L('CANCEL','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.closeSheet();Field.give(\'' + key + '\', true)">' + L('GIVE ANYWAY','תנו בכל זאת') + '</button></div>';
+        + '<button class="xbtn f-cancel" onclick="Field.closeSheet()">' + L('CANCEL','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.closeSheet();Field.give(\'' + key + '\', true)">' + (w.every(function(t){ return /flush|שטפו/i.test(t); }) ? L('FLUSHED — GIVE','נשטף — תנו') : L('GIVE ANYWAY','תנו בכל זאת')) + '</button></div>';
       app().appendChild(el); return;
     }
     snapshot();
@@ -249,7 +257,7 @@ var Field = {
     if ((X.e.medications || []).length === nMed && (X.c.fluids || []).length === nFl){ if (W._medUndoStack) W._medUndoStack.pop(); return; }
     undoToast(L(g.en + ' ' + d.sub + ' — given ' + hhmm(new Date().toISOString()), g.he + ' ' + d.subHe + ' — ניתן ' + hhmm(new Date().toISOString())), doUndo);
   },
-  undo: function(){ doUndo(); },
+  undo: function(){ var had = (W._medUndoStack || []).length; doUndo(); undoToast(had ? L('Undone: the last action was reversed','בוטל: הפעולה האחרונה הוחזרה') : L('Nothing to undo','אין מה לבטל'), null); },
   upgrade: function(){ var c = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0]; if (!c) return; W._upsertOfflineCasualty({ _docId:c._docId, formLevel:'full' }); undoToast(L('Now a FULL Form 101','כעת טופס 101 מלא'), null); render(); },
 
   // ── Vitals keypad ────────────────────────────────────────────
@@ -276,11 +284,11 @@ var Field = {
     var sheet = document.getElementById('f-kp');
     if (!sheet){ sheet = document.createElement('div'); sheet.id = 'f-kp'; sheet.className = 'sheet-wrap no-polish'; app().appendChild(sheet); }
     sheet.innerHTML = '<div class="sheet-dim" onclick="Field.kpClose()"></div><div class="sheet kp" role="dialog" aria-label="' + L('Vitals keypad','מקלדת מדדים') + '"><div class="sheet-grab"></div>'
-      + '<div class="kp-step">' + (K.i + 1) + ' / ' + K.f.length + '</div>'
+      + '<div class="kp-step" dir="ltr">' + (K.i + 1) + ' / ' + K.f.length + '</div>'
       + '<div class="kp-label">' + L(f.en, f.he) + '</div>'
       + '<div class="kp-val"><b>' + (cur === '' ? '—' : cur) + '</b><span>' + f.unit + '</span></div>'
       + '<div class="kp-hint' + (K.err ? ' bad' : '') + '" role="status">' + (K.err || L('Allowed: ' + f.min + ' to ' + f.max + (f.k === 'pulse' || f.k === 'rr' ? ', or 0 for none' : ''), 'טווח מותר: ' + f.min + ' עד ' + f.max + (f.k === 'pulse' || f.k === 'rr' ? ', או 0 אם אין' : ''))) + '</div>'
-      + '<div class="kp-keys">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.kpKey(\'' + k + '\')">' + (k === 'OK' ? (last ? L('SAVE','שמור') : L('NEXT','הבא')) : (k === '⌫' ? '<span class="kp-del">' + ico('arrow-left', 26) + L('DELETE','מחק') + '</span>' : k)) + '</button>'; }).join('') + '</div>'
+      + '<div class="kp-keys">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.kpKey(\'' + k + '\')">' + (k === 'OK' ? (last ? L('SAVE','שמור') : L('NEXT','הבא')) : (k === '⌫' ? '<span class="kp-del">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 26) + L('DELETE','מחק') + '</span>' : k)) + '</button>'; }).join('') + '</div>'
       + (lastVal(f.k) != null ? '<button class="xbtn kp-same" onclick="Field.kpSame()">' + L('SAME AS LAST: ','כמו הקודם: ') + lastVal(f.k) + '</button>' : '') + '<div class="kp-row"><button class="xbtn" onclick="Field.kpSkip()">' + L('SKIP','דלג') + '</button><button class="xbtn xbtn-primary" onclick="Field.kpSave()">' + L('SAVE NOW','שמור עכשיו') + '</button></div></div>';
   },
   // Returns '' when the field is fine, otherwise a sentence saying why not.
@@ -312,7 +320,7 @@ var Field = {
     if (!any) return;
     snapshot();
     var vi0 = W._casualtyVitalsInput || {}, pick = function(a, b){ return a !== '' && a != null ? a : (b || ''); };
-    W._casualtyVitalsInput = { pulse:pick(v.pulse, vi0.pulse), rr:pick(v.rr, vi0.rr), spo2:pick(v.spo2, vi0.spo2), bpSys:pick(v.bpSys, vi0.bpSys), bpDia:pick(v.bpDia, vi0.bpDia), temp:vi0.temp || '', etco2:vi0.etco2 || '', radialPulse:vi0.radialPulse || '' };
+    W._casualtyVitalsInput = { pulse:v.pulse || '', rr:v.rr || '', spo2:v.spo2 || '', bpSys:v.bpSys || '', bpDia:v.bpDia || '', temp:'', etco2:'', radialPulse:'' };
     W.addVitalsReading();
     undoToast(L('Vitals saved', 'מדדים נשמרו'), doUndo);
   }
