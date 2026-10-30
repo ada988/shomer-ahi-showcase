@@ -196,7 +196,7 @@ function renderTransport(v){
       + '<div class="tp-siren ' + (counts.red ? 'yes' : '') + '"><small>' + L('Fast transport','הובלה מהירה') + '</small><b>' + sirens + '</b></div>';
   } else {
     h += '<div class="ev-h">' + L('On board','על הסיפון') + ' (' + m.length + ')</div><div class="tp-pts">' + m.map(function(c){
-      var x = tq(c), mins = x ? Math.max(0, Math.round((Date.now() - Date.parse(x.time)) / 60000)) : null, lv = (c.vitalsHistory || []).slice(-1)[0] || {};
+      var x = tq(c), mins = x ? Math.max(0, Math.round((Date.now() - Date.parse(x.time)) / 60000)) : null, lv = (W.latestVitals ? W.latestVitals(c.vitalsHistory || []) : (c.vitalsHistory || []).slice(-1)[0]) || {};
       return '<button class="tp-pt" onclick="Evac.openCasualty(\'' + esc(c._docId) + '\')">' + W.TriageUI.chip(c.triageColor, true) + '<span class="tp-pn"><b>' + (W.casBadge ? W.casBadge(c) + ' ' : '') + esc(String(T(c.name)).split(' — ')[0]) + '</b>'
         + (mins != null ? '<em>' + L('Tourniquet on ','חוסם עורקים ') + mins + L(' min',' ד׳') + '</em>' : '')
         + '<span class="tp-v">' + (lv.pulse != null ? '<em>HR <i>' + lv.pulse + '</i></em> ' : '') + (lv.bpSys ? '<em>BP <i>' + lv.bpSys + '/' + (lv.bpDia || '–') + '</i></em> ' : '') + (lv.spo2 ? '<em>SpO₂ <i>' + lv.spo2 + '</i></em>' : '') + '</span></span></button>';

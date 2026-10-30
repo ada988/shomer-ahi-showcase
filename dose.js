@@ -37,6 +37,7 @@ function injuries(){ try { return typeof _casualtyInjuries !== 'undefined' ? (_c
 
 function patient(){
   var x = X(), e = x.e || {}, age = e.ageYears != null && e.ageYears !== '' ? Number(e.ageYears) : null, wt = Number(e.weightKg) || null, est = !!(wt && e.weightEst);
+  if (est && age != null) wt = estWeight(age);   // an estimated weight follows the age; a measured one is kept
   if (!wt){ wt = estWeight(age); est = wt != null; }
   var ageless = !wt;
   if (!wt){ wt = 70; est = true; }
@@ -69,7 +70,7 @@ function patient(){
     allergy: allergy, preg: e.pregnant === true, burns: !!ctx.burns, tbi: !!ctx.hasTBI || injuries().some(function(i){ return i && /head|face/.test(String(i.region || '')); }),
     neck: injuries().some(function(i){ return i && /neck/.test(String(i.region || '')); }), mins: ctx.minSinceInjury != null ? ctx.minSinceInjury : null,
     inj: inj, pain: painNow(), pen: pen, penTorso: !!ctx.penetratingTorso, penHNA: !!ctx.penetratingHeadNeckAbd,
-    iv: hasAccess(x.c || {}), io: isIO(x.c || {}), meds: e.medications || [], fluids: (x.c || {}).fluids || [] };
+    iv: hasAccess(x.c || {}), io: isIO(x.c || {}), ivReal: ivReal(x.c || {}), meds: e.medications || [], fluids: (x.c || {}).fluids || [] };
 }
 
 /* FINDINGS → RULES. Every rule below is stated by the IDF Trauma and Operational Medicine Book (Jan 2026, beta/… .txt line refs)
@@ -130,17 +131,25 @@ function decisions(all, P){
   var line = function(o, ic, t){ t = String(t).split(full).join(brief); return '<button class="dz-dl" onclick="Field.doseGo(\'' + o.d.id + '\')">' + ico(ic, 22) + '<span><b>' + o.d.en + '</b> ' + t + '</span></button>'; };
   var give = all.filter(function(o){ return o.s.due && !o.s.block; });
   var chg = all.filter(function(o){ return o.s.chg && !o.s.block; });
-  var no = all.filter(function(o){ return o.s.block && (o.s.kind === 'contra' || o.s.kind === 'access'); });
+  var wouldBe = function(o){ return (o.d.why && o.d.why()) || (o.d.cond && o.d.cond()); };
+  var no = all.filter(function(o){ return o.s.block && (o.s.kind === 'measure' || (o.s.kind === 'access' && o.s.wouldDue && !o.s.imOk) || (o.s.kind === 'contra' && wouldBe(o))); });
+  var cnd = all.filter(function(o){ return o.s.cond && !o.s.block; });
   var sec = function(cls, ic, title, list, fn){ return list.length ? '<div class="dz-dg ' + cls + '"><h4>' + ico(ic, 22) + '<span>' + title + '</span><i>' + list.length + '</i></h4>' + list.map(fn).join('') + '</div>' : ''; };
   var h = sec('give', 'check', L('Give now','לתת עכשיו'), give, function(o){ return line(o, 'check', doseText(o.s.dose) + ' · ' + o.s.due); })
     + sec('chg', 'gauge', L('Changed dose','מינון משתנה'), chg, function(o){ return line(o, 'gauge', o.s.chg); })
+    + sec('cnd', 'clock', L('If evacuation will take over 1 hour','אם הפינוי יימשך מעל שעה'), cnd, function(o){ return line(o, 'clock', doseText(o.s.dose) + ' · ' + o.s.cond); })
     + sec('no', 'octagon', L('Do not give','לא לתת'), no, function(o){ return line(o, 'octagon', o.s.block); });
   return h ? '<section class="dz-dec" aria-label="' + L('Decision summary','סיכום החלטות') + '"><h3 class="dz-h3">' + ico('list-checks', 22) + L('What to give','מה לתת') + '</h3>' + h + '</section>' : '';
 }
 Field.doseFind = function(sec, foc){
   Field.doseClose();
   if (W.FormUI && W.FormUI.jump) W.FormUI.jump(sec);
-  if (foc) setTimeout(function(){ var e = document.getElementById(foc); if (e){ e.scrollIntoView({ block:'center', behavior:'smooth' }); try { e.focus({ preventScroll:true }); } catch (x){} } }, 350);
+  if (foc === 'f-gcs-t'){ setTimeout(function(){ if (Field.gcsSheet) Field.gcsSheet(); }, 350); return; }
+  if (foc) setTimeout(function(){
+    var e = document.getElementById(foc); if (!e) return;
+    for (var p = e.parentElement; p; p = p.parentElement) if (p.tagName === 'DETAILS' && !p.open) p.open = true;
+    e.scrollIntoView({ block:'center', behavior:'smooth' }); try { e.focus({ preventScroll:true }); } catch (x){}
+  }, 350);
 };
 Field.doseGo = function(id){
   var P = patient(), d = drugs(P).filter(function(x){ return x.id === id; })[0]; if (!d) return;
@@ -149,15 +158,20 @@ Field.doseGo = function(id){
   if (c){ c.scrollIntoView({ block:'start', behavior:'smooth' }); c.classList.add('dz-flash'); setTimeout(function(){ c.classList.remove('dz-flash'); }, 1600); }
 };
 
+function ivReal(c){ var a = c.ivAccess; return Array.isArray(a) ? a.some(function(v){ return !/^IO|תוך-גרמ/i.test(String((v && v.site) || v)); }) : (!!a && a !== 'IO'); }
+function accessRoute(P, d){ return d.route === 'IV' && P.io && !P.ivReal ? 'IO' : d.route; }
 function isIO(c){ var a = c.ivAccess; return c.ioAccess === true || a === 'IO' || (Array.isArray(a) && a.some(function(v){ return /^IO|תוך-גרמ/i.test(String((v && v.site) || v)); })); }
 function hasAccess(c){ var a = c.ivAccess; return isIO(c) || (Array.isArray(a) ? a.length > 0 : !!a); }
 // region words for reasons: name the wound that triggers the rule
-function regionWord(r){ r = String(r || ''); return /head/.test(r) ? L('head','ראש') : r === 'neck' || /neck/.test(r) ? L('neck','צוואר') : /chest|upper_back/.test(r) ? L('chest','חזה') : /abdomen|lower_back/.test(r) ? L('belly','בטן') : r === 'pelvis' ? L('pelvis','אגן') : L('torso','גו'); }
+function regionWord(r){ r = String(r || ''); return /head/.test(r) ? L('head','ראש') : r === 'neck' || /neck/.test(r) ? L('neck','צוואר') : /chest|upper_back/.test(r) ? L('chest','חזה') : /abdomen|lower_back/.test(r) ? L('belly','בטן') : r === 'pelvis' || /groin|buttock/.test(r) ? L('pelvis','אגן') : /thigh|shin|knee|leg|foot|calf|ankle/.test(r) ? L('leg','רגל') : /arm|hand|elbow|shoulder|wrist/.test(r) ? L('arm','יד') : /face|eye|jaw/.test(r) ? L('face','פנים') : L('wound','פצע'); }
 function penRegions(list){ var seen = {}; return injuries().filter(function(i){ return i && i.type === 'penetrating' && (!list || list.indexOf(i.region) >= 0); }).map(function(i){ return regionWord(i.region); }).filter(function(w){ return seen[w] ? false : (seen[w] = true); }).join(', '); }
 var TORSO = ['chest_r','chest_l','abdomen_r','abdomen_l','upper_back_r','upper_back_l','lower_back_r','lower_back_l','neck','pelvis'];
+// Every entry for this drug, oldest first by its recorded time (a time edited on the timeline moves it): the last one is the most recent
+function tOf(m){ var t = new Date(m && m.time).getTime(); return isNaN(t) ? 0 : t; }
 function givenOf(P, d){
-  if (d.fluid) return P.fluids.filter(function(f){ return d.fluid.test(String(f.type || '')); });
-  return P.meds.filter(function(m){ return d.match.test(String(m.drug || m.name || '')); });
+  var g = d.fluid ? P.fluids.filter(function(f){ return d.fluid.test(String(f.type || '')); })
+    : P.meds.filter(function(m){ return d.mine ? d.mine(m) : d.match.test(String(m.drug || m.name || '')); });
+  return g.slice().sort(function(a, b){ return tOf(a) - tOf(b); });
 }
 function amountOf(m){ var s = String(m.dose || '').trim(), n = parseFloat(s.replace(/[^\d.]/g, '')) || 0; return /mcg/i.test(s) ? n / 1000 : /^[\d.]+\s*g$/i.test(s) ? n * 1000 : n; }
 
@@ -175,8 +189,8 @@ function drugs(P){
     stop: function(){ return !inWin ? L('More than 3 hours since injury: the book says do not give.','חלפו יותר מ-3 שעות מהפציעה: הספר קובע לא לתת.') : null; },
     why: function(){ if (!(P.deep || P.penTorso)) return null; return (P.deep ? shockW(P) : L('Penetrating wound: ','פצע חודר: ') + penRegions(TORSO)) + ' · ' + (P.inj ? L(P.inj.left + ' min left of the 3-hour window', 'נותרו ' + P.inj.left + ' דק׳ מחלון 3 השעות') : L('set the time of injury','קבעו שעת פציעה')); } });
   D.push({ id:'blood', g:'shock', en:L('Whole blood','דם מלא'), sub:L('Plasma (FDP) if no blood. 1:1 with PRBC if both used.','פלסמה (FDP) אם אין דם. 1:1 עם כדוריות אם שתיהן בשימוש.'), fluid:/דם|blood|FDP|פלסמה|plasma/i, ftype:'דם מלא', route:'IV',
-    dose: function(){ return { v: P.child ? Math.min(500, r0(20 * kg)) : 500, u:'mL' }; },
-    rule: P.child ? L('20 mL/kg (about 1 unit up to 20 kg)','20 מ״ל/ק״ג (כמנה אחת עד 20 ק״ג)') : L('1 unit, then stop and re-check','מנה אחת, ואז עצירה ובדיקה חוזרת'),
+    dose: function(){ return { v: P.child ? Math.min(400, r0(20 * kg)) : 400, u:'mL' }; },
+    rule: P.child ? L('20 mL/kg, up to one 400 mL unit (about 20 kg) · book ch. 3','20 מ״ל/ק״ג, עד מנה אחת של 400 מ״ל (כ-20 ק״ג) · ספר פרק 3') : L('1 unit (400 mL), then stop and re-check · book ch. 3','מנה אחת (400 מ״ל), ואז עצירה ובדיקה חוזרת · ספר פרק 3'),
     prep: L('After EACH unit: stop, re-check blood pressure. Another unit only if still in deep shock. Target systolic 90.','אחרי כל מנה: עוצרים ומודדים לחץ דם. מנה נוספת רק אם עדיין בהלם עמוק. יעד סיסטולי 90.') + (P.child ? L(' Give with a syringe and a 3-way tap.',' מתן במזרק וברז תלת-כיווני.') : ''),
     stop: function(){ return !P.deep ? L('Only in suspected deep shock. None is recorded.','רק בחשד להלם עמוק. לא נרשם.') : null; },
     why: function(){ return P.deep ? shockW(P) : null; } });
@@ -192,21 +206,19 @@ function drugs(P){
     rule: P.child ? L('0.3 mg/kg','0.3 מ״ג/ק״ג') : L('25 mg single bolus','בולוס יחיד 25 מ״ג'),
     prep: L('Flush 10 mL saline. No relief after 5 min: morphine. Long evacuation: repeat every 45 min. Watch breathing and consciousness.','שטיפה 10 מ״ל סליין. אין הקלה אחרי 5 דק׳: מורפין. פינוי ממושך: חזרה כל 45 דק׳. מעקב נשימה והכרה.'),
     every: 45,
-    stop: function(){ return !P.iv ? L('No IV access recorded. Without IV: fentanyl lozenge.','לא נרשמה גישה ורידית. בלי וריד: סוכריית פנטניל.') : null; },
     why: function(){ return P.pain != null && P.pain >= 5 ? L('Pain ' + P.pain + ' of 10','כאב ' + P.pain + ' מתוך 10') : null; } };
   D.push(ket);
   D.push({ id:'mor', g:'pain', en:L('Morphine','מורפין'), sub:L('If ketamine did not help after 5 min','אם קטמין לא עזר אחרי 5 דק׳'), eng:'מורפין', match:/מורפין|morphine/i, route:'IV',
     dose: function(){ return { v: P.child ? (P.profound ? r2(0.02 * kg) : r2(0.05 * kg)) : (P.profound ? 2 : 5), u:'mg' }; },
-    rule: (P.child ? L('0.05 mg/kg (0.02 in shock)','0.05 מ״ג/ק״ג (0.02 בהלם)') : L('5 mg (2 mg in shock)','5 מ״ג (2 מ״ג בהלם)')) + (P.profound ? (P.child ? L(' · REDUCED: low blood pressure for age',' · מופחת: לחץ דם נמוך לגיל') : L(' · REDUCED: shock',' · מופחת: הלם')) : ''),
+    rule: (P.child ? L('0.05 mg/kg (0.02 in suspected shock)','0.05 מ״ג/ק״ג (0.02 בחשד להלם)') : L('5 mg (2 mg in suspected shock)','5 מ״ג (2 מ״ג בחשד להלם)')) + (P.profound ? (P.child ? L(' · REDUCED: low blood pressure for age',' · מופחת: לחץ דם נמוך לגיל') : L(' · REDUCED: suspected shock',' · מופחת: חשד להלם')) : ''),
     prep: L('Repeat every 15 min while pain stays 5 or more.','חזרה כל 15 דק׳ כל עוד הכאב 5 ומעלה.') + (P.child ? L(' No IV: 0.1 mg/kg IM once.',' אין וריד: 0.1 מ״ג/ק״ג לשריר פעם אחת.') : ''),
     every: 15, chg: function(){ return P.profound ? (P.child ? L('0.02 mg/kg instead of 0.05 · ','0.02 מ״ג/ק״ג במקום 0.05 · ') : L('2 mg instead of 5 mg · ','2 מ״ג במקום 5 מ״ג · ')) + (P.evid.length ? shockW(P) : L('suspected shock','חשד להלם')) + ' · ' + L('book ch. 15','ספר פרק 15') : null; },
-    stop: function(){ return !P.iv ? L('No IV access recorded.','לא נרשמה גישה ורידית.') : null; },
     why: function(){ if (!(P.pain != null && P.pain >= 5)) return null; var k = givenOf(P, ket); if (!k.length) return null; return minsSince(k[k.length - 1].time) >= 5 ? L('Pain still ' + P.pain + ' after ketamine','כאב עדיין ' + P.pain + ' אחרי קטמין') : null; } });
-  D.push({ id:'fen', g:'pain', en:L('Fentanyl lozenge','סוכריית פנטניל'), sub:L('Actiq. When there is no IV.','אקטיק. כשאין וריד.'), eng:'פנטניל', match:/פנטניל|fentanyl/i, route:'OTFC',
+  D.push({ id:'fen', g:'pain', en:L('Fentanyl lozenge','סוכריית פנטניל'), sub:L('Actiq. When there is no IV.','אקטיק. כשאין וריד.'), eng:'Actiq OTFC', engRoute:'Buccal', match:/Actiq|OTFC|אקטיק|סוכרי/i, mine: function(m){ return /Actiq|OTFC|אקטיק|סוכרי/i.test(String(m.drug || '')) || (/פנטניל|fentanyl/i.test(String(m.drug || '')) && /OTFC|Buccal|לחי/i.test(String(m.route || ''))); }, route:'OTFC',
     dose: function(){ return { v: 800, u:'mcg' }; }, rule: L('800 mcg, max 2','800 מק״ג, עד 2'),
     prep: L('Between cheek and gum, rub along the cheek. Do not chew. Still in pain after 15 min: a second one in the other cheek.','בין הלחי לחניכיים, לשפשף לאורך הלחי. לא ללעוס. עדיין כאוב אחרי 15 דק׳: שנייה בלחי השנייה.'),
     every: 15, maxN: 2,
-    stop: function(){ return kg < 40 ? L('Not under 40 kg.','לא מתחת ל-40 ק״ג.') : null; },
+    stop: function(){ return P.child ? L('Child: the book does not approve the lozenge for children.','ילד: הספר אינו מאשר סוכרייה לילדים.') : kg < 40 ? L('Not under 40 kg.','לא מתחת ל-40 ק״ג.') : null; },
     why: function(){ return P.pain != null && P.pain >= 5 && !P.iv ? L('Pain ' + P.pain + ' and no IV','כאב ' + P.pain + ' ואין וריד') : null; } });
   D.push({ id:'para', g:'pain', en:L('Paracetamol','אקמול'), sub:L('Acamol. Or dipyrone (Optalgin) 1000 mg.','פרצטמול. או אופטלגין 1000 מ״ג.'), eng:'פרצטמול', match:/פרצטמול|paracetamol|אקמול|אופטלגין|dipyrone/i, route:'PO',
     dose: function(){ return { v: 1000, u:'mg' }; }, rule: L('1000 mg every 6 h, max 4000 mg a day','1000 מ״ג כל 6 שעות, עד 4000 מ״ג ביום'),
@@ -224,13 +236,13 @@ function drugs(P){
     rule: P.child ? L('100 mg/kg, max 2 g, once a day','100 מ״ג/ק״ג, עד 2 גרם, פעם ביום') : L('2 g once a day','2 גרם פעם ביום'),
     prep: L('IV push over 2 to 4 min. Never with Hartmann.','דחיפה לווריד במשך 2 עד 4 דק׳. לעולם לא עם הרטמן.') + (P.child ? '' : L(' No IV: 1 g IM × 2, each in 3.5 mL water or lidocaine 1% (not in shock).',' אין וריד: 1 גרם לשריר × 2, כל אחד ב-3.5 מ״ל מים או לידוקאין 1% (לא בהלם).')),
     every: 1440,
-    why: function(){ return P.pen ? L('Penetrating wound: ','פצע חודר: ') + penRegions(null) : null; } });
+    cond: function(){ return P.pen ? L('Penetrating wound: ','פצע חודר: ') + penRegions(null) : null; } });
   D.push({ id:'met', g:'abx', en:L('Metronidazole','מטרונידזול'), sub:L('Penetrating wound to the torso, head or neck','פציעה חודרת בבית החזה, בבטן, בגב, בראש או בצוואר'), eng:'מטרונידזול', match:/מטרונידזול|metronidazole/i, route:'IV',
     dose: function(){ return { v: P.child ? Math.min(500, r0(10 * kg)) : 500, u:'mg' }; },
     rule: P.child ? L('10 mg/kg, max 500 mg, every 8 h','10 מ״ג/ק״ג, עד 500 מ״ג, כל 8 שעות') : L('500 mg every 8 h','500 מ״ג כל 8 שעות'),
     prep: L('Slow drip. Repeat every 8 hours if evacuation is delayed.','בטפטוף איטי. חזרה כל 8 שעות אם הפינוי מתעכב.'),
     every: 480,
-    why: function(){ return P.penHNA ? L('Penetrating wound: ','פצע חודר: ') + penRegions(typeof _ABX_REGIONS !== 'undefined' ? _ABX_REGIONS : null) : null; } });
+    cond: function(){ return P.penHNA ? L('Penetrating wound to the torso, head or neck: ','פציעה חודרת בבית החזה, בבטן, בגב, בראש או בצוואר: ') + penRegions(typeof _ABX_REGIONS !== 'undefined' ? _ABX_REGIONS : null) : null; } });
 
   // ── OTHER (ch. 4, 11, 3) ──
   D.push({ id:'mid', g:'other', en:L('Midazolam','מידזולם'), sub:L('Seizure','פרכוס'), eng:'דורמיקום', match:/דורמיקום|midazolam|מידזולם/i, route:'IV',
@@ -242,7 +254,8 @@ function drugs(P){
   var indK = P.child ? r0((P.deep ? 1.25 : 2.5) * kg) : r0((P.deep ? 1.75 : 3.5) * kg), indM = P.child ? Math.min(5, r1((P.deep ? 0.0375 : 0.075) * kg)) : (P.deep ? 2.5 : 5);
   D.push({ id:'ind', g:'other', en:L('Intubation induction','אינדוקציה לאינטובציה'), sub:L('Senior medic only, with two assistants','מטפל בכיר בלבד, עם שני מסייעים'), route:'IV', info:true,
     chg: function(){ return P.deep ? L('Half dose · ','חצי מנה · ') + shockW(P) + L(' · book ch. 4',' · ספר פרק 4') : null; },
-    dose: function(){ return { v: indK, u:'mg', txt: L('Ketamine ' + indK + ' mg + midazolam ' + fmt(indM) + ' mg','קטמין ' + indK + ' מ״ג + מידזולם ' + fmt(indM) + ' מ״ג') }; },
+    dose: function(){ return { v: indK, u:'mg', txt: L('Ketamine ' + indK + ' mg + midazolam ' + fmt(indM) + ' mg','קטמין ' + indK + ' מ״ג + מידזולם ' + fmt(indM) + ' מ״ג'),
+      parts: [{ n: L('Ketamine','קטמין'), mg: indK, conc: 50, how: L('as supplied, 50 mg/cc','כפי שמגיע, 50 מ״ג/סמ״ק') }, { n: L('Midazolam','מידזולם'), mg: indM, conc: 0.5, how: L('book mix 0.5 mg/cc (ch. 17)','תערובת הספר 0.5 מ״ג/סמ״ק (פרק 17)') }] }; },
     rule: (P.child ? L('Ketamine 2 to 3 mg/kg, midazolam 0.05 to 0.1 mg/kg (max 5 mg)','קטמין 2 עד 3 מ״ג/ק״ג, מידזולם 0.05 עד 0.1 מ״ג/ק״ג (עד 5 מ״ג)') : L('Ketamine 3 to 4 mg/kg, midazolam 5 mg','קטמין 3 עד 4 מ״ג/ק״ג, מידזולם 5 מ״ג')) + (P.deep ? L(' · HALVED: suspected deep shock',' · חצי: חשד להלם עמוק') : ''),
     prep: P.child ? L('Maintenance: the book gives no child dose. A doctor decides.','אחזקה: אין מינון לילדים בספר. רופא מחליט.') : L('Onset 1 to 2 min. Maintenance every 15 min: ketamine 25 to 50 mg + midazolam 1 to 1.5 mg. No paralytics in the field.','השפעה תוך 1 עד 2 דק׳. אחזקה כל 15 דק׳: קטמין 25 עד 50 מ״ג + מידזולם 1 עד 1.5 מ״ג. ללא משתקי שרירים בשטח.') });
   D.push({ id:'adr', g:'other', en:L('Adrenaline','אדרנלין'), sub:L('Severe reaction to a blood product','תגובה קשה למוצר דם'), eng:'אדרנלין', match:/אדרנלין|adrenaline|epinephrine/i, route:'IM',
@@ -262,17 +275,20 @@ function drugs(P){
 
 // Status of one drug for this casualty: given list, totals, time to next dose, blocked reason, due reason
 function status(P, d){
-  var g = d.info ? [] : givenOf(P, d), last = g.length ? g[g.length - 1] : null, dz = d.dose(P);
+  var g = d.info ? [] : givenOf(P, d), last = g.length ? g[g.length - 1] : null, dz = d.dose(P), pc = prepOf(P, d).conc;
+  if (pc && dz.u === 'mg' && !dz.parts){ var vo = volOf(dz.v, pc); if (vo.mg !== dz.v) dz = { v: vo.mg, u: 'mg', orig: dz.v }; }
   var s = { g:g, last:last, dose:dz, wait:0, block:null, due:null };
   var ci = contra(P, d); if (ci){ s.block = ci; s.kind = 'contra'; }
-  if (!s.block && d.stop){ s.block = d.stop(); if (s.block) s.kind = /^(blood|hart)$/.test(d.id) ? 'notind' : (!P.iv && /^(ket|mor)$/.test(d.id) ? 'access' : 'contra'); }
+  if (!s.block && d.stop){ s.block = d.stop(); if (s.block) s.kind = /^(blood|hart)$/.test(d.id) ? 'notind' : 'contra'; }
   s.chg = d.chg ? d.chg() : null;
-  if (d.route === 'IV' && !P.iv && !d.info){ s.noAccess = true; if (!s.block){ s.kind = 'access'; s.wouldDue = d.why ? d.why() : null; s.block = L('Needs IV or IO first.','צריך קודם וריד או IO.') + (d.id === 'cef' && !P.child ? L(' Without access: IM, see How to give.',' בלי גישה: לשריר, ראו איך לתת.') : ''); } }
+  if (d.route === 'IV' && !P.iv && !d.info){ s.noAccess = true; if (!s.block){ s.kind = 'access'; s.wouldDue = d.why ? d.why() : (d.cond ? d.cond() : null); s.block = L('Needs IV or IO first.','צריך קודם וריד או IO.') + (d.id === 'cef' && !P.child ? L(' Without access: IM, see How to give.',' בלי גישה: לשריר, ראו איך לתת.') : d.id === 'ket' && !P.child ? L(' Without access: fentanyl lozenge.',' בלי גישה: סוכריית פנטניל.') : ''); if (d.id === 'cef' && !P.child) s.imOk = true; } }
+  if (!s.block && d.id === 'ket' && P.child){ var vk = volOf(dz.v, 50); if (vk.vol < 0.1){ s.block = L('Not measurable as supplied (' + fmt(vk.vol) + ' cc of 50 mg/cc) · consult a physician','לא ניתן למדידה כפי שמגיע (' + fmt(vk.vol) + ' סמ״ק של 50 מ״ג/סמ״ק) · להתייעץ עם רופא'); s.kind = 'measure'; } }
   if (!s.block && d.maxN && g.length >= d.maxN) s.kind = 'done';
   if (!s.block && d.maxN && g.length >= d.maxN) s.block = d.maxN === 1 ? L('Already given at ' + hm(last.time) + '. One dose only.','כבר ניתן ב-' + hm(last.time) + '. מנה אחת בלבד.') : L('Maximum ' + d.maxN + ' doses reached.','הגיע למקסימום ' + d.maxN + ' מנות.');
   if (d.max24){ var tot = g.filter(function(m){ return minsSince(m.time) < 1440; }).reduce(function(a, m){ return a + amountOf(m); }, 0); s.tot24 = tot; if (!s.block && tot + dz.v > d.max24) s.block = L('Would pass the 24-hour maximum (' + d.max24 + ' mg).','יעבור את המקסימום היומי (' + d.max24 + ' מ״ג).'); }
   if (last && d.every){ var left = d.every * 60 - minsSince(last.time) * 60; if (left > 0) s.wait = left; }
   if (!s.block && d.why) s.due = d.why();
+  if (!s.block && !s.due && d.cond) s.cond = d.cond();
   if (s.due && s.wait > 0) s.due = null;
   if (s.due && d.fluid && g.length && minsSince(last.time) < 10) s.due = null;   // a unit just went in: re-check before the next
   return s;
@@ -310,28 +326,36 @@ function prepOf(P, d){
       amp: L('1 g vial (powder)','בקבוקון 1 גרם (אבקה)'), ref: L('Book ch. 16, ceftriaxone','ספר, פרק 16, צפטריאקסון'),
       alt: P.child ? null : L('No IV: 1 g IM × 2, each in 3.5 cc water for injection or lidocaine 1%. Not in shock.','אין וריד: 1 גרם לשריר × 2, כל אחד ב-3.5 סמ״ק מים להזרקה או לידוקאין 1%. לא בהלם.') };
     case 'ket': return { kind:'none', conc:50, amp: L('Ampoule 500 mg / 10 cc (50 mg/cc)','אמפולה 500 מ״ג / 10 סמ״ק (50 מ״ג/סמ״ק)'),
-      ref: L('Book ch. 15: ketamine is not diluted. Flush with saline.','ספר, פרק 15: קטמין לא נמהל. שטיפה בסליין.'),
-      tiny: P.child ? (function(){ var a = r1(0.5 * P.wt), b = r1(1 * P.wt); return L('Too small to measure as supplied · consult a physician · or IM 0.5–1 mg/kg (MDA): ' + fmt(a) + '–' + fmt(b) + ' mg = ' + fmt(r2(a / 50)) + '–' + fmt(r2(b / 50)) + ' cc at 50 mg/cc', 'קטן מדי למדידה כפי שמגיע · להתייעץ עם רופא · או לשריר 0.5–1 מ״ג/ק״ג (מד״א): ' + fmt(a) + '–' + fmt(b) + ' מ״ג = ' + fmt(r2(a / 50)) + '–' + fmt(r2(b / 50)) + ' סמ״ק בריכוז 50 מ״ג/סמ״ק'); })() : null,
-      mda: P.child ? L('Not the IDF book. IV 0.2 mg/kg with other drugs, 0.3–0.5 mg/kg for pain · IM 0.5–1 mg/kg · may repeat once after 10 min · not if systolic over 180. No dilution given.','לא ספר צה״ל. לווריד 0.2 מ״ג/ק״ג בשילוב, 0.3–0.5 מ״ג/ק״ג לכאב · לשריר 0.5–1 מ״ג/ק״ג · אפשר לחזור פעם אחת אחרי 10 דק׳ · לא בסיסטולי מעל 180. ללא מהילה.') : null };
+      ref: L('Book ch. 15: ketamine is not diluted. Flush with saline.','ספר, פרק 15: קטמין לא נמהל. שטיפה בסליין.'), give: L('Push, then flush with 10 cc saline','לדחוף ואז לשטוף ב-10 סמ״ק סליין'),
+      tiny: P.child ? L('Too small to measure as supplied · consult a physician. The book: no IM ketamine for pain in children (ch. 18).','קטן מדי למדידה כפי שמגיע · להתייעץ עם רופא. הספר: ללא קטמין לשריר לכאב בילדים (פרק 18).') : null,
+      mda: P.child ? L('Reference only, not the IDF book. IV 0.2 mg/kg with other drugs, 0.3–0.5 mg/kg for pain · may repeat once after 10 min · not if systolic over 180. No dilution given.','לעיון בלבד, לא ספר צה״ל. לווריד 0.2 מ״ג/ק״ג בשילוב, 0.3–0.5 מ״ג/ק״ג לכאב · אפשר לחזור פעם אחת אחרי 10 דק׳ · לא בסיסטולי מעל 180. ללא מהילה.') : null };
     case 'ind': return { kind:'none', conc:50, amp: L('Ketamine ampoule 500 mg / 10 cc (50 mg/cc)','אמפולת קטמין 500 מ״ג / 10 סמ״ק (50 מ״ג/סמ״ק)'),
-      ref: L('Book ch. 4, induction','ספר, פרק 4, אינדוקציה'),
+      ref: L('Book ch. 4, induction','ספר, פרק 4, אינדוקציה'), give: L('Push','לדחוף'),
       extra: [ { name: L('Ketamine maintenance syringe','מזרק אחזקה קטמין'), dname: L('ketamine 50 mg/cc','קטמין 50 מ״ג/סמ״ק'), drugCc:5, drugMg:250, dil:'saline', dilCc:5, total:10, conc:25 },
                { name: L('Midazolam maintenance syringe','מזרק אחזקה מידזולם'), dname: L('midazolam 5 mg/cc','מידזולם 5 מ״ג/סמ״ק'), drugCc:1, drugMg:5, dil:'saline', dilCc:9, total:10, conc:0.5 } ],
       extraRef: L('Book ch. 17, prepared sedation syringes','ספר, פרק 17, מזרקי הרדמה מוכנים') };
     case 'txa': return { kind:'none', conc:100, amp: L('Hexakapron ampoule 500 mg / 5 cc = 100 mg/cc · confirm the label','אמפולת הקסקפרון 500 מ״ג / 5 סמ״ק = 100 מ״ג/סמ״ק · לאשר מול התווית'),
-      ref: L('Book ch. 3: never with blood in the same line: flush 10 cc saline between.','ספר, פרק 3: לא עם דם באותו קו: שטיפה 10 סמ״ק סליין ביניהם.') };
-    case 'adr': return { kind:'none', conc:1, amp: L('Adrenaline ampoule 1 mg / 1 cc (1:1000) · IM only, never IV undiluted · confirm the label','אמפולת אדרנלין 1 מ״ג / 1 סמ״ק (1:1000) · לשריר בלבד, לעולם לא לווריד לא מהול · לאשר מול התווית'), ref: L('Book ch. 3, transfusion reaction','ספר, פרק 3, תגובה לעירוי') };
+      ref: L('Book ch. 3: never with blood in the same line: flush 10 cc saline between.','ספר, פרק 3: לא עם דם באותו קו: שטיפה 10 סמ״ק סליין ביניהם.'), give: L('Push slowly; flush 10 cc saline if blood shares the line','לדחוף לאט; שטיפה 10 סמ״ק סליין אם דם באותו קו') };
+    case 'adr': return { kind:'none', conc:1, amp: L('Adrenaline ampoule 1 mg / 1 cc (1:1000) · IM only, never IV undiluted · confirm the label','אמפולת אדרנלין 1 מ״ג / 1 סמ״ק (1:1000) · לשריר בלבד, לעולם לא לווריד לא מהול · לאשר מול התווית'), ref: L('Book ch. 3, transfusion reaction','ספר, פרק 3, תגובה לעירוי'), give: L('Inject into a muscle (IM). Never IV.','להזריק לשריר (IM). לעולם לא לווריד.') };
     case 'met': return dz.v >= 500 ? { kind:'bag', vol:100, ref: L('Book ch. 16: comes ready in a bottle','ספר, פרק 16: מגיע מוכן בבקבוקון') }
-      : { kind:'none', conc:5, amp: L('Ready bottle 500 mg / 100 cc (5 mg/cc)','בקבוקון מוכן 500 מ״ג / 100 סמ״ק (5 מ״ג/סמ״ק)'), ref: L('Book ch. 16: comes ready in a bottle','ספר, פרק 16: מגיע מוכן בבקבוקון'), from: L('from the bottle','מהבקבוקון') };
-    case 'sol': return { kind:'none', conc:null, amp: L('Make up as the vial label says','להכין לפי תווית הבקבוקון'), ref: L('Book ch. 3, transfusion reaction','ספר, פרק 3, תגובה לעירוי') };
+      : { kind:'none', conc:5, amp: L('Ready bottle 500 mg / 100 cc (5 mg/cc)','בקבוקון מוכן 500 מ״ג / 100 סמ״ק (5 מ״ג/סמ״ק)'), ref: L('Book ch. 16: comes ready in a bottle','ספר, פרק 16: מגיע מוכן בבקבוקון'), from: L('from the bottle','מהבקבוקון'), give: L('Run as a slow drip','בטפטוף איטי') };
+    case 'sol': return { kind:'none', conc:null, msg: L('Powder vial · make up as the vial label says (not in the book)','בקבוקון אבקה · להכין לפי התווית (לא בספר)'), amp: '', ref: L('Book ch. 3, transfusion reaction','ספר, פרק 3, תגובה לעירוי') };
     default: return { kind:'na' };
   }
 }
 
 var SIZES = [1, 3, 5, 10, 20];
 function sizeFor(v){ return SIZES.concat([50]).filter(function(z){ return z >= v - 1e-9; })[0] || 0; }
-// Volume rounded to the syringe's marks: 0.01 cc in a 1 cc syringe, 0.1 cc up to 5 cc, 0.5 cc above
-function volR(v){ var z = sizeFor(v); return z === 1 ? r2(v) : z && z <= 5 ? r1(v) : Math.round(v * 2) / 2; }
+// Volume rounded to the syringe's marks: 0.01 cc in a 1 cc syringe, 0.1 cc up to 10 cc, 0.5 cc above
+function volR(v){ var z = sizeFor(v); return z === 1 ? r2(v) : z && z <= 10 ? r1(v) : Math.round(v * 2) / 2; }
+// Volume for a dose at a concentration: syringe-mark rounding only if it keeps the dose within 2%; otherwise 0.01 cc,
+// and if even that is off by more than 2% the dose shown is the dose that volume delivers.
+function volOf(mg, conc){
+  var v = mg / conc, r = volR(v);
+  if (mg && Math.abs(r * conc - mg) / mg > 0.02) r = r2(v);
+  var got = r2(r * conc);
+  return { vol: r, mg: mg && Math.abs(got - mg) / mg > 0.02 ? got : mg };
+}
 var SYRN = 0;
 // One syringe of a chosen size. layers: [{cc, k:'drug'|'dil'|'mix'}] from the tip outward. mark: {cc, label} pointer on the scale.
 function drawSyr(size, layers, mark){
@@ -361,10 +385,14 @@ function drawSyr(size, layers, mark){
 }
 function swatch(k){ return '<i class="dz-sw ' + k + '" aria-hidden="true"></i>'; }
 // A syringe figure for a volume, honouring the chosen size: too big → say so and offer the right size
-function syrFig(vol, layers, mark, legend, caption){
+function syrFig(vol, layers, mark, legend, caption, mix){
   var size = S.syr, best = sizeFor(vol), h = '<figure class="dz-syr" dir="ltr" role="img" aria-label="' + esc(caption) + '">';
+  if (vol > size + 1e-9 && mix === true){
+    return '<div class="dz-fit no">' + ico('triangle-alert', 24) + '<span><b>' + L('Too small for the mix', 'קטן מדי לתערובת') + '</b>' + L('The mix is ' + ccT(vol) + ': it needs one ' + best + ' cc syringe', 'התערובת ' + ccT(vol) + ': צריך מזרק אחד של ' + best + ' סמ״ק') + '</span>'
+      + '<button class="xbtn xbtn-primary" onclick="Field.doseSyr(' + best + ')">' + ico('syringe', 24) + '<span>' + L('Use ' + best + ' cc','מזרק ' + best) + '</span></button></div>';
+  }
   if (vol > size + 1e-9){
-    return '<div class="dz-fit no">' + ico('triangle-alert', 24) + '<span><b>' + L('Too big for ' + size + ' cc', 'גדול מדי למזרק ' + size + ' סמ״ק') + '</b>' + (best ? L('Needs ' + ccT(vol) + ': use ' + best + ' cc, or ' + Math.ceil(vol / size) + ' × ' + size + ' cc', 'צריך ' + ccT(vol) + ': מזרק ' + best + ' סמ״ק, או ' + Math.ceil(vol / size) + ' × ' + size + ' סמ״ק') : L('Needs ' + ccT(vol) + ': use several syringes', 'צריך ' + ccT(vol) + ': כמה מזרקים')) + '</span>'
+    return '<div class="dz-fit no">' + ico('triangle-alert', 24) + '<span><b>' + L('Too big for ' + size + ' cc', 'גדול מדי למזרק ' + size + ' סמ״ק') + '</b>' + (best ? L('Needs ' + ccT(vol) + ': use one ' + best + ' cc syringe' + (mix === 'multi' ? ', or ' + Math.ceil(vol / size) + ' × ' + size + ' cc' : ''), 'צריך ' + ccT(vol) + ': מזרק אחד של ' + best + ' סמ״ק' + (mix === 'multi' ? ', או ' + Math.ceil(vol / size) + ' × ' + size + ' סמ״ק' : '')) : L('Needs ' + ccT(vol) + ': use several syringes', 'צריך ' + ccT(vol) + ': כמה מזרקים')) + '</span>'
       + (best && SIZES.indexOf(best) >= 0 ? '<button class="xbtn xbtn-primary" onclick="Field.doseSyr(' + best + ')">' + ico('syringe', 24) + '<span>' + L('Use ' + best + ' cc','מזרק ' + best) + '</span></button>' : '') + '</div>';
   }
   h += drawSyr(size, layers, mark);
@@ -382,7 +410,7 @@ function mixLine(m, name){ return (m.drugCc != null ? ccT(m.drugCc) + ' ' + name
 // The whole "how to prepare" block for a card (and a short version for the read-back)
 function prepHtml(P, d, dz, short){
   var pr = prepOf(P, d); if (pr.kind === 'na' || dz.u !== 'mg' && pr.kind !== 'bag') return '';
-  var name = d.en, vol = pr.conc ? volR(dz.v / pr.conc) : null, h = '<section class="dz-prep">';
+  var name = d.en, vol = pr.conc ? volOf(dz.parts ? dz.parts[0].mg : dz.v, pr.conc).vol : null, h = '<section class="dz-prep">';
   h += '<h4>' + ico('layers', 22) + '<span>' + L('Prepare','הכנה') + '</span></h4>';
   if (pr.kind === 'bag') return h + '<p class="dz-bag">' + ico('droplet', 26) + '<span><b>' + L('Ready-made bottle','בקבוקון מוכן') + ' · ' + cc(pr.vol) + '</b>' + L('Run as a slow drip. No syringe, no dilution.','בטפטוף איטי. בלי מזרק ובלי מהילה.') + '</span></p><p class="dz-ref">' + pr.ref + '</p></section>';
   if (!short) h += sizePicker();
@@ -395,7 +423,7 @@ function prepHtml(P, d, dz, short){
     if (!short){
       var dc = pr.drugCc != null ? pr.drugCc : 1, layers = [{ cc: dc, k:'drug' }, { cc: pr.total - dc, k:'dil' }];
       var legend = '<span>' + swatch('drug') + name + ' ' + (pr.drugCc != null ? ccT(pr.drugCc) : '') + '</span><span>' + swatch('dil') + dilWord(pr.dil) + ' ' + (pr.dilCc != null ? ccT(pr.dilCc) : L('to ' + ccT(pr.total), 'עד ' + ccT(pr.total))) + '</span><span class="dz-leg-t">' + L('Total ','סה״כ ') + ccT(pr.total) + '</span>';
-      h += '<p class="dz-fig-t">' + L('1 · Make the mix','1 · הכנת התערובת') + '</p>' + syrFig(pr.total, layers, { cc: pr.total, label: ccT(pr.total) }, legend, L(name + ' ' + (pr.drugCc || '') + ' cc plus ' + dilWord(pr.dil), name + ' ועוד ' + dilWord(pr.dil)));
+      h += '<p class="dz-fig-t">' + L('1 · Make the mix','1 · הכנת התערובת') + '</p>' + syrFig(pr.total, layers, { cc: pr.total, label: ccT(pr.total) }, legend, L(name + ' ' + (pr.drugCc || '') + ' cc plus ' + dilWord(pr.dil), name + ' ועוד ' + dilWord(pr.dil)), true);
       h += '<p class="dz-fig-t">' + L('2 · Push','2 · מתן') + '</p>' + syrFig(vol, [{ cc: vol, k:'mix' }], { cc: vol, label: L('Push ','') + ccT(vol) }, '<span>' + swatch('mix') + L('Mix ','תערובת ') + fmt(pr.conc) + L(' mg/cc',' מ״ג/סמ״ק') + '</span><span class="dz-leg-t">' + L('Push ','לדחוף ') + ccT(vol) + '</span>', L('Push ' + vol + ' cc of the mix', 'לדחוף ' + vol + ' סמ״ק מהתערובת'));
     }
   } else if (pr.kind === 'vial'){
@@ -403,12 +431,12 @@ function prepHtml(P, d, dz, short){
       L('Mix until clear: ','לערבב עד שקוף: ') + fmt(pr.conc) + L(' mg/cc',' מ״ג/סמ״ק') + ' (' + pct(pr.conc) + ')',
       L('Draw ' + ccT(vol), 'לשאוב ' + ccT(vol)),
       L('Push ' + ccT(vol) + ' ', 'לדחוף ' + ccT(vol) + ' ') + pr.over]);
-    if (!short) h += syrFig(vol, [{ cc: vol, k:'mix' }], { cc: vol, label: ccT(vol) }, '<span>' + swatch('mix') + L('Made-up vial ','בקבוקון מוכן ') + fmt(pr.conc) + L(' mg/cc',' מ״ג/סמ״ק') + '</span>', L('Draw ' + vol + ' cc', 'לשאוב ' + vol + ' סמ״ק'));
+    if (!short) h += syrFig(vol, [{ cc: vol, k:'mix' }], { cc: vol, label: ccT(vol) }, '<span>' + swatch('mix') + L('Made-up vial ','בקבוקון מוכן ') + fmt(pr.conc) + L(' mg/cc',' מ״ג/סמ״ק') + '</span>', L('Draw ' + vol + ' cc', 'לשאוב ' + vol + ' סמ״ק'), 'multi');
     if (pr.alt) h += '<p class="dz-conc">' + ico('info', 22) + '<span>' + pr.alt + '</span></p>';
   } else {
-    h += '<p class="dz-nodil">' + ico('circle-help', 22) + '<span><b>' + L('No dilution in the book · give as supplied','אין מהילה בספר · לתת כפי שמגיע') + '</b>' + pr.amp + '</span></p>';
+    h += '<p class="dz-nodil">' + ico('circle-help', 22) + '<span><b>' + (pr.msg || L('No dilution in the book · give as supplied','אין מהילה בספר · לתת כפי שמגיע')) + '</b>' + pr.amp + '</span></p>';
     if (vol){
-      h += steps([L('Draw ' + ccT(vol) + ' ', 'לשאוב ' + ccT(vol) + ' ') + (pr.from || L('as supplied','כפי שמגיע')), L('Push, then flush with saline','לדחוף ואז לשטוף בסליין')]);
+      h += steps([L('Draw ' + ccT(vol) + ' ', 'לשאוב ' + ccT(vol) + ' ') + (pr.from || L('as supplied','כפי שמגיע')), pr.give || L('Push','לדחוף')]);
       if (!short) h += syrFig(vol, [{ cc: vol, k:'drug' }], { cc: vol, label: ccT(vol) }, '<span>' + swatch('drug') + name + ' ' + fmt(pr.conc) + L(' mg/cc',' מ״ג/סמ״ק') + '</span>', L('Draw ' + vol + ' cc', 'לשאוב ' + vol + ' סמ״ק'));
       if (pr.tiny && vol < 0.1) h += '<p class="dz-tiny">' + ico('triangle-alert', 22) + '<span>' + pr.tiny + '</span></p>';
       if (pr.mda) h += '<p class="dz-mda">' + ico('file-text', 22) + '<span><b>' + L('MDA ALS 2024','מד״א ALS 2024') + '</b>' + pr.mda + '</span></p>';
@@ -440,6 +468,7 @@ function band(P, d, s){
   if (s.block) return '<div class="dz-band no">' + ico('octagon', 24) + '<div><strong>' + L('Not now','לא עכשיו') + '</strong><span>' + s.block + '</span></div></div>';
   if (s.wait > 0) return '<div class="dz-band wait" data-due="' + Math.round(Date.now() + s.wait * 1000) + '">' + ico('timer', 24) + '<div><strong>' + L('Next dose in ','מנה הבאה בעוד ') + '<b dir="ltr">' + mmss(s.wait) + '</b></strong><span>' + L('Last given at ','ניתן לאחרונה ב-') + hm(s.last.time) + '</span></div></div>';
   if (s.due) return '<div class="dz-band due">' + ico('check', 24) + '<div><strong>' + L('Give now','לתת עכשיו') + '</strong><span>' + s.due + '</span></div></div>';
+  if (s.cond) return '<div class="dz-band ok">' + ico('clock', 24) + '<div><strong>' + L('If evacuation will take over 1 hour','אם הפינוי יימשך מעל שעה') + '</strong><span>' + s.cond + L(' · book ch. 16',' · ספר פרק 16') + '</span></div></div>';
   if (d.fluid && s.last && minsSince(s.last.time) < 10) return '<div class="dz-band wait">' + ico('heart-pulse', 24) + '<div><strong>' + L('Re-check first','בדיקה חוזרת קודם') + '</strong><span>' + L('A unit went in at ','מנה ניתנה ב-') + hm(s.last.time) + L(': blood pressure before the next.',': לחץ דם לפני הבאה.') + '</span></div></div>';
   if (d.info) return '<div class="dz-band ref">' + ico('file-text', 24) + '<div><strong>' + L('Reference','לעיון') + '</strong><span>' + L('Record each drug in the form','כל תרופה נרשמת בטופס') + '</span></div></div>';
   return '<div class="dz-band ok">' + ico('circle', 24) + '<div><strong>' + L('If needed','לפי הצורך') + '</strong><span>' + d.sub + '</span></div></div>';
@@ -451,7 +480,7 @@ function band(P, d, s){
    Side effects: [en, he, what-to-do en, what-to-do he], most important first. */
 function recentOther(P, re, mins){ return P.meds.some(function(m){ return re.test(String(m.drug || '')) && minsSince(m.time) < mins; }); }
 function safety(P, d, s){
-  var kg = P.wt, opioidRecent = recentOther(P, /מורפין|פנטניל|morphine|fentanyl/i, 30), benzoRecent = recentOther(P, /דורמיקום|midazolam|מידזולם/i, 30);
+  var kg = P.wt, opioidRecent = recentOther(P, /מורפין|פנטניל|morphine|fentanyl|Actiq|OTFC|אקטיק/i, 30), benzoRecent = recentOther(P, /דורמיקום|midazolam|מידזולם/i, 30);
   var waitItem = s.wait > 0 ? [[L('Repeat timer still running: next dose in ' + mmss(s.wait), 'טיימר חזרה עדיין רץ: מנה הבאה בעוד ' + mmss(s.wait)), true]] : [];
   var ALLERGY = function(n){ return [L('Known allergy to ' + n, 'רגישות ידועה ל' + n), false]; };
   var NOKID = [L('Child: the book gives no child dose', 'ילד: אין מינון לילדים בספר'), P.child];
@@ -481,19 +510,18 @@ function safety(P, d, s){
       side:[['Too much fluid: thinner blood, more bleeding', '', L('One bolus, then re-check.', 'בולוס אחד ואז בדיקה חוזרת.')],
             ['Cold casualty', '', L('Keep warm.', 'לחמם.')]] },
     ket: { no:[ALLERGY(L('ketamine','קטמין')), [L('Systolic over 180 (MDA ALS 2024)', 'סיסטולי מעל 180 (מד״א ALS 2024)'), false]],
-      when:[[L('No IV access: use a fentanyl lozenge', 'אין גישה ורידית: סוכריית פנטניל'), !P.iv]].concat(waitItem),
+      when:[[L('No IV or IO access: fentanyl lozenge (adults)', 'אין גישה ורידית או גרמית: סוכריית פנטניל (מבוגרים)'), !P.iv]].concat(waitItem),
       caution:[[L('Watch breathing and consciousness', 'מעקב נשימה והכרה'), false],
-               [L('Suspected deep shock: give with care', 'חשד להלם עמוק: בזהירות'), P.deep],
-               [L('Child: dilute to 5 mg/mL first', 'ילד: למהול ל-5 מ״ג/מ״ל קודם'), P.child]],
+               [L('Suspected deep shock: give with care', 'חשד להלם עמוק: בזהירות'), P.deep]],
       side:[['Agitation, hallucinations on waking', '', L('Calm voice, reassure. Midazolam per protocol if severe.', 'קול רגוע והרגעה. מידזולם לפי הפרוטוקול אם קשה.')],
             ['More saliva', '', L('Suction. Atropine 0.5 mg IV if needed.', 'שאיבה. אטרופין 0.5 מ״ג לווריד אם נדרש.')],
             ['Higher heart rate and BP', '', L('Expected. Monitor.', 'צפוי. מעקב.')],
             ['Flickering eyes', '', L('Expected, harmless.', 'צפוי, לא מזיק.')]] },
     mor: { no:[ALLERGY(L('morphine','מורפין')), [L('Slow breathing or reduced consciousness', 'נשימה איטית או הכרה ירודה'), false]],
-      when:[[L('No IV access recorded', 'לא נרשמה גישה ורידית'), !P.iv],
+      when:[[L('No IV or IO access recorded', 'לא נרשמה גישה ורידית או גרמית'), !P.iv],
             [L('Midazolam in the last 30 min: breathing risk', 'מידזולם ב-30 הדק׳ האחרונות: סכנה לנשימה'), benzoRecent],
             [L('Less than 5 min after ketamine', 'פחות מ-5 דק׳ אחרי קטמין'), recentOther(P, /קטמין|ketamine/i, 5)]].concat(waitItem),
-      caution:[[(P.child ? L('Low blood pressure for age: reduced dose', 'לחץ דם נמוך לגיל: מינון מופחת') : L('Shock: reduced dose', 'הלם: מינון מופחת')), P.profound],
+      caution:[[(P.child ? L('Low blood pressure for age: reduced dose', 'לחץ דם נמוך לגיל: מינון מופחת') : L('Suspected shock: reduced dose', 'חשד להלם: מינון מופחת')), P.profound],
                [L('Ketamine first; morphine only if no relief after 5 min', 'קודם קטמין; מורפין רק אם אין הקלה אחרי 5 דק׳'), false]],
       side:[BREATH,
             ['Low blood pressure', '', L('Re-check BP. No more doses.', 'מדידת לחץ דם. לא מנות נוספות.')],
@@ -599,11 +627,12 @@ Field.doseSafety = function(id){ S.sf = id; safetySheet(id); };
 Field.doseSafetyClose = function(){ S.sf = null; var r = document.getElementById('dz-sf'); if (r) r.remove(); };
 
 function card(P, d, s, hero){
-  var dz = s.dose, pr = prepOf(P, d), vol = pr.conc && dz.u === 'mg' ? volR(dz.v / pr.conc) : null, blocked = !!s.block, p = parts(dz);
+  var dz = s.dose, pr = prepOf(P, d), vol = pr.conc && dz.u === 'mg' && !dz.parts ? volOf(dz.v, pr.conc).vol : null, blocked = !!s.block, p = parts(dz);
   var h = '<article class="dz-c' + (blocked ? ' stop' : s.wait > 0 ? ' wait' : s.due ? ' due' : '') + (hero ? ' hero' : '') + '" data-id="' + d.id + '">';
   h += band(P, d, s);
-  h += '<div class="dz-body"><div class="dz-h"><div><b>' + d.en + '</b>' + (d.info ? '<small>' + d.sub + '</small>' : '') + '</div><span class="dz-route">' + esc(routeWord(d.route)) + '</span></div>';
-  h += '<div class="dz-dose">' + (dz.txt ? '<strong class="dz-txt">' + esc(dz.txt) + '</strong>' : qty(p.n, p.u, 'dz-big')) + (vol ? '<span class="dz-vol"><i>=</i>' + cc(vol) + '</span>' : '') + '</div>';
+  h += '<div class="dz-body"><div class="dz-h"><div><b>' + d.en + '</b>' + (d.info ? '<small>' + d.sub + '</small>' : '') + '</div><span class="dz-route">' + esc(routeWord(accessRoute(P, d))) + '</span></div>';
+  if (dz.parts) h += '<div class="dz-parts">' + dz.parts.map(function(q){ var vq = volOf(q.mg, q.conc); return '<p><b>' + q.n + '</b>' + qty(fmt(q.mg), 'mg', 'dz-pq') + '<span class="dz-vol"><i>=</i>' + cc(vq.vol) + '</span><small>' + q.how + '</small></p>'; }).join('') + '</div>';
+  else h += '<div class="dz-dose">' + (dz.txt ? '<strong class="dz-txt">' + esc(dz.txt) + '</strong>' : qty(p.n, p.u, 'dz-big')) + (vol ? '<span class="dz-vol"><i>=</i>' + cc(vol) + '</span>' : '') + '</div>';
   if (s.chg && !blocked) h += '<p class="dz-chg">' + ico('gauge', 22) + '<span><b>' + L('Changed dose','מינון משתנה') + '</b>' + s.chg + '</span></p>';
   h += '<p class="dz-rule">' + d.rule + (P.child && !d.info ? ' · ' + kgW(P.wt) + (P.est ? L(' (estimated)',' (משוער)') : '') : '') + '</p>';
   if (!blocked) h += prepHtml(P, d, dz);
@@ -691,12 +720,12 @@ function draw(){
 // ── Read-back: the five rights, out loud, before anything is recorded ──
 function readback(id){
   var P = patient(), d = drugs(P).filter(function(x){ return x.id === id; })[0]; if (!d){ S.rb = null; return; }
-  var s = status(P, d), dz = s.dose, p = parts(dz), pr = prepOf(P, d), vol = pr.conc && dz.u === 'mg' ? volR(dz.v / pr.conc) : null;
+  var s = status(P, d), dz = s.dose, p = parts(dz), pr = prepOf(P, d), vol = pr.conc && dz.u === 'mg' && !dz.parts ? volOf(dz.v, pr.conc).vol : null;
   var old = document.getElementById('dz-rb'); if (old) old.remove();
   var warn = [];
   if (s.wait > 0) warn.push(L('Last dose ' + Math.round(minsSince(s.last.time)) + ' min ago. The next dose is due in ' + mmss(s.wait) + '.','מנה אחרונה לפני ' + Math.round(minsSince(s.last.time)) + ' דק׳. המנה הבאה בעוד ' + mmss(s.wait) + '.'));
   if (P.est) warn.push(L('Weight is estimated (' + kgW(P.wt) + '). Confirm it before a weight-based dose.','המשקל משוער (' + kgW(P.wt) + '). אמתו לפני מנה לפי משקל.'));
-  if (/^(mor|mid|fen)$/.test(id) && P.meds.some(function(m){ return /מורפין|פנטניל|דורמיקום|morphine|fentanyl|midazolam/i.test(m.drug || '') && minsSince(m.time) < 30 && !d.match.test(m.drug || ''); })) warn.push(L('Another drug that slows breathing was given in the last 30 min: watch breathing.','תרופה נוספת שמאטה נשימה ניתנה ב-30 הדק׳ האחרונות: מעקב נשימה.'));
+  if (/^(mor|mid|fen)$/.test(id) && P.meds.some(function(m){ return /מורפין|פנטניל|דורמיקום|morphine|fentanyl|midazolam|Actiq|OTFC|אקטיק/i.test(m.drug || '') && minsSince(m.time) < 30 && !(d.mine ? d.mine(m) : d.match.test(m.drug || '')); })) warn.push(L('Another drug that slows breathing was given in the last 30 min: watch breathing.','תרופה נוספת שמאטה נשימה ניתנה ב-30 הדק׳ האחרונות: מעקב נשימה.'));
   if (id === 'txa' && P.fluids.some(function(f){ return /דם|blood|FDP|פלסמה/i.test(f.type || '') && minsSince(f.time) < 15; })) warn.push(L('Blood is running: use another line, or flush 10 mL saline first.','דם בעירוי: קו אחר, או שטיפה ב-10 מ״ל סליין קודם.'));
   var row = function(k, v){ return '<div><dt>' + ico('check', 22) + '<span>' + k + '</span></dt><dd>' + v + '</dd></div>'; };
   var el = document.createElement('div'); el.id = 'dz-rb'; el.className = 'dz-rb-wrap';
@@ -707,8 +736,8 @@ function readback(id){
     + row(L('Drug','תרופה'), '<b>' + d.en + '</b>')
     + row(L('Dose','מינון'), qty(p.n, p.u, 'dz-rb-n') + (vol ? '<span class="dz-vol"><i>=</i>' + cc(vol) + '</span>' : ''))
     + (pr.kind === 'dil' ? row(L('Mix','תערובת'), '<b>' + mixLine(pr, d.en) + '</b>') : pr.kind === 'vial' ? row(L('Mix','תערובת'), '<b>' + ccT(pr.dilCc) + ' ' + dilWord(pr.dil) + L(' per 1 g vial = ',' לכל בקבוקון 1 גרם = ') + fmt(pr.conc) + L(' mg/cc',' מ״ג/סמ״ק') + '</b>') : pr.kind === 'none' && vol ? row(L('Mix','תערובת'), '<b>' + L('No dilution · as supplied','ללא מהילה · כפי שמגיע') + '</b>') : '')
-    + (vol ? row(L('Syringe','מזרק'), '<b>' + ccT(vol > S.syr ? sizeFor(vol) : S.syr) + '</b>') : '')
-    + row(L('Route','דרך מתן'), '<b>' + esc(routeWord(d.route)) + '</b>')
+    + (vol ? row(L('Syringe','מזרק'), '<b>' + (pr.kind === 'dil' && pr.total > vol ? L('Mix in ','תערובת ב-') + ccT(sizeFor(pr.total)) + ' · ' + L('push with ','מתן ב-') + ccT(vol > S.syr ? sizeFor(vol) : S.syr) : ccT(pr.kind === 'dil' ? Math.max(sizeFor(pr.total), S.syr >= pr.total ? S.syr : 0) : (vol > S.syr ? sizeFor(vol) : S.syr))) + '</b>') : '')
+    + row(L('Route','דרך מתן'), '<b>' + esc(routeWord(accessRoute(P, d))) + '</b>')
     + row(L('Patient','מטופל'), '<b>' + (P.child ? L('Child','ילד') : L('Adult','מבוגר')) + ' · ' + kgW(P.wt) + (P.est ? L(' (estimated)',' (משוער)') : '') + '</b>')
     + row(L('Time','שעה'), '<b dir="ltr">' + hm(Date.now()) + '</b>')
     + '</dl>'
@@ -726,14 +755,17 @@ Field.doseCheck = function(id){ S.rb = id; readback(id); var b = document.queryS
 Field.doseRbClose = function(){ S.rb = null; var r = document.getElementById('dz-rb'); if (r) r.remove(); };
 Field.doseGive = function(id){
   var P = patient(), d = drugs(P).filter(function(x){ return x.id === id; })[0]; if (!d) return;
-  var dz = d.dose(P), x = X(), n0 = (x.e.medications || []).length, f0 = ((x.c || {}).fluids || []).length;
+  var dz = status(P, d).dose, x = X(), n0 = (x.e.medications || []).length, f0 = ((x.c || {}).fluids || []).length;
   Field.doseRbClose();
-  if (W.pushMedHistory) W.pushMedHistory();
+  var st = W._medUndoStack, u0 = st ? st.length : 0, lock = W._medPushLock;
+  W._medPushLock = false;
+  if (W.pushMedHistory) W.pushMedHistory();          // exactly one snapshot: the state before this give
+  W._medPushLock = true;                               // the engine's own push inside add… must not add a second one
   W._fieldConfirmed = true;
-  try { if (d.fluid) W.addFluidEntry(d.ftype, dz.v); else W.addMedication(d.eng, engDose(dz), d.route); } finally { W._fieldConfirmed = false; }
+  try { if (d.fluid) W.addFluidEntry(d.ftype, dz.v); else W.addMedication(d.eng, engDose(dz), d.engRoute || accessRoute(P, d)); } finally { W._fieldConfirmed = false; W._medPushLock = lock; }
+  if (st) while (st.length > u0 + 1) st.pop();
   var added = (x.e.medications || []).length > n0 || ((x.c || {}).fluids || []).length > f0;
-  if (!added){ if (W._medUndoStack) W._medUndoStack.pop(); return; }
-  if (d.fluid && W._medUndoStack) W._medUndoStack.pop();   // addFluidEntry takes its own undo step
+  if (!added){ if (st && st.length > u0) st.pop(); return; }
   if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave();
   toast(L(d.en + ' ' + doseText(dz) + ' recorded at ' + hm(Date.now()), d.en + ' ' + doseText(dz) + ' תועד ב-' + hm(Date.now())));
   draw();
@@ -743,6 +775,7 @@ function toast(msg){
   var el = document.createElement('div'); el.id = 'undo-toast'; el.className = 'undo-toast no-polish'; el.setAttribute('role', 'status');
   el.innerHTML = '<span>' + esc(msg) + '</span><button>' + ico('undo-2', 24) + '<span>' + L('Undo','ביטול') + '</span></button>';
   el.querySelector('button').onclick = function(){ el.remove(); if (W.medUndo) W.medUndo(); setTimeout(draw, 50); };
+  el.style.setProperty('z-index', '100010', 'important');                          // above the dose sheet, so Undo can be tapped
   (document.getElementById('app') || document.body).appendChild(el);
   setTimeout(function(){ el.remove(); }, 8000);
   if (navigator.vibrate) navigator.vibrate(25);
@@ -791,9 +824,18 @@ setInterval(function(){
   var s = document.getElementById('dose-sheet'); if (!s) return;
   var done = false;
   s.querySelectorAll('[data-due]').forEach(function(n){ var left = (Number(n.getAttribute('data-due')) - Date.now()) / 1000; var t = n.tagName === 'I' ? n : n.querySelector('b'); if (t) t.textContent = mmss(left); if (left <= 0) done = true; });
-  if (done && !S.rb && !S.sf && !s.contains(document.activeElement)) draw();
+  if (done) refresh();
 }, 1000);
-setInterval(function(){ var s = document.getElementById('dose-sheet'); if (s && !S.rb && !S.sf && !s.contains(document.activeElement)) draw(); }, 15000);
+setInterval(function(){ if (document.getElementById('dose-sheet')) refresh(); }, 15000);
+// Redraw in place: never while typing in a field, and focus returns to the same control afterwards
+function refresh(){
+  var s = document.getElementById('dose-sheet'); if (!s || S.rb || S.sf) return;
+  var a = document.activeElement, inside = a && s.contains(a);
+  if (inside && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+  var key = inside && a.getAttribute ? a.getAttribute('onclick') : null;
+  draw();
+  if (key){ var b = Array.prototype.filter.call(s.querySelectorAll('[onclick]'), function(n){ return n.getAttribute('onclick') === key; })[0]; if (b) try { b.focus({ preventScroll:true }); } catch (e){} }
+}
 
 // Entry button in Form 101: says how many doses are due now
 Field.doseHtml = function(){

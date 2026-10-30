@@ -21,7 +21,7 @@
 .dz-top>b svg{color:var(--dz-cyan)}
 .dz-top .xbtn{flex:none;min-height:56px;padding:0 16px;font-size:18px;font-weight:800;display:inline-flex;align-items:center;gap:8px;border-radius:14px}
 .dz-top .dz-short{display:none}
-@media (max-width:420px){.dz-top .dz-long{display:none}.dz-top .dz-short{display:inline}}
+@container dz (max-width:420px){.dz-top .dz-long{display:none}.dz-top .dz-short{display:inline}}
 .dz-lbl{display:block;margin-bottom:6px;font-size:16px;font-weight:800;color:var(--dz-t2)}
 
 /* number + unit read as one */
@@ -56,8 +56,8 @@
 .dz-pain-g .p1{background:#173d27}.dz-pain-g .p2{background:#4a3505}.dz-pain-g .p3{background:#4d1513}
 .dz-pain-g button.on{background:#fff;color:#0b0c0e}
 .dz-pain-k{display:flex;justify-content:space-between;gap:6px;margin-top:8px;font-size:16px;font-weight:700;color:var(--dz-t2)}
-@media (max-width:520px){.dz-pain-g{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}.dz-pain-k{flex-wrap:wrap}}
-@media (max-width:360px){.dz-pain-g{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@container dz (max-width:520px){.dz-pain-g{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}.dz-pain-k{flex-wrap:wrap}}
+@container dz (max-width:360px){.dz-pain-g{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 /* what was read from the form */
 .dz-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -75,13 +75,13 @@
 .dz-tabs button span{white-space:nowrap}
 .dz-tabs button.on{background:#fff;color:#0b0c0e}
 .dz-tabs button i{position:absolute;top:-6px;inset-inline-end:-4px;min-width:28px;height:28px;padding:0 6px;box-sizing:border-box;border-radius:14px;display:grid;place-items:center;background:var(--dz-cyan);color:#0b0c0e;box-shadow:0 0 0 2px var(--dz-bg);font-style:normal;font-size:16px;font-weight:900}
-@media (max-width:520px){
+@container dz (max-width:520px){
   .dz-tabs{position:static;grid-template-columns:repeat(4,minmax(0,1fr))}
   .dz-tabs button.now{grid-column:1 / -1;flex-direction:row;gap:10px;min-height:60px;font-size:18px}
   .dz-tabs button.now i{position:static;box-shadow:none}
   .dz-tabs button.now:not(.on) i{background:var(--dz-cyan)}
 }
-@media (max-width:359px){
+@container dz (max-width:359px){
   .dz-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
   .dz-tabs button:not(.now){flex-direction:row;gap:8px;min-height:56px}
 }
@@ -177,19 +177,19 @@
 .dz-rb-b{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;margin-top:14px}
 .dz-rb-b .xbtn{min-height:68px;font-size:19px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:14px}
 
-@media (max-width:480px){
+@container dz (max-width:480px){
   .dz-pt{grid-template-columns:minmax(0,1fr) minmax(0,.72fr)}
   .dz-step{grid-template-columns:52px minmax(0,1fr) 52px;gap:4px}
   .dz-step label,.dz-agein{padding:0 6px}
 }
-@media (max-width:360px){
+@container dz (max-width:360px){
   .dz-pt{grid-template-columns:1fr}
   .dz-big{font-size:46px}
   .dz-rb-b{grid-template-columns:1fr}
   .dz-rb-l>div{grid-template-columns:1fr;gap:2px;padding:8px 12px}
 }
 .dz-rb:focus{outline:none}
-@media (max-width:340px){.dz-ps{grid-template-columns:1fr}.dz-ps-b{min-height:88px}}
+@container dz (max-width:340px){.dz-ps{grid-template-columns:1fr}.dz-ps-b{min-height:88px}}
 
 /* warnings: one button in the same place on every card, and a sheet with every safety item */
 .dz-sfb{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;margin-top:10px;padding:6px 12px;box-sizing:border-box;border-radius:12px;border:0;background:var(--dz-s2);color:#fff;font:800 17px/1.2 var(--f,inherit);text-align:start;cursor:pointer}
@@ -289,7 +289,7 @@
 .dz-ps-k>svg:last-child{margin-inline-start:auto}
 .undo-toast button{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .dz-step button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:16px;font-weight:800;line-height:1.1}
-@media (max-width:360px){.dz-body{padding:12px 10px 12px}.dz-prep{padding:10px 6px}.dz-size-g{gap:2px;padding:2px}}
+@container dz (max-width:360px){.dz-body{padding:12px 10px 12px}.dz-prep{padding:10px 6px}.dz-size-g{gap:2px;padding:2px}}
 .dz-mda{display:flex;align-items:flex-start;gap:10px;margin:8px 0 0;padding:10px 12px;border-radius:12px;background:#1a1530;font-size:16px;font-weight:700;color:#ddd6ff;line-height:1.35}.dz-mda svg{flex:none;color:#b9a8ff}.dz-mda b{display:block;font-size:17px;font-weight:900;color:#fff}
 
 /* header: which casualty, by number */
@@ -323,3 +323,18 @@
 .dz-chg b{display:block;font-size:17px;font-weight:900;color:#fff}
 .dz-c.dz-flash{box-shadow:inset 0 0 0 3px #fff}
 .dz-fd{min-height:52px}
+
+/* layout follows the sheet's own width (the phone on desktop), not the browser window */
+.dz-wrap{container:dz / inline-size}
+/* weight / pain status: wrap, never cut */
+.dz-ps-s{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.25}
+.dz-ps-k>span{white-space:normal;overflow:visible;text-overflow:clip}
+/* induction: each drug with its own volume */
+.dz-parts{display:grid;gap:6px;margin:8px 0 0}
+.dz-parts p{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin:0;padding:8px 10px;border-radius:12px;background:var(--dz-bg)}
+.dz-parts p>b{flex-basis:100%;font-size:17px;font-weight:900}
+.dz-parts .dz-pq{font-size:34px;font-weight:900;color:var(--dz-cyan)}
+.dz-parts .dz-pq .dz-qu{color:var(--dz-cyan)}
+.dz-parts .dz-vol{font-size:26px}
+.dz-parts small{flex-basis:100%;font-size:16px;font-weight:700;color:var(--dz-t2)}
+.dz-dg.cnd h4 svg,.dz-dg.cnd .dz-dl svg{color:#cfd3da}

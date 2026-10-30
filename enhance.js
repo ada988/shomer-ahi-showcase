@@ -182,14 +182,14 @@ function hoBlocks(text){
   var E = W.escapeHtml, iso = function(s){ return '<bdi>' + E(s.replace(/[\u2066-\u2069]/g, '').trim()) + '</bdi>'; };
   var NAMES = { M:L('M · Mechanism','M · מנגנון'), I:L('I · Injuries','I · פציעות'), S:L('S · Signs','S · סימנים'), T:L('T · Treatment','T · טיפול') };
   var lines = String(text).split('\n').filter(function(x){ return x.trim(); }), out = '', blocks = [];
-  var rank = function(k){ return k === 'M' ? 1 : k === 'I' ? 2 : k === 'S' ? 3 : /^(Consciousness|הכרה)/.test(k) ? 4 : k === 'T' ? 5 : /^(Tourniquet|TQ|ח״ע|חוסם|Drugs|Medications|תרופות|Blood|דם)/.test(k) ? 6 : 7; };
+  var rank = function(k){ return k === 'M' ? 1 : k === 'I' ? 2 : k === 'S' ? 3 : /^(Consciousness|הכרה)/.test(k) ? 3.5 : k === 'T' ? 5 : /^(Tourniquet|TQ|ח״ע|חוסם|Drugs|Medications|תרופות|Blood|דם)/.test(k) ? 6 : 7; };
   lines.forEach(function(ln, n){
     var clean = ln.replace(/[\u2066-\u2069]/g, '');
     if (n === 0){ var hp = clean.split(' | '); var hoC = (W._incidentCasualties || []).filter(function(x){ return x._docId === W._casualtyEditId; })[0]; out += '<div class="ho-title">' + (W.casBadge ? W.casBadge({ name: W._casualtyName }, true) + ' ' : '') + iso(hp[0].replace(/^MIST\+\s*—\s*/, '')) + (W.casTag && hoC ? W.casTag(hoC) : '') + (hp[1] ? '<small>' + iso(hp[1]) + '</small>' : '') + '</div>'; return; }
     if (n === 1 && / \| /.test(clean)){ out += '<div class="ho-chips">' + clean.split(' | ').map(function(c){ return '<span>' + iso(c) + '</span>'; }).join('') + '</div>'; return; }
     var m = /^([^:]{1,40}):\s+(.*)$/.exec(clean);
     if (!m){ out += '<div class="ho-alert">' + iso(clean) + '</div>'; return; }
-    var key = m[1].trim(), val = m[2], label = NAMES[key] || key, o0 = out; out = '';
+    var key = m[1].trim(), val = m[2], label = NAMES[key] || (/^(Consciousness|הכרה)/.test(key) ? L('S · Consciousness, GCS, pupils','S · הכרה, GCS, אישונים') : key), o0 = out; out = '';
     var items;
     if (key === 'S'){
       var tm = /^(.*?)\s*\(((?:trend|מגמה)[^:]*):\s*(.*)\)$/.exec(val);
@@ -228,7 +228,7 @@ W.FormUI = {
     var app = document.getElementById('app'); if (document.getElementById('fs-sheet')) return;
     var raw = W.generateMISTPlusReport ? W.generateMISTPlusReport() : '';
     var text = W.Polish ? W.Polish.strip((W.ShowcaseI18n ? W.ShowcaseI18n.tr(raw) : raw).replace(/→/g, L(' then ', ' ואז '))) : raw;
-    if (lang() === 'he') text = text.replace(/טריאז׳/g, 'מיון').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/ח"ע:/g, 'חוסם עורקים:');
+    if (lang() === 'he') text = text.replace(/\(greater trochanters?\)/g, '(בגובה הטרוכנטרים)').replace(/GCS EYE:/g, 'GCS עיניים:').replace(/GCS VERBAL:/g, 'GCS דיבור:').replace(/GCS MOTOR:/g, 'GCS תנועה:').replace(/טריאז׳/g, 'מיון').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/ח"ע:/g, 'חוסם עורקים:');
     var s = document.createElement('div'); s.id = 'fs-sheet'; s.className = 'sheet-wrap';
     s.innerHTML = '<div class="sheet ho-sheet ho-full" role="dialog" aria-modal="true" aria-label="MIST+">'
       + '<div class="ho-top"><h3>' + L('Handoff report','דוח העברה') + ' <small dir="ltr">MIST+</small></h3><button class="xbtn ho-big-b" aria-pressed="false" onclick="FormUI.hoBig(this)">' + ico('volume-2', 24) + L('Read aloud','להקראה') + '</button><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('Close','סגור') + '</button></div>' + hoBlocks(text) + '<p class="mist-warn">' + L('Demo · fictional data · not for real patients','דמו · נתונים בדויים · לא לנפגעים אמיתיים') + '</p>'

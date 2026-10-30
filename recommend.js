@@ -61,7 +61,10 @@ function check(){
   var list = W.Field.nextItems().filter(function(i){ return i.id && SHORT[i.id]; }), now = {};
   list.forEach(function(i){ now[i.id] = true; });
   var t = Date.now();
-  if (W._casualtyEditId !== caseId || lang() !== lastLang) { caseId = W._casualtyEditId; lastLang = lang(); settle = t + 1500; hide(); }
+  // the casualty's identity is its number: the first save turns the id from null into cas_…, which is not a new casualty
+  var key = (W.casNum && W.casNum({ name: W._casualtyName })) || W._casualtyEditId;
+  if (key !== caseId) { caseId = key; lastLang = lang(); settle = t + 1500; hide(); }
+  else if (lang() !== lastLang) { lastLang = lang(); settle = t + 1500; hide(); }
   if (t < settle) { seen = now; return; }       // the form is still opening: whatever is there now is the baseline
   var fresh = list.filter(function(i){ return !seen[i.id]; });
   seen = now;

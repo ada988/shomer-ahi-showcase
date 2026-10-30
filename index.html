@@ -26,30 +26,24 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css?v=25">
-<link rel="stylesheet" href="app.css?v=25">
-<link rel="stylesheet" href="shared/medical-forms.css?v=25">
-<link rel="stylesheet" href="ui.css?v=25">
-<link rel="stylesheet" href="form.css?v=25">
-<link rel="stylesheet" href="disclaimer.css?v=25">
-<link rel="stylesheet" href="stress.css?v=25">
-<link rel="stylesheet" href="field.css?v=25">
-<link rel="stylesheet" href="chrome.css?v=25">
-<link rel="stylesheet" href="xcare.css?v=25">
-<link rel="stylesheet" href="pwa.css?v=25">
-<link rel="stylesheet" href="dose.css?v=25">
-<link rel="stylesheet" href="yc-board.css?v=25">
-<link rel="stylesheet" href="yc-home.css?v=25">
-<link rel="stylesheet" href="yc-brc.css?v=25">
-<link rel="stylesheet" href="yc-form2.css?v=25">
-<link rel="stylesheet" href="recommend.css?v=25">
-<link rel="stylesheet" href="bodyzoom.css?v=25">
-<link rel="stylesheet" href="yc-evac2.css?v=25">
-<link rel="stylesheet" href="yc-motion.css?v=25">
-<link rel="stylesheet" href="tour.css?v=25">
-<link rel="stylesheet" href="help.css?v=25">
-<link rel="stylesheet" href="landing.css?v=25">
+<link rel="preload" href="app.bundle.js?v=47f3a58b" as="script">
+<link rel="stylesheet" href="app.bundle.css?v=47f3a58b">
+<style>
+/* boot splash: painted before any script runs, removed by boot.js once the app has rendered */
+#boot{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#09090b;color:#f4f4f5;font:600 17px/1.2 Inter,Heebo,system-ui,sans-serif;transition:opacity .35s ease,visibility .35s}
+#boot.out{opacity:0;visibility:hidden}
+#boot .bt{display:flex;flex-direction:column;align-items:center;gap:18px}
+#boot svg{width:56px;height:56px;animation:btp 1.6s ease-in-out infinite}
+#boot .bar{width:148px;height:3px;border-radius:2px;background:#27272a;overflow:hidden}
+#boot .bar i{display:block;width:40%;height:100%;border-radius:2px;background:#f4f4f5;animation:btb 1.1s ease-in-out infinite}
+#boot small{font-size:14px;font-weight:500;color:#71717a}
+@keyframes btp{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
+@keyframes btb{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
+@media (prefers-reduced-motion:reduce){#boot svg,#boot .bar i{animation:none}#boot .bar i{width:100%}}
+</style>
 </head>
 <body>
+<div id="boot" role="status" aria-live="polite"><div class="bt"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#fff" d="M24 5 39 10.6v11.9c0 9.9-6.3 16.8-15 20.1-8.7-3.3-15-10.2-15-20.1V10.6z"/></svg><span>Shomer Ahi</span><span class="bar"><i></i></span><small>Loading · טוען</small></div></div>
 <a class="skip-link" href="#incident-content">Skip to content</a>
 <div class="stage">
 
@@ -73,35 +67,6 @@
   </div></div>
 </div>
 
-<script src="vendor/qrcode.min.js?v=25"></script>
-<script src="shared/core.js?v=25"></script>
-<script src="shared/icons.js?v=25"></script>
-<script src="shared/medical-forms.js?v=25"></script>
-<script src="host.ported.js?v=25"></script>
-<script src="ui-icons.js?v=25"></script>
-<script src="i18n-dict.js?v=25"></script>
-<script src="i18n.js?v=25"></script>
-<script src="scenario.js?v=25"></script>
-<script src="disclaimer.js?v=25"></script>
-<script src="bracelet.js?v=25"></script>
-<script src="enhance.js?v=25"></script>
-<script src="field.js?v=25"></script>
-<script src="next.js?v=25"></script>
-<script src="xcare.js?v=25"></script>
-<script src="timeline.js?v=25"></script>
-<script src="dose.js?v=25"></script>
-<script src="swipe.js?v=25"></script>
-<script src="pwa.js?v=25"></script>
-<script src="appbar.js?v=25"></script>
-<script src="quick.js?v=25"></script>
-<script src="evac.js?v=25"></script>
-<script src="shell.js?v=25"></script>
-<script src="polish.js?v=25"></script>
-<script src="tour.js?v=25"></script>
-<script src="help.js?v=25"></script>
-<script src="recommend.js?v=25"></script>
-<script src="bodyzoom.js?v=25"></script>
-<script src="landing.js?v=25"></script>
-<script src="boot.js?v=25"></script>
+<script src="app.bundle.js?v=47f3a58b"></script>
 </body>
 </html>

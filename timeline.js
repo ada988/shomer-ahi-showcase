@@ -23,10 +23,11 @@ var CAT = {
 };
 // Entry text for display only (the stored record is unchanged).
 function disp(a){
-  var s = String(a || ''), fm = /^נוזלים: (\d+(?:\.\d+)?)\s*ml (.+)$/.exec(s);
+  var s = String(a || ''), fm = /^נוזלים: (\d+(?:\.\d+)?)\s*ml (.+)$/.exec(s), am = /^(?:גישה ורידית|גישה גרמית \(IO\)): (.+)$/.exec(s);
+  if (am && W.accessLabel) return L('Access: ','גישה: ') + W.accessLabel(am[1]);
   if (fm) return L(T(fm[2]) + ' ' + fm[1] + ' mL', fm[2] + ' ' + fm[1] + ' מ״ל');
   if (lang() !== 'he') return T(s);
-  s = s.replace(/^ח"ע\b/, 'חוסם עורקים').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/דרך BVM/g, 'דרך מפוח (BVM)');
+  s = s.replace(/\(greater trochanters?\)/g, '(בגובה הטרוכנטרים)').replace(/^GCS EYE:/, 'GCS עיניים:').replace(/^GCS VERBAL:/, 'GCS דיבור:').replace(/^GCS MOTOR:/, 'GCS תנועה:').replace(/^ח"ע\b/, 'חוסם עורקים').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/דרך BVM/g, 'דרך מפוח (BVM)');
   return W.outLR ? W.outLR(s) : s;
 }
 Field._tlAll = false;
@@ -54,15 +55,19 @@ Field.timelineHtml = function(){
   if (all.length > 8) h += '<button class="xbtn tl-more" onclick="Field.tlAll()">' + ico(Field._tlAll ? 'chevron-down' : 'chevrons-down', 24) + (Field._tlAll ? L('Show less','הצג פחות') : L('Show all ' + all.length,'הצג את כל ' + all.length)) + '</button>';
   return h + '</section>';
 };
+// A sheet acts only on the casualty it was opened for, and only while that form is open
+function caseKey(){ return W._casualtyEditMode ? String(W._casualtyEditId || W._casualtyName || '') : null; }
+function alive(){ var ok = Field._tlCas != null && Field._tlCas === caseKey(); if (!ok){ Field.tlRowClose(); var t = document.getElementById('tl-time'); if (t) t.remove(); } return ok; }
 // Tap a row: a sheet with the entry and its actions (edit a note, delete). Delete is undoable.
 Field.tlOpen = function(i){
-  var e = (W._casualtyTimeline || [])[i]; if (!e) return;
+  var e = (W._casualtyTimeline || [])[i]; if (!e || !W._casualtyEditMode) return;
+  Field._tlCas = caseKey();
   Field.tlRowClose();
   var note = e.category === 'note', text = note ? String(e.action || '') : disp(e.action);
   var el = document.createElement('div'); el.id = 'tl-row-sheet'; el.className = 'sheet-wrap no-polish';
   el.innerHTML = '<div class="sheet-dim" onclick="Field.tlRowClose()"></div><div class="sheet tl-sheet tl-rs" role="dialog" aria-label="' + L('Timeline entry','רשומה בציר הזמן') + '"><div class="sheet-grab"></div>'
     + '<p class="tl-rs-t"><b dir="ltr">' + hm(e.time) + '</b></p><p class="tl-rs-x' + (note ? ' no-tr" dir="auto' : '') + '">' + esc(text) + '</p>'
-    + (e.audit && e.audit.length ? '<p class="tl-rs-n">' + e.audit.map(function(a){ return esc(a); }).join('<br>') + '</p>' : '')
+    + (e.audit && e.audit.length ? '<p class="tl-rs-n">' + e.audit.map(function(a){ return typeof a === 'string' ? esc(a) : L('Time edited ','השעה שונתה ') + '<bdi dir="ltr">' + hm(a.f) + ' → ' + hm(a.t) + '</bdi>'; }).join('<br>') + '</p>' : '')
     + '<div class="tl-rs-b"><button class="xbtn" onclick="Field.tlTime(' + i + ')">' + ico('clock', 24) + L('Edit time','עריכת שעה') + '</button>' + (note ? '<button class="xbtn" onclick="Field.tlEdit(' + i + ')">' + ico('file-text', 24) + L('Edit note','עריכת הערה') + '</button>' : '')
     + '<button class="xbtn tl-rs-del" onclick="Field.tlRowClose();Field.tlDel(' + i + ')">' + ico('x', 24) + L('Delete entry','מחיקת הרשומה') + '</button>'
     + '<button class="xbtn" onclick="Field.tlRowClose()">' + ico('x', 24) + L('Close','סגור') + '</button></div>'
@@ -74,7 +79,8 @@ Field.tlOpen = function(i){
 // clock that reads it (tourniquet minutes, repeat-dose timers, 24 h totals, TXA window, order of this list) follows.
 function hmT(t){ var d = new Date(t); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 Field.tlTime = function(i, t){
-  var e = (W._casualtyTimeline || [])[i]; if (!e) return;
+  var e = (W._casualtyTimeline || [])[i]; if (!e || !W._casualtyEditMode) return;
+  Field._tlCas = caseKey();
   var orig = Date.parse(e.time); Field._tt = { i:i, t: t != null ? t : orig, orig:orig, warned:false };
   Field.tlRowClose(); Field._ttDraw();
 };
@@ -101,7 +107,7 @@ Field.tlTimeExact = function(v){
   T0.t = d.getTime(); T0.warned = false; Field._ttDraw();
 };
 Field.tlTimeSave = function(){
-  var T0 = Field._tt; if (!T0) return; var tl = W._casualtyTimeline || [], e = tl[T0.i]; if (!e) return Field.tlTimeClose();
+  var T0 = Field._tt; if (!T0) return; if (!alive()) return Field.tlTimeClose(); var tl = W._casualtyTimeline || [], e = tl[T0.i]; if (!e) return Field.tlTimeClose();
   if (T0.t > Date.now() + 60000) return Field._ttDraw(L('That is in the future. Pick a time up to now.','זו שעה עתידית. בחרו שעה עד עכשיו.'), true);
   var X = W._casualtyXABCDE || {}, inj = Date.parse((X.e || {}).timeOfInjury), act = String(e.action || ''), isInj = /^שעת פציעה /.test(act);
   if (!isInj && !isNaN(inj) && T0.t < inj && !T0.warned){ T0.warned = true; return Field._ttDraw(L('This is before the injury time (' + hmT(inj) + '). Check it.','זה לפני שעת הפציעה (' + hmT(inj) + '). בדקו.'), false); }
@@ -120,7 +126,7 @@ Field.tlTimeSave = function(){
     else if (isInj && X.e){ X.e.timeOfInjury = iso; e.action = 'שעת פציעה ' + hmT(T0.t); moved = 'injury'; }
     else if (move((X.e || {}).procedures)) moved = 'proc';
     if (!e.editedFrom) e.editedFrom = new Date(T0.orig).toISOString();
-    e.audit = (e.audit || []).concat([L('Time edited ','השעה שונתה ') + hmT(T0.orig) + ' → ' + hmT(T0.t)]);
+    e.audit = (e.audit || []).concat([{ f:new Date(T0.orig).toISOString(), t:iso }]);   // words are added on display, in the reader's language
     e.time = new Date(T0.t);
   } finally { Promise.resolve().then(function(){ W._medPushLock = false; }); }
   Field.tlTimeClose();
@@ -130,12 +136,14 @@ Field.tlTimeSave = function(){
 };
 Field.tlRowClose = function(){ var s = document.getElementById('tl-row-sheet'); if (s) s.remove(); };
 Field.tlEdit = function(i){
-  var e = (W._casualtyTimeline || [])[i]; if (!e) return;
+  if (!alive()) return; var e = (W._casualtyTimeline || [])[i]; if (!e) return;
   Field.tlRowClose(); Field.tlNote(i);
 };
 Field.tlAll = function(){ Field._tlAll = !Field._tlAll; W.MedHost.renderIncidentPage(); };
+// One delete path: other screens (body-map treatment list) delete through the timeline so the linked record goes too
+Field.tlDelLinked = function(i){ Field._tlCas = caseKey(); Field.tlDel(i); };
 Field.tlDel = function(i){
-  var tl = W._casualtyTimeline || [], e = tl[i]; if (!e) return;
+  if (!alive()) return; var tl = W._casualtyTimeline || [], e = tl[i]; if (!e) return;
   var X = W._casualtyXABCDE || {}, et = Date.parse(e.time), act = String(e.action || ''), linked = '';
   var near = function(r){ return Math.abs(Date.parse(r.time) - et) < 90000; };
   if (W.pushMedHistory) W.pushMedHistory();

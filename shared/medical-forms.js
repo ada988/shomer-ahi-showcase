@@ -283,7 +283,7 @@ function generateForm101(){
   if(xabcde?.e?.ageYears!=null)ageWeight.push(`גיל: ${xabcde.e.ageYears}`);
   if(sexOutName(xabcde?.e?.sex))ageWeight.push(`מין: ${sexOutName(xabcde.e.sex)}`);
   if(_getPatientWeight())ageWeight.push(`משקל: ${_getPatientWeight()}ק״ג`);
-  const peb=xabcde?.e?.pelvicBinder?`\n  מקבע אגן (greater trochanter) ב-${fmtHM(xabcde.e.pelvicBinder.time)}`:'';
+  const peb=xabcde?.e?.pelvicBinder?`\n  מקבע אגן (בגובה הטרוכנטרים) ב-${fmtHM(xabcde.e.pelvicBinder.time)}`:'';
   const cco=xabcde?.a?.cervicalCollar?`\n  צווארון C-Collar ב-${fmtHM(xabcde.a.cervicalCollar.time)}`:'';
   const tube=xabcde?.b?.tubeThora?`\n  נקז חזה ${outLR(xabcde.b.tubeThora.side||'')} (צלע 4-5) ב-${fmtHM(xabcde.b.tubeThora.time)}`:'';
   const burnPct=calcBurnPercentage();
@@ -344,12 +344,28 @@ function hypoLabelOut(m){return({HPMK:'HPMK — ערכת מניעת היפותר
 function triageOutName(c){return({red:'דחוף',yellow:'עדיפות שנייה',green:'לא דחוף',gray:'ממתין',black:'ממתין'})[c]||'לא נקבע';}
 // NATO evacuation categories: Urgent ≤1h, Priority ≤4h, Routine ≤24h.
 function evacOutName(p){return({immediate:'דחוף (עד שעה)',urgent:'בעדיפות (עד 4 שעות)',routine:'שגרתי (עד 24 שעות)',expectant:'ממתין'})[p]||'';}
+// Latest value PER FIELD across all readings, each with its own time. A later partial reading (only the pulse)
+// must never erase an earlier low blood pressure. BP stays one pair from one reading.
+function latestVitals(arr){
+  arr=arr||[];if(!arr.length)return null;
+  const out={},T={},F=['pulse','rr','spo2','temp','etco2','radialPulse','avpu','painScore'];
+  for(let i=arr.length-1;i>=0;i--){
+    const r=arr[i]||{},t=r.time||r.t||null;
+    F.forEach(k=>{if(!(k in T)&&_hv(r[k])){out[k]=r[k];T[k]=t;}});
+    if(!('bp' in T)&&(_hv(r.bpSys)||(_hv(r.bp)&&/\d/.test(String(r.bp))))){out.bpSys=_hv(r.bpSys)?r.bpSys:null;out.bpDia=_hv(r.bpDia)?r.bpDia:null;out.bp=r.bp;T.bp=t;}
+  }
+  out.time=(arr[arr.length-1]||{}).time||null;out._t=T;
+  return out;
+}
+window.latestVitals=latestVitals;
 function vitalsOutText(v){
   if(!v)return'לא נמדדו';
-  const p=['HR '+(_hv(v.pulse)?v.pulse+(v.pulse===0?' (אין דופק)':''):'—'),'RR '+(_hv(v.rr)?v.rr+(v.rr===0?' (אין נשימה)':''):'—'),'SpO₂ '+(_hv(v.spo2)?v.spo2+'%':'—'),'BP '+(_bpOut(v)||'—')];
-  if(_hv(v.temp))p.push('T '+v.temp+'°');
-  if(_hv(v.etco2))p.push('EtCO₂ '+v.etco2+' mmHg');
-  if(v.radialPulse)p.push('רדיאלי '+(v.radialPulse==='absent'?'אין':v.radialPulse==='weak'?'חלש':'תקין'));
+  // a value older than the newest reading carries its own time: "BP 84/50 (22:31)"
+  const st=k=>{const t=v._t&&v._t[k];return(t&&v.time&&String(t)!==String(v.time))?' ('+fmtHM(t)+')':'';};
+  const p=['HR '+(_hv(v.pulse)?v.pulse+(v.pulse===0?' (אין דופק)':'')+st('pulse'):'—'),'RR '+(_hv(v.rr)?v.rr+(v.rr===0?' (אין נשימה)':'')+st('rr'):'—'),'SpO₂ '+(_hv(v.spo2)?v.spo2+'%'+st('spo2'):'—'),'BP '+(_bpOut(v)?_bpOut(v)+st('bp'):'—')];
+  if(_hv(v.temp))p.push('T '+v.temp+'°'+st('temp'));
+  if(_hv(v.etco2))p.push('EtCO₂ '+v.etco2+' mmHg'+st('etco2'));
+  if(v.radialPulse)p.push('רדיאלי '+(v.radialPulse==='absent'?'אין':v.radialPulse==='weak'?'חלש':'תקין')+st('radialPulse'));
   return p.join(' · ');
 }
 function vitalsTrendOut(a,b){
@@ -403,7 +419,7 @@ function timelineOutItems(x,noTime){
   return tl.filter(t=>{
     if(['injury','vitals'].includes(t.category))return false;
     const a=String(t.action||'').trim();
-    if(!a||medKeys.has(a)||/^נוזלים: /.test(a)||/^ח"ע — /.test(a)||/^(AVPU:|כאב:|גיל:|משקל משוער:|❌)/.test(a))return false;
+    if(!a||medKeys.has(a)||/^נוזלים: /.test(a)||/^ח"ע — /.test(a)||/^(AVPU:|כאב:|גיל:|משקל משוער:|משקל:|GCS |אישון |❌)/.test(a))return false;
     return true;
   }).map(t=>(noTime?'':(fmtHM(t.time)+' '))+outLR(t.action||''));
 }
@@ -463,7 +479,7 @@ function generateMISTPlusReport(){
   const injArr=(typeof _casualtyInjuries!=='undefined')?_casualtyInjuries:[];
   const injuries=S(injArr.map(i=>bodyLabelOut(i.region)+' ('+({hemorrhage:'דימום',fracture:'שבר',burn:'כוויה',penetrating:'חודר'}[i.type]||'פציעה')+')'+(i.pins&&i.pins.length?' · '+i.pins.length+' '+(i.pins.length===1?'נקודה מסומנת':'נקודות מסומנות'):'')).join(', ')||'לא סומנו');
   const vArr=(typeof _casualtyVitals!=='undefined')?_casualtyVitals:[];
-  const lastVitals=vArr.length?vArr[vArr.length-1]:null;
+  const lastVitals=latestVitals(vArr);
   const firstVitals=vArr.length?vArr[0]:null;
   const vitalsText=lastVitals?vitalsOutText(lastVitals)+vitalsTrendOut(firstVitals,lastVitals):'לא נמדדו';
   const x=(typeof _casualtyXABCDE!=='undefined'&&_casualtyXABCDE)?_casualtyXABCDE:{e:{},c:{},d:{},x:{}};
@@ -527,7 +543,7 @@ function generateMISTReport(){
   const injArr=(typeof _casualtyInjuries!=='undefined')?_casualtyInjuries:[];
   const injuries=sanitizeExport(injArr.map(i=>bodyLabelOut(i.region)+' ('+({hemorrhage:'דימום',fracture:'שבר',burn:'כוויה',penetrating:'חודר'}[i.type]||'')+')').join(', ')||'לא סומנו');
   const vArr=(typeof _casualtyVitals!=='undefined')?_casualtyVitals:[];
-  const lastVitals=vArr.length?vArr[vArr.length-1]:null;
+  const lastVitals=latestVitals(vArr);
   const vitalsText=lastVitals?vitalsOutText(lastVitals):'לא נמדדו';
   const xabcde=(typeof _casualtyXABCDE!=='undefined')?_casualtyXABCDE:{d:{}};
   const cons=sanitizeExport(consciousnessOutText(xabcde)||'לא נבדקה');
@@ -1373,7 +1389,7 @@ function _hasTBI(){
     (_casualtyXABCDE?.d?.gcs!=null&&_casualtyXABCDE.d.gcs<=12&&(_hasMOI('blast')||_hasMOI('fall')||_hasMOI('blunt')||_hasMOI('vehicle')));
 }
 function buildCasualtyContext(){
-  const v=_casualtyVitals.length?_casualtyVitals[_casualtyVitals.length-1]:null;
+  const v=latestVitals(_casualtyVitals);
   const lastVitals=v||{};
   const _sp=lastVitals.bp?parseInt(lastVitals.bp):NaN;
   const sys=!isNaN(_sp)?_sp:(lastVitals.bpSys!=null&&!isNaN(parseInt(lastVitals.bpSys))?parseInt(lastVitals.bpSys):null);
@@ -1746,10 +1762,11 @@ function _setPainScore(val){
 function _setPatientAge(years){
   if(!_casualtyXABCDE.e)_casualtyXABCDE.e={};
   _casualtyXABCDE.e.ageYears=years;
-  // Auto-set weight from Broselow estimate if not already set
-  if(!_getPatientWeight()&&years<=12){
-    _casualtyXABCDE.e.weightKg=_broselowWeight(years);
-    _casualtyXABCDE.e.weightEst=true;
+  // Weight estimate from the book table: set when there is no weight, and re-estimated whenever the age changes while
+  // the weight is still an estimate. A measured weight (weightEst false) is never overwritten.
+  if(!_getPatientWeight()||_casualtyXABCDE.e.weightEst){
+    if(years<=12){_casualtyXABCDE.e.weightKg=_broselowWeight(years);_casualtyXABCDE.e.weightEst=true;}
+    else{_casualtyXABCDE.e.weightKg=null;_casualtyXABCDE.e.weightEst=false;}
   }
   addTimestampedAction('e','גיל: '+years+' שנים','');
   MedHost.triggerAutoSave();MedHost.renderIncidentPage();
@@ -1872,7 +1889,7 @@ function clearBreathingEntry(field){
 function addPelvicBinder(){
   if(!_casualtyXABCDE.e)_casualtyXABCDE.e={};
   _casualtyXABCDE.e.pelvicBinder={site:'greater trochanter',time:new Date().toISOString()};
-  addTimestampedAction('e','מקבע אגן (greater trochanter)','');
+  addTimestampedAction('e','מקבע אגן (בגובה הטרוכנטרים)','');
   MedHost.triggerAutoSave();MedHost.renderIncidentPage();
 }
 function clearPelvicBinder(){
@@ -2910,7 +2927,7 @@ function setGCSComponent(key,val){
   _casualtyXABCDE.d.gcsDetail[key]=val;
   const g=_casualtyXABCDE.d.gcsDetail;
   if(g.eye&&g.verbal&&g.motor){_casualtyXABCDE.d.gcs=g.eye+g.verbal+g.motor;}
-  addTimestampedAction('d','GCS '+key.toUpperCase()+': '+val,'');
+  addTimestampedAction('d','GCS '+({eye:'עיניים',verbal:'דיבור',motor:'תנועה'}[key]||key)+': '+val,'');
   MedHost.renderIncidentPage();
 }
 async function closeCasualtyForm(){
@@ -3827,17 +3844,11 @@ function renderCasualtyForm(){
   h+='</div>';
   if(_casualtyTreatments.length){
     _casualtyTreatments.forEach((t,idx)=>{
-      const icon=TREATMENT_ICONS[t.type]||'💊';
-      const reg=escapeHtml(BODY_LABELS[t.region]||t.region||'');
-      const sideL=t.side==='front'?'קדמי':'אחורי';
-      // Custom free-form treatments carry a label string.
-      const custom=t.type==='custom'&&t.label?' — '+escapeHtml(String(t.label).slice(0,60)):'';
-      h+=`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--sep);font-size:12px">
-        <span style="font-size:14px">${icon}</span>
-        <span style="flex:1;color:var(--t2)">${reg} (${sideL})${custom}</span>
-        <span style="color:var(--t4);font-size:10px">${escapeHtml(String(t.time||''))}</span>
-        <button onclick="removeTreatmentFromBody(${idx})" aria-label="מחק טיפול" style="background:none;border:none;color:var(--re);font-size:14px;cursor:pointer;padding:4px 8px;min-height:32px;min-width:32px">🗑</button>
-      </div>`;
+      // same words as the handoff: "Tourniquet · Right thigh", with the treatment's icon
+      const _ti={tourniquet:'timer',pressureDressing:'bandage',hemostatic:'droplet',woundPacking:'package',bandage:'bandage',splint:'bone',pelvicBinder:'shield',tubeThora:'wind'}[t.type]||'plus';
+      const nm=t.type==='custom'&&t.label?escapeHtml(String(t.label).slice(0,60)):escapeHtml((typeof _BM_WORD!=='undefined'&&_BM_WORD[t.type])||_txHe(t.type));
+      const reg=escapeHtml(bodyLabelOut(t.region)+(t.side==='back'?' (אחורי)':''));
+      h+=`<div class="tx-row">${window.Icon?window.Icon(_ti,24):''}<span><b>${nm}</b> · ${reg}</span><time dir="ltr">${escapeHtml(String(t.time||''))}</time><button class="tx-del" onclick="removeTreatmentFromBody(${idx})" aria-label="מחיקה: ${nm} · ${reg}">${window.Icon?window.Icon('x',22):''}<span>מחיקה</span></button></div>`;
     });
   } else {
     h+='<div class="tx-hint">'+(_pendingTreatmentType?'עכשיו לחצו על הגוף':'בחרו טיפול, ואז לחצו על הגוף')+'</div>';

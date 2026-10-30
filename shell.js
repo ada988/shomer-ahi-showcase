@@ -202,7 +202,7 @@ function renderPatients(){
   if (f) h += '<button class="filter-bar" onclick="Demo.filter(null)">' + chip(f) + '<span>' + L('Showing only these','מוצגים רק אלה') + '</span><b>' + L('Show all','הצג הכל') + '</b></button>';
   h += '<div class="add-split"><button class="ch full" onclick="Demo.newFull()">' + ico('file-text', 30) + '<b>' + L('One patient','נפגע אחד') + '</b><small>' + L('Full Form 101','טופס 101 מלא') + '</small></button><button class="ch quick" onclick="Quick.open()">' + ico('zap', 30) + '<b>' + L('Many casualties','נפגעים רבים') + '</b><small>' + L('Quick triage','מיון מהיר') + '</small></button></div><div class="pl">';
   list.forEach(function(c){
-    var x = c.xabcde || {}, v = (c.vitalsHistory || []).slice(-1)[0] || {};
+    var x = c.xabcde || {}, v = (w.latestVitals ? w.latestVitals(c.vitalsHistory || []) : (c.vitalsHistory || []).slice(-1)[0]) || {};
     var tq = (x.x && x.x.tourniquets || [])[0];
     var tqMin = tq ? Math.max(0, Math.round((Date.now() - Date.parse(tq.time)) / 60000)) : null;
     var inj = (c.injuries || []).slice(0, 3).map(function(i){ return esc(T(w.bodyLabelOut ? w.bodyLabelOut(i.region) : ((w.BODY_LABELS || {})[i.region] || i.region))); }).join(' · ');
@@ -212,7 +212,7 @@ function renderPatients(){
       + '<span class="pl-sub">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="pl-vit">'
       + (v.pulse === 0 ? '<em><i>' + L('No pulse','אין דופק') + '</i></em>' : v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('High','גבוה'), v.pulse > 120) + '</em>' : '')
-      + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('LOW','נמוך'), v.bpSys < 90) + '</em>' : '')
+      + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('LOW','נמוך'), v.bpSys < 90) + flag(L('HIGH','גבוה'), v.bpSys >= 180) + staleAt(v, 'bp') + '</em>' : '')
       + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('LOW','נמוך'), v.spo2 < 92) + '</em>' : '')
       + (tqMin != null ? '<em class="warn">' + ico('timer', 22) + L('Tourniquet ','חוסם עורקים ') + '<i>' + tqMin + L(' min',' ד׳') + '</i></em>' : '')
       + (onVeh ? '<em class="ok">' + ico('ambulance', 22) + ((w.findVehicleForCasualty(c) || {}).status === 'athospital' ? L('At hospital','בבית חולים') : L('On ambulance','באמבולנס')) + '</em>' : '')
@@ -227,7 +227,9 @@ function renderPatients(){
 // a search row that stays on screen, and one card per casualty (same card language as the list).
 var AVPU = { A:['Alert','ער'], V:['Responds to voice','מגיב לקול'], P:['Responds to pain','מגיב לכאב'], U:['Unresponsive','לא מגיב'] };
 function minsSinceTs(t){ var d = t && t.toDate ? t.toDate() : (t ? new Date(t) : null); return d && !isNaN(d) ? Math.max(0, Math.round((Date.now() - d.getTime()) / 60000)) : null; }
-function lastVit(c){ var v = (c.vitalsHistory || []).slice(-1)[0] || {}; return { pulse: v.pulse != null ? v.pulse : c.pulse, bpSys: v.bpSys != null ? v.bpSys : c.bpSys, bpDia: v.bpDia != null ? v.bpDia : c.bpDia, spo2: v.spo2 != null ? v.spo2 : c.spo2, rr: v.rr != null ? v.rr : c.rr, avpu: v.avpu || c.avpu || (((c.xabcde || {}).d || {}).avpu) || '' }; }
+// a value older than the newest reading shows its own time
+function staleAt(v, k){ var t = v && v._t && v._t[k]; if (!t || !v.time || String(t) === String(v.time)) return ''; var d = new Date(t); return isNaN(d) ? '' : ' <small class="stale" dir="ltr">' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + '</small>'; }
+function lastVit(c){ var v = (w.latestVitals ? w.latestVitals(c.vitalsHistory || []) : (c.vitalsHistory || []).slice(-1)[0]) || {}; return { _t: v._t || {}, time: v.time, pulse: v.pulse != null ? v.pulse : c.pulse, bpSys: v.bpSys != null ? v.bpSys : c.bpSys, bpDia: v.bpDia != null ? v.bpDia : c.bpDia, spo2: v.spo2 != null ? v.spo2 : c.spo2, rr: v.rr != null ? v.rr : c.rr, avpu: v.avpu || c.avpu || (((c.xabcde || {}).d || {}).avpu) || '' }; }
 function openTq(c){ var t = (((c.xabcde || {}).x || {}).tourniquets || []).filter(function(q){ return !q.released && !q.removed; })[0]; return t ? Math.max(0, Math.round((Date.now() - Date.parse(t.time)) / 60000)) : null; }
 function renderBoard(){
   var order = { red:0, yellow:1, green:2, gray:3, black:4 };
@@ -398,8 +400,13 @@ function renderNow(){
 // ── Demo controller ────────────────────────────────────────────
 w._casView = 'list'; w._plFilter = null;
 function closeOverlays(keepQuick){
-  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-rush-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet','dose-sheet'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
-  if (w.Field) w.Field._k = null;
+  // a note being typed survives a language switch: the sheet is reopened in the new language with the same text
+  var note = document.getElementById('tl-note'), draft = (keepQuick === true && note) ? { t: note.value, i: w.Field ? w.Field._tlEditIdx : null } : null;
+  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-rush-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet','tl-row-sheet','tl-time','bz-sheet','dose-sheet','rec-alert'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
+  var bm = document.querySelector('#app > #body-tap-overlay'); if (bm) bm.remove();
+  if (keepQuick !== true) w._selectedRegion = null;
+  if (w.Field){ w.Field._k = null; w.Field._tt = null; }
+  if (draft && w.Field && w.Field.tlNote) setTimeout(function(){ w.Field.tlNote(draft.i); var ta = document.getElementById('tl-note'); if (ta) ta.value = draft.t; }, 0);
 }
 var Demo = w.Demo = {
   closeOverlays: closeOverlays,
@@ -519,7 +526,7 @@ document.addEventListener('input', function(e){
 });
 
 // ── Modal behaviour for every overlay/sheet: focus moves in, Tab stays inside (background is inert), Esc closes, focus returns ──
-var OVERLAY = '#help-sheet,#f-kp,#f-sheet,#fs-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
+var OVERLAY = '#help-sheet,#f-kp,#f-sheet,#fs-sheet,#tl-sheet,#tl-row-sheet,#tl-time,#dose-sheet,#bz-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
 var _ret = null;
 function topOverlay(){ var l = document.querySelectorAll(OVERLAY); return l.length ? l[l.length - 1] : null; }
 function syncModal(){
@@ -542,6 +549,8 @@ document.addEventListener('keydown', function(e){
   if (t.id === 'qt' && w.Quick){ w.Quick.close(); return; }
   if (t.id === 'f-tap' && w.Field){ w.Field.tapClose(); return; }
   if (t.id === 'radio-overlay' && w.closeRadioReadout){ w.closeRadioReadout(); return; }
+  if (t.id === 'bz-sheet' && w.BodyZoom){ w.BodyZoom.close(); return; }        // body zoom first, then (next Esc) its menu
+  if (t.id === 'dose-sheet' && w.Field && w.Field.doseClose){ if (document.getElementById('dz-rb') && w.Field.doseRbClose) w.Field.doseRbClose(); else w.Field.doseClose(); return; }
   if (t.classList.contains('bo') && w.Bracelet){ w.Bracelet.close(); return; }
   var d = t.querySelector('.sheet-dim'), x = t.querySelector('.bo-x');
   if (d) d.click(); else if (x) x.click(); else t.remove();

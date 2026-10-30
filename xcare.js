@@ -193,12 +193,19 @@ Field.setAvpu = function(v){
 };
 Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; Field._xfo = {}; W.MedHost.renderIncidentPage(); };
 Field.xcOpen = function(key, v){ Field._xo[key] = !!v; W.MedHost.renderIncidentPage(); };
+function dropLine(text){ var tl = W._casualtyTimeline || []; for (var j = tl.length - 1; j >= 0; j--){ if (String(tl[j].action || '') === text){ tl.splice(j, 1); return; } } }
+var _lastTap = { k:null, t:0 };
 Field.xcToggle = function(k){
   var Xo = X(); if (!Xo) return;
+  var now = Date.now(); if (_lastTap.k === k && now - _lastTap.t < 450) return; _lastTap = { k:k, t:now };   // a double tap is one tap
   if (k === 'p_x0'){
-    if (W.pushMedHistory) W.pushMedHistory();
-    Xo.x = Xo.x || {}; Xo.x.noMassiveHemorrhage = !Xo.x.noMassiveHemorrhage;
-    if (Xo.x.noMassiveHemorrhage && W.addTimestampedAction) W.addTimestampedAction('x', 'X-CARE: אין דימום פורץ', '');
+    Xo.x = Xo.x || {};
+    var bled = ((Xo.x.tourniquets || []).length || (Xo.x.hemostatic || []).length || (Xo.x.woundPacking || []).length || (Xo.x.pressureDressings || []).length || (W._casualtyInjuries || []).some(function(i){ return i.type === 'hemorrhage'; }));
+    if (!Xo.x.noMassiveHemorrhage && bled){ if (Field.toast) Field.toast(L('Bleeding or a tourniquet is recorded, so this cannot be "No massive bleeding".','מתועד דימום או חוסם עורקים, לכן לא ניתן לסמן ״אין דימום פורץ״.'), null); return; }
+    if (W.pushMedHistory) W.pushMedHistory(); W._medPushLock = true; Promise.resolve().then(function(){ W._medPushLock = false; });
+    Xo.x.noMassiveHemorrhage = !Xo.x.noMassiveHemorrhage;
+    if (Xo.x.noMassiveHemorrhage){ (W._casualtyTimeline || []).push({ time:new Date(), category:'x', action:'X-CARE: אין דימום פורץ', details:'' }); }
+    else dropLine('X-CARE: אין דימום פורץ');
     if (W.MedHost){ W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage(); }
     return;
   }
@@ -207,7 +214,7 @@ Field.xcToggle = function(k){
   if (W.pushMedHistory) W.pushMedHistory();
   Xo.xcare = Xo.xcare || {};
   var all = PRIMARY.concat(SECONDARY), it = null; all.forEach(function(g){ g.items.forEach(function(i){ if (i[0] === k) it = i; }); });
-  if (Xo.xcare[k]) delete Xo.xcare[k];
+  if (Xo.xcare[k]){ delete Xo.xcare[k]; if (it) dropLine('X-CARE: ' + it[2]); }   // untick = the line goes too
   else {
     Xo.xcare[k] = new Date().toISOString();
     if (it && W.addTimestampedAction) W.addTimestampedAction(k.charAt(0) === 'p' && /_x/.test(k) ? 'x' : /_c/.test(k) ? 'c' : /_a/.test(k) ? 'a' : /_r/.test(k) ? 'b' : 'e', 'X-CARE: ' + it[2], '');   // stored in Hebrew, translated on display (see the dictionary below)

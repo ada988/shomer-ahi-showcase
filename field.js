@@ -62,6 +62,13 @@ var GIVE = [
 var MARCH = [['M','x','Bleeding','דימום'], ['A','a','Airway','נתיב אוויר'], ['R','b','Breathing','נשימה'], ['C','c','Circulation','מחזור דם'], ['H','e','Cold / head','קור / ראש'], ['P','e','Pain','כאב']];
 
 var ACCESS = [['ivr','IV right arm','יד ימין','Peripheral line','קו פריפרי'], ['ivl','IV left arm','יד שמאל','Peripheral line','קו פריפרי'], ['ioh','IO humerus','IO הומרוס','Bone needle, upper arm','מחט גרמית, זרוע'], ['iot','IO tibia','IO טיביה','Bone needle, shin','מחט גרמית, שוק']];
+// One label for an access site, whatever spelling it was stored with ("יד R", "יד ימין", "IO hum-L", "IO הומרוס")
+W.accessLabel = function(site){
+  var s0 = String(site || ''), io = /^IO\b/i.test(s0), side = /(\bR\b|-R\b|ימין)/.test(s0) ? 'R' : /(\bL\b|-L\b|שמאל)/.test(s0) ? 'L' : '';
+  var where = io ? (/hum|הומרוס/i.test(s0) ? ['humerus','הומרוס'] : /tib|טיביה/i.test(s0) ? ['tibia','טיביה'] : ['bone','עצם']) : (/AC/.test(s0) ? ['elbow','מרפק'] : /EJ/.test(s0) ? ['neck vein','וריד צוואר'] : ['arm','יד']);
+  var sd = side === 'R' ? ['right ','ימין'] : side === 'L' ? ['left ','שמאל'] : ['',''];
+  return io ? L('IO · ' + sd[0] + where[0], 'IO · ' + where[1] + (sd[1] ? ' ' + sd[1] : '')) : L('IV · ' + sd[0] + where[0], 'IV · ' + where[1] + (sd[1] ? ' ' + sd[1] : ''));
+};
 var IVONLY = { txa:1, blood:1, hart:1, ket:1, mor:1, cef:1, met:1, mid:1 };
 function hasAccess(){ return (((W._casualtyXABCDE || {}).c || {}).ivAccess || []).length > 0; }
 // What the top undo step would remove, in words: compare the snapshot with the record now.
@@ -154,18 +161,19 @@ function html(){
     + (veh ? tile(L('Ambulance','אמבולנס'), (W.Evac ? W.Evac.etaText(veh) : '—'), L('on board','על הסיפון'), 'ok') : tile(L('Ambulance','אמבולנס'), L('Not yet','עדיין לא'), L('not assigned','לא שויך'), ''))
     + '</div>';
   // 3 · tourniquet
-  h += '<button class="f-tq" onclick="Field.tq()">' + ico('timer', 34) + '<span>' + (tqs.length ? L('Another tourniquet','חוסם עורקים נוסף') : L('Tourniquet on','חוסם עורקים הונח')) + '</span></button>';
+  h += '<button class="f-tq" onclick="Field.tq()">' + ico('timer', 34) + '<span>' + (tqs.length ? L('Another tourniquet','חוסם עורקים נוסף') : L('Add tourniquet','הוספת חוסם עורקים')) + '</span></button>';
   if (tqs.length){
     h += '<div class="f-tqlist">' + tqs.map(function(q, i){ var nm = W.bodyLabelOut ? W.bodyLabelOut(q.site) : ((W.BODY_LABELS || {})[q.site] || q.site); return '<div class="f-tqrow"><span><b>' + esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(nm) : nm) + '</b><small>' + L('on at ','הונח ב-') + hhmm(q.time) + '</small></span><strong>' + minsAgo(q.time) + ' ' + L('min','ד׳') + '</strong></div>'; }).join('') + '</div>';
   }
   // 5 · vitals
-  var v = { pulse:lastVal('pulse'), bpSys:lastVal('bpSys'), bpDia:lastVal('bpDia'), spo2:lastVal('spo2'), rr:lastVal('rr') };
+  // latest value per field; BP is one pair from one reading (never a new top number with an old bottom one)
+  var v = (W.latestVitals ? W.latestVitals(W._casualtyVitals || []) : null) || { pulse:lastVal('pulse'), bpSys:lastVal('bpSys'), bpDia:lastVal('bpDia'), spo2:lastVal('spo2'), rr:lastVal('rr') };
   var num = function(x){ return x == null ? '—' : x; };
   h += '<div class="f-h">' + L('Vitals','מדדים') + '</div><div class="f-vit">'
-    + vt('HR', num(v.pulse), '/min', 0, v.pulse > 120 || (v.pulse != null && v.pulse < 50), v.pulse > 120 ? L('High','גבוה') : L('Low','נמוך'))
-    + vt('BP', v.bpSys ? v.bpSys + '/' + (v.bpDia || '–') : '—', '', 1, v.bpSys && v.bpSys < 90, L('Low','נמוך'))
+    + vt('HR', num(v.pulse), L('/min','/דק׳'), 0, v.pulse > 120 || (v.pulse != null && v.pulse < 50), v.pulse > 120 ? L('High','גבוה') : L('Low','נמוך'))
+    + vt('BP', v.bpSys ? v.bpSys + '/' + (v.bpDia || '–') : '—', '', 1, v.bpSys && (v.bpSys < 90 || v.bpSys >= 180), v.bpSys >= 180 ? L('High','גבוה') : L('Low','נמוך'))
     + vt('SpO₂', num(v.spo2), '%', 3, v.spo2 != null && v.spo2 < 92, L('Low','נמוך'))
-    + vt(L('Breaths','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 24 || v.rr < 10), v.rr > 24 ? L('High','גבוה') : L('Low','נמוך'))
+    + vt(L('Breaths','נשימות'), num(v.rr), L('/min','/דק׳'), 4, v.rr != null && (v.rr > 24 || v.rr < 10), v.rr > 24 ? L('High','גבוה') : L('Low','נמוך'))
     + '</div>'
     + '<div class="f-tapbar"><button onclick="Field.tapStart(\'pulse\')">' + ico('heart-pulse', 30) + '<span>' + L('Tap the heartbeat','הקישו את הדופק') + '</span></button><button onclick="Field.tapStart(\'rr\')">' + ico('wind', 30) + '<span>' + L('Tap the breaths','הקישו את הנשימות') + '</span></button></div>';
   // 6 · finish: link this record to the tag on the casualty
@@ -213,7 +221,7 @@ function accessHtml(){
   var a = ((W._casualtyXABCDE || {}).c || {}).ivAccess || [], tr = function(x){ return W.ShowcaseI18n ? W.ShowcaseI18n.tr(String(x)) : String(x); };
   if (!a.length) return '<button class="f-acc none" onclick="Field.accessSheet()">' + ico('syringe', 26) + '<span><b>' + L('Record IV / IO access','תיעוד גישה ורידית / IO') + '</b><small>' + L('Needed before IV drugs and blood','נדרש לפני תרופות לווריד ודם') + '</small></span></button>';
   var last = a[a.length - 1];
-  return '<div class="f-acc"><span class="f-acc-t">' + ico('check', 24) + '<span><b>' + L('Access: ','גישה: ') + esc(tr(last.site)) + (a.length > 1 ? ' +' + (a.length - 1) : '') + '</b><small dir="ltr">' + hhmm(last.time) + '</small></span></span><button onclick="Field.accessSheet()">' + ico('plus', 22) + '<span>' + L('Add','הוספה') + '</span></button></div>';
+  return '<div class="f-acc"><span class="f-acc-t">' + ico('check', 24) + '<span><b>' + esc(W.accessLabel(last.site)) + (a.length > 1 ? ' +' + (a.length - 1) : '') + '</b><small dir="ltr">' + hhmm(last.time) + '</small></span></span><button onclick="Field.accessSheet()">' + ico('plus', 22) + '<span>' + L('Add','הוספה') + '</span></button></div>';
 }
 function gcsLine(){
   var d = ((W._casualtyXABCDE || {}).d) || {}, p = d.pupils || {}, out = [];
@@ -232,7 +240,10 @@ function patientHtml(){
 // A new casualty gets the next number at once: the number is the identity, never a name
 if (typeof W.newCasualty === 'function' && !W.newCasualty.__num){
   var _nc = W.newCasualty;
-  W.newCasualty = function(){ var r = _nc.apply(this, arguments); if (W._casualtyEditMode && !String(W._casualtyName || '').trim() && W.nextCasNum){ W._casualtyName = 'נפגע ' + W.nextCasNum(); if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave(); if (W.MedHost && W.MedHost.renderIncidentPage) W.MedHost.renderIncidentPage(); } return r; };
+  W.newCasualty = function(){ var r = _nc.apply(this, arguments);
+    // pupils start as "not checked" (the engine default reads as two normal pupils that nobody examined)
+    var d0 = W._casualtyEditMode && W._casualtyXABCDE && W._casualtyXABCDE.d; if (d0) d0.pupils = { left:{ size:null, reactive:null }, right:{ size:null, reactive:null } };
+    if (W._casualtyEditMode && !String(W._casualtyName || '').trim() && W.nextCasNum){ W._casualtyName = 'נפגע ' + W.nextCasNum(); if (W.MedHost && W.MedHost.renderIncidentPage) W.MedHost.renderIncidentPage(); } return r; };
   W.newCasualty.__num = true;
 }
 // ── Procedures: one sheet, grouped by X-CARE letter. Each item writes to the field the engine already has
@@ -292,8 +303,29 @@ function isChild(){ var e = ctx().e; return e.ageYears != null ? Number(e.ageYea
 function procLine(){
   var out = [];
   PROC.forEach(function(g){ g.items.forEach(function(it){ if (it.k !== 'iv' && procDone(it)) out.push(L(it.en, it.he).replace(/ \(.*\)$/, '')); }); });
-  var n = aIv('אינטובציה'); if (n.length){ var ok = n.some(function(x){ return x.outcome === 'success'; }); out = out.map(function(x){ return x === L('Intubation','אינטובציה') ? x + (ok ? L(' (in)',' (הצליח)') : L(' (failed)',' (נכשל)')) : x; }); }
+  var n = aIv('אינטובציה'); if (n.length){ var ok = n.some(function(x){ return x.outcome === 'success'; }); out = out.map(function(x){ return x === L('Intubation','אינטובציה') ? x + (ok ? L(' (success)',' (הצליח)') : L(' (failed)',' (נכשל)')) : x; }); }
   return out.length ? out.join(' · ') : L('None recorded','לא תועדו');
+}
+// Deleting a treatment from the body-map list removes the same record as deleting it from the timeline (tourniquet clock,
+// handoff, X-CARE all follow) and gets the same named undo.
+if (typeof W.removeTreatmentFromBody === 'function' && !W.removeTreatmentFromBody.__one){
+  var _rt = W.removeTreatmentFromBody;
+  W.removeTreatmentFromBody = function(idx){
+    var t = (W._casualtyTreatments || [])[idx]; if (!t) return;
+    var tl = W._casualtyTimeline || [], X0 = W._casualtyXABCDE || {}, i = -1, lab = (W.BODY_LABELS || {})[t.region] || '';
+    if (t.type === 'tourniquet'){
+      var q = ((X0.x || {}).tourniquets || []).filter(function(r){ return r.site === t.region; })[0], qt = q ? Date.parse(q.time) : NaN;
+      if (!isNaN(qt)) i = tl.findIndex(function(e){ return /ח"ע|חוסם/.test(String(e.action || '')) && Math.abs(Date.parse(e.time) - qt) < 90000; });
+    } else i = tl.findIndex(function(e){ return e.details === t.type && /^טיפול /.test(String(e.action || '')) && String(e.action).indexOf(lab) >= 0; });
+    if (i >= 0 && Field.tlDelLinked) return Field.tlDelLinked(i);
+    // no timeline line (older record): remove the pin and its matching X record together, still undoable
+    snapshot(); W._medPushLock = true; Promise.resolve().then(function(){ W._medPushLock = false; });
+    var arr = { tourniquet:'tourniquets', pressureDressing:'pressureDressings', hemostatic:'hemostatic', woundPacking:'woundPacking' }[t.type];
+    if (arr && X0.x && X0.x[arr]){ var k = X0.x[arr].findIndex(function(r){ return r.site === t.region; }); if (k >= 0) X0.x[arr].splice(k, 1); }
+    _rt.call(this, idx);
+    undoToast(L('Deleted: ','נמחק: ') + esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr((W._txHe ? W._txHe(t.type) : t.type) + ' — ' + lab) : lab), doUndo);
+  };
+  W.removeTreatmentFromBody.__one = true;
 }
 var Field = {
   html: html,
@@ -304,13 +336,18 @@ var Field = {
     var d = new Date();
     if (val === 'now') d.setSeconds(0, 0);
     else if (val instanceof Date) d = val;
-    else { var m = /^(\d{1,2}):(\d{2})$/.exec(val || ''); if (!m) return; d.setHours(+m[1], +m[2], 0, 0); if (d.getTime() > Date.now() + 60000) d.setDate(d.getDate() - 1); }
+    else { var m = /^(\d{1,2}):(\d{2})$/.exec(val || ''); if (!m) return; d.setHours(+m[1], +m[2], 0, 0); }
+    // never in the future (a later clock time is not silently turned into "yesterday")
+    if (d.getTime() > Date.now() + 60000){ render(); return undoToast(L('Injury time cannot be in the future. Now is ' + hm(Date.now()) + '.','שעת הפציעה לא יכולה להיות בעתיד. עכשיו ' + hm(Date.now()) + '.'), null); }
+    // the injury happens before any treatment: say so if the new time is later than the first one
+    var Xt = W._casualtyXABCDE || {}, first = [].concat(((Xt.x || {}).tourniquets) || [], ((Xt.e || {}).medications) || [], ((Xt.c || {}).fluids) || [], ((Xt.c || {}).ivAccess) || []).map(function(r){ return Date.parse(r.time); }).filter(function(t){ return !isNaN(t); }).sort(function(a, b){ return a - b; })[0];
+    var late = first != null && d.getTime() > first + 60000;
     snapshot();
     X.e.timeOfInjury = d.toISOString();
     var tl0 = W._casualtyTimeline || []; for (var j = tl0.length - 1; j >= 0; j--){ if (/^שעת פציעה /.test(String(tl0[j].action || ''))) tl0.splice(j, 1); }
     if (W.addTimestampedAction) W.addTimestampedAction('injury', 'שעת פציעה ' + hm(d.getTime()), '');
     W.MedHost.triggerAutoSave(); render();
-    undoToast(L('Time of injury: ' + hm(d.getTime()), 'שעת פציעה: ' + hm(d.getTime())), doUndo);
+    undoToast(late ? L('Injury ' + hm(d.getTime()) + ' is after the first treatment (' + hm(first) + '). Check it.','פציעה ' + hm(d.getTime()) + ' אחרי הטיפול הראשון (' + hm(first) + '). בדקו.') : L('Time of injury: ' + hm(d.getTime()), 'שעת פציעה: ' + hm(d.getTime())), doUndo);
   },
   editWho: function(){
     var e = ctx().e; if (W.FormUI && W.FormUI.jump) W.FormUI.jump('fs-record');
@@ -349,7 +386,7 @@ var Field = {
     else if (it.k === 'o2'){ X0.b.oxygen = true; X0.b.o2Lpm = X0.b.o2Lpm || 15; X0.b.o2StartTime = X0.b.o2StartTime || now; W.addTimestampedAction('b', 'חמצן ' + X0.b.o2Lpm + ' L/min', ''); }
     else if (it.k === 'bvm'){ X0.b.bvm = { time:now }; W.addTimestampedAction('b', 'הנשמה במפוח (BVM)', ''); }
     else if (it.k === 'ct'){ X0.b.tubeThora = { side:a1, time:now, outcome:'success' }; W.addTimestampedAction('b', 'נקז חזה' + sideHe, ''); if (W.autoPlaceTreatment) try { W.autoPlaceTreatment(a1 === 'L' ? 'chest_l' : 'chest_r', 'tubeThora'); } catch (e) {} }
-    else if (it.k === 'pb'){ if (!(X0.e || {}).pelvicBinder){ X0.e.pelvicBinder = { site:'greater trochanter', time:now }; W.addTimestampedAction('e', 'מקבע אגן (greater trochanter)', ''); } }
+    else if (it.k === 'pb'){ if (!(X0.e || {}).pelvicBinder){ X0.e.pelvicBinder = { site:'greater trochanter', time:now }; W.addTimestampedAction('e', 'מקבע אגן (בגובה הטרוכנטרים)', ''); } }
     else if (it.hypo){ X0.e.hypothermiaPrevention = it.hypo; W.addTimestampedAction('e', 'מניעת היפותרמיה: ' + (it.hypo === 'HPMK' ? 'HPMK' : 'שמיכה'), ''); }
     else { X0.e.procedures = X0.e.procedures || []; X0.e.procedures.push({ k:it.k, label:it.he, side:a1 || '', time:now }); W.addTimestampedAction(it.k === 'tsd' ? 'b' : 'e', it.he + sideHe, ''); }
     Field.closeSheet();
@@ -383,7 +420,7 @@ var Field = {
     var conf = Object.keys(S0.conf || {}).filter(function(k){ return S0.conf[k]; }).map(function(k){ return k === 'etco2' ? 'ETCO2' : 'האזנה'; });
     X0.a.interventions = X0.a.interventions || [];
     X0.a.interventions.push({ type:'אינטובציה', time:now, attempts:n, outcome: ok ? 'success' : 'fail', tubeSize: ok ? S0.size : null, confirm: ok ? conf : [] });
-    W.addTimestampedAction('a', 'אינטובציה — ניסיון ' + n + (ok ? ': הצליח' + (S0.size ? ' · ' + S0.size + 'mm' : '') + (conf.length ? ' · ' + conf.join(', ') : '') : ': נכשל'), '');
+    W.addTimestampedAction('a', 'אינטובציה — ניסיון ' + n + (ok ? ': הצליח' + ((S0.size || conf.length) ? ' (' + [S0.size ? S0.size + 'mm' : ''].concat(conf).filter(Boolean).join(' + ') + ')' : '') : ': נכשל'), '');
     Field._int = null; W.MedHost.triggerAutoSave(); render();
     if (ok) Field.closeSheet(); else Field.intSheet();
     undoToast(L('Intubation attempt ' + n + (ok ? ': success' : ': failed'), 'אינטובציה ניסיון ' + n + (ok ? ': הצליח' : ': נכשל')), doUndo);
@@ -411,23 +448,23 @@ var Field = {
     var d = new Date(Math.min(Date.now(), ii.t + delta * 60000)); d.setSeconds(0, 0);
     Field.setInjury(d);
   },
-  patIn: function(k, val){
-    var X = W._casualtyXABCDE; if (!X) return; X.e = X.e || {}; var n = parseFloat(val);
-    if (!Field._patPend){ snapshot(); Field._patPend = true; }   // UNDO must return to the value from BEFORE the first keystroke
-    if (k === 'age') X.e.ageYears = (!isNaN(n) && n >= 0 && n <= 120) ? (n < 2 ? Math.round(n * 10) / 10 : Math.floor(n)) : null;
-    else X.e.weightKg = (!isNaN(n) && n >= 1 && n <= 250) ? n : null;
-    W.MedHost.triggerAutoSave();
-  },
+  // Age / weight: nothing is written while typing. On commit (blur / Done) a valid value is saved through the engine
+  // (which re-estimates an estimated weight from the age); an invalid one is refused and the previous value stays.
+  patIn: function(k, val){ Field._patPend = true; },
   patDone: function(k, val){
-    var had = Field._patPend; Field._patPend = false;
-    // The undo step for this edit was taken before the first keystroke; stop the engine adding a second one that already contains the new value.
-    var hold = function(){ W._medPushLock = true; Promise.resolve().then(function(){ W._medPushLock = false; }); };
-    var n = parseFloat(val); if (isNaN(n)) return;
-    var pd = Field._pd = (Field._pd && Field._pd.c === W._casualtyXABCDE) ? Field._pd : { c: W._casualtyXABCDE };
-    if (pd[k] === n) return;   // the same value committed again (blur after change): no empty UNDO step
-    pd[k] = n;
-    if (k === 'age'){ if (n < 0 || n > 120){ undoToast(L('Age must be 0 to 120','הגיל חייב להיות 0 עד 120'), null); return; } if (had) hold(); else snapshot(); W._setPatientAge((n < 2 ? Math.round(n * 10) / 10 : Math.floor(n))); }
-    else { if (n < 1 || n > 250){ undoToast(L('Weight must be 1 to 250 kg','המשקל חייב להיות 1 עד 250 ק״ג'), null); return; } if (had) hold(); else snapshot(); W._setPatientWeight(n); }
+    Field._patPend = false;
+    var e = ctx().e, raw = String(val == null ? '' : val).trim(), n = parseFloat(raw);
+    var cur = k === 'age' ? e.ageYears : e.weightKg;
+    if (raw === '') return;
+    if (isNaN(n) || (k === 'age' ? (n < 0 || n > 120) : (n < 1 || n > 250))){
+      render();   // the field shows the last valid value again
+      return undoToast(k === 'age' ? L('Age must be 0 to 120. Kept: ' + (cur != null ? cur : '—'),'הגיל חייב להיות 0 עד 120. נשאר: ' + (cur != null ? cur : '—')) : L('Weight must be 1 to 250 kg. Kept: ' + (cur != null ? cur + ' kg' : '—'),'המשקל חייב להיות 1 עד 250 ק״ג. נשאר: ' + (cur != null ? cur + ' ק״ג' : '—')), null);
+    }
+    if (k === 'age') n = n < 2 ? Math.round(n * 10) / 10 : Math.floor(n);
+    if (cur === n && (k !== 'wt' || !e.weightEst)) return;   // same value committed again: no empty UNDO step
+    snapshot();
+    W._medPushLock = true; Promise.resolve().then(function(){ W._medPushLock = false; });   // one undo step for this edit
+    if (k === 'age') W._setPatientAge(n); else W._setPatientWeight(n);
   },
   setSex: function(s){
     var X = W._casualtyXABCDE; if (!X) return; snapshot(); X.e = X.e || {};
@@ -521,14 +558,18 @@ var Field = {
   access: function(k){
     var a = ACCESS.filter(function(x){ return x[0] === k; })[0]; if (!a || !W.addIVAccess) return;
     var then = Field._afterAccess; Field._afterAccess = null; Field.closeSheet();
-    W.addIVAccess(a[2]);
+    snapshot();
+    var X1 = W._casualtyXABCDE; X1.c = X1.c || {}; X1.c.ivAccess = X1.c.ivAccess || []; X1.c.ivAccess.push({ site:a[2], time:new Date().toISOString() });
+    if (W.addTimestampedAction) W.addTimestampedAction('c', (a[0].charAt(1) === 'o' ? 'גישה גרמית (IO): ' : 'גישה ורידית: ') + a[2], '');
     if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave();
-    undoToast(L('Access recorded: ' + a[1] + ', ' + hhmm(new Date().toISOString()), 'גישה תועדה: ' + a[2] + ', ' + hhmm(new Date().toISOString())), doUndo);
+    render();
+    undoToast(L('Recorded: ','תועד: ') + esc(W.accessLabel(a[2])) + ', ' + hhmm(new Date().toISOString()), doUndo);
     if (then) setTimeout(then, 60);
   },
   // GCS and pupils, quick entry
   // GCS and pupils, quick entry. Best answer first; every option = colour (good → bad) + icon + number + word.
   gcsSheet: function(){
+    var prevS = document.querySelector('#f-sheet .f-gcs'), keepY = prevS ? prevS.scrollTop : 0;
     Field.closeSheet();
     var d = ((W._casualtyXABCDE || {}).d) || {}, g = d.gcsDetail || {}, p = d.pupils || {};
     var tone = function(v, max){ var f = (v - 1) / (max - 1); return f >= 0.999 ? 'g-ok' : f >= 0.5 ? 'g-mid' : f > 0 ? 'g-low' : 'g-bad'; };
@@ -557,6 +598,7 @@ var Field = {
       + '<h3>' + L('Pupils','אישונים') + '</h3>' + pup('right', 'Right eye', 'עין ימין') + pup('left', 'Left eye', 'עין שמאל')
       + '<button class="xbtn xbtn-primary" onclick="Field.closeSheet()">' + ico('check', 26) + L('Done','סיום') + '</button></div>';
     app().appendChild(el);
+    var nS = el.querySelector('.f-gcs'); if (nS && keepY) nS.scrollTop = keepY;
   },
   gcs: function(key, v){ snapshot(); if (W.setGCSComponent) W.setGCSComponent(key, v); W.MedHost.triggerAutoSave(); Field.gcsSheet(); },
   pupil: function(side, k){
@@ -644,7 +686,7 @@ var Field = {
     var K = Field._k; if (!K) return; var f = K.f[K.i]; K.err = '';
     if (k === '⌫'){ K.v[f.k] = K.v[f.k].slice(0, -1); }
     else if (k === 'OK'){ K.err = Field._kpCheck(K.i); if (K.err){ if (navigator.vibrate) navigator.vibrate([30, 40, 30]); return Field._kpDraw(); } if (K.i === K.f.length - 1) return Field.kpSave(); K.i++; }
-    else { var nv = ((K.v[f.k] === '0' ? '' : K.v[f.k]) + k).slice(0, 3); if (parseInt(nv, 10) <= f.max) K.v[f.k] = nv; }
+    else { var cur0 = K.v[f.k] === '0' ? '' : K.v[f.k]; if (cur0.length >= 3){ K.err = L('3 digits at most. Delete to change it.','עד 3 ספרות. מחקו כדי לשנות.'); if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } else K.v[f.k] = cur0 + k; }
     if (navigator.vibrate) navigator.vibrate(8);
     Field._kpDraw();
   },
@@ -654,6 +696,7 @@ var Field = {
   kpSave: function(){
     var K = Field._k; if (!K) return; var v = K.v;
     for (var ci = 0; ci < K.f.length; ci++){ var msg = Field._kpCheck(ci); if (msg){ K.i = ci; K.err = msg; if (navigator.vibrate) navigator.vibrate([30, 40, 30]); return Field._kpDraw(); } }
+    if ((v.bpSys === '') !== (v.bpDia === '')){ K.i = v.bpSys === '' ? 1 : 2; K.err = L('Blood pressure needs both numbers, or skip both.','לחץ דם צריך את שני המספרים, או לדלג על שניהם.'); if (navigator.vibrate) navigator.vibrate([30, 40, 30]); return Field._kpDraw(); }
     var any = v.pulse || v.bpSys || v.bpDia || v.spo2 || v.rr;
     Field.kpClose();
     if (!any) return;

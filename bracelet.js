@@ -53,7 +53,7 @@ function clockSec(str){
 var BT_TYPES = ['chestSeal', 'splint', 'bandage', 'custom'];
 function snapshot(c){
   var x = c.xabcde || c.xcare || {}, e = x.e || {}, xx = x.x || {}, a = x.a || {}, b = x.b || {}, cc = x.c || {}, d = x.d || {};
-  var v = (c.vitalsHistory || []).slice(-1)[0] || {};
+  var v = (W.latestVitals ? W.latestVitals(c.vitalsHistory || []) : (c.vitalsHistory || []).slice(-1)[0]) || {};   // latest value per field
   var sys = nn(v.bpSys), dia = nn(v.bpDia);
   if (sys == null && v.bp){ var pm = String(v.bp).match(/^(\d+)\/(\d+)?/); if (pm){ sys = +pm[1]; dia = pm[2] ? +pm[2] : null; } }
   var g = d.gcsDetail, pu = d.pupils || {};

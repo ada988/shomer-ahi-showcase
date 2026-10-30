@@ -18,6 +18,7 @@
 
   // If the first render failed completely, show a plain message with a reload button instead of an empty screen.
   function blankGuard() {
+    var bs = document.getElementById('boot'); if (bs && bs.parentNode) bs.parentNode.removeChild(bs);
     var c = document.getElementById('incident-content');
     if (!c || c.firstElementChild) return;
     var d = document.createElement('div'); d.className = 'boot-fail'; d.setAttribute('role', 'alert');
@@ -30,6 +31,8 @@
 
   window.addEventListener('DOMContentLoaded', function () {
     try { Demo.boot(); } finally { Disclaimer.gate(); }   // an error in boot still propagates, but the medical notice is never skipped
+    // fade the boot splash out once the first frame of the real app is on screen
+    requestAnimationFrame(function () { var b = document.getElementById('boot'); if (!b) return; b.classList.add('out'); setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 400); });
     setTimeout(blankGuard, 1500);
   });
 
