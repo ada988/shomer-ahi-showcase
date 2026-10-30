@@ -1,4 +1,4 @@
-/* 60-second guided tour: navigates the real app and spotlights the real controls. */
+/* 60-second guided tour (8 steps): navigates the real app and spotlights the real controls. */
 (function(){
 'use strict';
 var W = window;
@@ -10,44 +10,29 @@ function ensureForm(){ return W._casualtyEditMode ? Promise.resolve() : W.Demo.g
 
 var STEPS = [
   { pre: function(){ W.Bracelet.close(true); return W.Demo.tab('status'); }, target:'.ov-tiles', pos:'bottom',
-    en:['A live scenario','Six casualties from a bus-stop attack. Every colour block is a triage group — tap one to see who is in it.'],
-    he:['תרחיש חי','שישה נפגעי פיגוע בתחנת אוטובוס. כל בלוק צבע הוא קבוצת מיון — לחצו לראות מי בה.'] },
-  { pre: function(){ return W.Demo.tab('status'); }, target:'.ov-choose', pos:'bottom', scroll:'center',
-    en:['Two ways to start','One patient: the full Form 101. Many casualties: quick triage, a colour in seconds. A quick record can be completed as a full Form 101 later.'],
-    he:['שתי דרכי התחלה','נפגע אחד: טופס 101 מלא. נפגעים רבים: מיון מהיר, צבע תוך שניות. את הרשומה המהירה אפשר להשלים אחר כך לטופס 101 מלא.'] },
-  { pre: function(){ return W.Demo.go('mci'); }, target:'.mci-card', pos:'top',
-    en:['The command board','Sorted by priority, with vitals, a running tourniquet clock and what has been done. Tap a card to expand it.'],
-    he:['לוח הפיקוד','ממוין לפי עדיפות, עם מדדים, שעון חוסם עורקים ומה שבוצע. לחצו על כרטיס להרחבה.'] },
-  { pre: ensureForm, target:'.f-tri', pos:'bottom', scroll:'start',
-    en:['One tap sets triage','Huge colour buttons with a shape and a word. The whole app updates at once.'],
-    he:['לחיצה אחת קובעת מיון','כפתורי צבע ענקיים עם צורה ומילה. כל האפליקציה מתעדכנת מיד.'] },
-  { pre: ensureForm, target:'.f-tq', pos:'top', scroll:'center',
-    en:['Tourniquet with automatic time','Tap, choose the limb. The time is recorded and the clock starts. Undo for 8 seconds.'],
-    he:['חוסם עורקים עם זמן אוטומטי','לוחצים, בוחרים איבר. הזמן נרשם והשעון מתחיל. ביטול למשך 8 שניות.'] },
-  { pre: ensureForm, target:'.f-vit', pos:'top', scroll:'center',
-    en:['Vitals in big numbers','Tap a number to open a keypad with huge keys. Red means out of range.'],
-    he:['מדדים במספרים גדולים','לוחצים על מספר לפתיחת מקלדת עם מקשים ענקיים. אדום = חריג.'] },
+    en:['A live mass-casualty scene','Six casualties from a bus-stop attack. Each block is a triage group: shape, word and colour.'],
+    he:['זירת אר״ן חיה','שישה נפגעי פיגוע בתחנת אוטובוס. כל בלוק הוא קבוצת מיון: צורה, מילה וצבע.'] },
+  { pre: function(){ return W.Demo.tab('status').then(function(){ W.Quick.open(); }); }, target:'.qt-yn', pos:'top',
+    en:['Quick triage in seconds','Many casualties: a few yes / no questions from the IDF protocol give each one a colour. Bleeding, breathing, airway, chest, shock.'],
+    he:['מיון מהיר תוך שניות','נפגעים רבים: כמה שאלות כן / לא לפי פרוטוקול צה״ל נותנות לכל אחד צבע. דימום, נשימה, נתיב אוויר, חזה, הלם.'] },
+  { pre: function(){ if (W.Quick) W.Quick.close(); return W.Demo.go('casualty'); }, target:'.f-id', pos:'bottom', scroll:'start',
+    en:['One patient: the full Form 101','Casualty A is in shock. Triage, wristband number and identity on one strip.'],
+    he:['נפגע אחד: טופס 101 מלא','נפגע א׳ בהלם. מיון, מספר צמיד וזהות בשורה אחת.'] },
   { pre: ensureForm, target:'.xc-tabs', pos:'bottom', scroll:'center',
-    en:['X-CARE, step by step','Primary and secondary survey. Tap a row to tick it, tap the big button to do it: tourniquet, blood, TXA, ketamine, antibiotic. Times are recorded for the handoff.'],
-    he:['X-CARE שלב אחר שלב','סקר ראשוני ושניוני. לוחצים על שורה לסימון, ועל הכפתור הגדול לביצוע: חוסם עורקים, דם, TXA, קטמין, אנטיביוטיקה. הזמנים נרשמים להעברה.'] },
-  { pre: ensureForm, target:'[data-tour=bodymap]', pos:'top', scroll:'center',
-    en:['Body map','Tap a region to mark a wound or a treatment. Each action is saved with a timestamp.'],
-    he:['מפת גוף','לחצו על אזור לסימון פציעה או טיפול. כל פעולה נשמרת עם חותמת זמן.'] },
+    en:['X-CARE, step by step','The IDF 2026 protocol as big rows. Tap a row to tick it, tap the button to act: tourniquet, blood, TXA. Every time is recorded.'],
+    he:['X-CARE שלב אחר שלב','פרוטוקול צה״ל 2026 כשורות גדולות. לוחצים על שורה לסימון, ועל הכפתור לביצוע: חוסם עורקים, דם, TXA. כל זמן נרשם.'] },
   { pre: ensureForm, target:'[data-tour=handoff]', pos:'top', scroll:'center',
     en:['Hand off in one tap','A short report with the time-critical items first, a radio script, or a printable Form 101.'],
-    he:['העברה בלחיצה','דוח קצר עם הפריטים הקריטיים בזמן קודם, תסריט רדיו או טופס 101 להדפסה.'] },
-  { pre: function(){ W.Evac.close(); return W.Demo.tab('evac'); }, target:'.ev-road', pos:'bottom',
-    en:['Evacuation on the road','Who is on the ambulance, the hospital, and a live arrival countdown.'],
-    he:['פינוי בדרך','מי באמבולנס, לאיזה בית חולים, וספירה לאחור חיה להגעה.'] },
-  { pre: function(){ return W.Demo.tab('evac').then(function(){ W.Evac.open('v_a2'); }); }, target:'.tp-eta', pos:'bottom',
-    en:['Transport screen','Built for a moving vehicle: giant countdown, big buttons, and a driver view with no controls.'],
-    he:['מסך הובלה','בנוי לרכב נוסע: ספירה לאחור ענקית, כפתורים גדולים ותצוגת נהג בלי פקדים.'] },
+    he:['העברה בלחיצה','דוח קצר עם הפריטים הקריטיים קודם, תסריט רדיו או טופס 101 להדפסה.'] },
+  { pre: function(){ W.Evac.close(); return W.Demo.tab('evac'); }, target:'.ev-rush, .ev-road', pos:'bottom',
+    en:['Load and go','One tap puts the most urgent casualty still on scene on the free ambulance, picks the nearest trauma centre and starts the countdown.'],
+    he:['העמסה ויציאה','לחיצה אחת שמה את הנפגע הדחוף ביותר שעדיין בזירה על האמבולנס הפנוי, בוחרת את מרכז הטראומה הקרוב ומתחילה ספירה לאחור.'] },
   { pre: function(){ W.Evac && W.Evac.close(); return W.Demo.tab('bracelets'); }, target:'.bt-item .brc2', pos:'bottom',
-    en:['A wristband for every casualty','The QR code carries the medical summary. Print it and attach it to the casualty.'],
-    he:['צמיד לכל נפגע','קוד ה-QR נושא את תמצית המידע הרפואי. מדפיסים וחוברים לנפגע.'] },
+    en:['A wristband for every casualty','The QR code carries the record. Print it and fasten it to the casualty.'],
+    he:['צמיד לכל נפגע','קוד ה-QR נושא את התיק. מדפיסים וחוברים לנפגע.'] },
   { pre: function(){ W.Bracelet.viewCard('demo_c1'); }, target:'.cc-banner', pos:'bottom',
-    en:['Anyone can scan it','A phone camera is enough: triage, what was done and when — even with no network.'],
-    he:['כל אחד יכול לסרוק','מצלמת טלפון מספיקה: מיון, מה בוצע ומתי — גם בלי רשת.'] }
+    en:['Anyone can scan it','Any phone camera: triage, what was done and when. No app, no login, no network.'],
+    he:['כל אחד יכול לסרוק','כל מצלמת טלפון: מיון, מה בוצע ומתי. בלי אפליקציה, בלי התחברות, בלי רשת.'] }
 ];
 
 var i = 0, root = null, spot = null, card = null;

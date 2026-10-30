@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Shomer Ahi">
 <meta name="format-detection" content="telephone=no">
 <title>Shomer Ahi — early beta demo (not for clinical use)</title>
-<meta name="description" content="Digital TCCC casualty card (Form 101), body map, MARCH decision support, mass-casualty triage and QR bracelets. Interactive demo — no login.">
+<meta name="description" content="Digital TCCC casualty card (Form 101), body map, X-CARE protocol guidance, mass-casualty triage and QR bracelets. Interactive demo — no login.">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="shared/logo-shield.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
@@ -36,19 +36,20 @@
   <aside class="side" aria-label="About this demo">
     <div class="brand"><img src="shared/logo-shield.svg" alt=""><span data-en="Shomer Ahi" data-he="שומר אחי">Shomer Ahi</span></div>
     <h1 role="heading" aria-level="2" data-en="Every casualty. One card. Handed off in seconds." data-he="כל נפגע. כרטיס אחד. מועבר תוך שניות.">Every casualty. One card. Handed off in seconds.</h1>
-    <p class="lede" data-en="A digital TCCC casualty card for field medics: body map, MARCH decision support, mass-casualty triage and QR wristbands that carry the patient’s record. Works offline." data-he="כרטיס נפגע דיגיטלי למטפלים בשטח: מפת גוף, תמיכה בהחלטות לפי MARCH, מיון רב-נפגעים וצמידי QR הנושאים את תיק הנפגע. עובד גם בלי רשת.">A digital TCCC casualty card for field medics: body map, MARCH decision support, mass-casualty triage and QR wristbands that carry the patient’s record. Works offline.</p>
+    <p class="lede" data-en="Form 101 on a phone for combat medics and paramedics. It walks the medic through the IDF X-CARE protocol, triages a mass-casualty scene in seconds, and puts each record on a QR wristband any phone can read, even offline." data-he="טופס 101 בטלפון לחובשים ופרמדיקים. מוביל את המטפל בפרוטוקול X-CARE של צה״ל, ממיין אר״ן תוך שניות, ושם כל תיק על צמיד QR שכל טלפון קורא, גם בלי רשת.">Form 101 on a phone for combat medics and paramedics. It walks the medic through the IDF X-CARE protocol, triages a mass-casualty scene in seconds, and puts each record on a QR wristband any phone can read, even offline.</p>
+
+    <div class="phone-qr" id="phone-qr"></div>
 
     <h4 data-en="Try it in 60 seconds" data-he="נסו ב-60 שניות">Try it in 60 seconds</h4>
     <div class="try">
-      <button onclick="Tour.start()"><span class="n">▶</span><div><b data-en="Take the guided tour" data-he="סיור מודרך">Take the guided tour</b><span class="d" data-en="Thirteen short steps, from triage to bracelet scan" data-he="שלושה עשר שלבים קצרים, מהמיון ועד סריקת צמיד">Thirteen short steps, from triage to bracelet scan</span></div></button>
-      <button onclick="Demo.go('casualty')"><span class="n">1</span><div><b data-en="Open a casualty card" data-he="פתחו כרטיס נפגע">Open a casualty card</b><span class="d" data-en="Tap the body map, log vitals, see decision support" data-he="לחצו על מפת הגוף, תעדו מדדים וראו תמיכה בהחלטות">Tap the body map, log vitals, see decision support</span></div></button>
-      <button onclick="Demo.go('mci')"><span class="n">2</span><div><b data-en="See the triage board" data-he="ראו את לוח המיון">See the triage board</b><span class="d" data-en="Six casualties, sorted by priority, with live tourniquet clocks" data-he="שישה נפגעים לפי עדיפות, עם שעוני חוסם עורקים חיים">Six casualties, sorted by priority, with live tourniquet clocks</span></div></button>
-      <button onclick="Demo.go('scan')"><span class="n">3</span><div><b data-en="Scan a wristband" data-he="סרקו צמיד">Scan a wristband</b><span class="d" data-en="Print one, or scan this screen — the QR holds the record" data-he="הדפיסו אחד, או סרקו מהמסך — ה-QR מחזיק את התיק">Print one, or scan this screen — the QR holds the record</span></div></button>
+      <button onclick="Tour.start()"><span class="n">▶</span><div><b data-en="Take the guided tour" data-he="סיור מודרך">Take the guided tour</b><span class="d" data-en="8 steps: triage, X-CARE, handoff, ambulance, wristband scan" data-he="8 שלבים: מיון, X-CARE, העברה, אמבולנס, סריקת צמיד">8 steps: triage, X-CARE, handoff, ambulance, wristband scan</span></div></button>
+      <button onclick="Demo.go('casualty')"><span class="n">1</span><div><b data-en="Open a casualty card" data-he="פתחו כרטיס נפגע">Open a casualty card</b><span class="d" data-en="Casualty A in shock: X-CARE steps, tourniquet clock, vitals" data-he="נפגע א׳ בהלם: שלבי X-CARE, שעון חוסם עורקים, מדדים">Casualty A in shock: X-CARE steps, tourniquet clock, vitals</span></div></button>
+      <button onclick="Quick.open()"><span class="n">2</span><div><b data-en="Triage a mass-casualty scene" data-he="מיינו זירת אר״ן">Triage a mass-casualty scene</b><span class="d" data-en="Answer a few yes / no questions, get a colour in seconds" data-he="ענו על כמה שאלות כן / לא, קבלו צבע תוך שניות">Answer a few yes / no questions, get a colour in seconds</span></div></button>
+      <button onclick="Demo.go('scan')"><span class="n">3</span><div><b data-en="Scan a wristband" data-he="סרקו צמיד">Scan a wristband</b><span class="d" data-en="Use your phone on the QR below, or print a sheet" data-he="השתמשו בטלפון על ה-QR למטה, או הדפיסו גיליון">Use your phone on the QR below, or print a sheet</span></div></button>
     </div>
 
     <ul class="facts" id="facts"></ul>
 
-    <div class="phone-qr" id="phone-qr"></div>
     <div class="side-warn" role="note"><b data-en="Early beta demo — not for real use" data-he="דמו בטא מוקדמת — לא לשימוש אמיתי">Early beta demo — not for real use</b><p data-en="This showcase uses fictional patients and has not been deployed or validated. It is not a medical device. Every suggestion is produced by software from the values entered and can be wrong; only a qualified medical professional may make medical decisions. Do not use it on real patients." data-he="הדמו משתמש בנפגעים בדויים ולא הופעל ולא תוקף. אינו מכשיר רפואי. כל הצעה מופקת על ידי תוכנה מתוך הערכים שהוזנו ועלולה להיות שגויה; רק איש צוות רפואי מוסמך רשאי לקבל החלטות רפואיות. אין להשתמש בנפגעים אמיתיים.">This showcase uses fictional patients and has not been deployed or validated. It is not a medical device. Every suggestion is produced by software from the values entered and can be wrong; only a qualified medical professional may make medical decisions. Do not use it on real patients.</p><button class="xbtn" onclick="Disclaimer.open()" data-en="Read the full notice" data-he="קראו את ההודעה המלאה">Read the full notice</button></div>
   </aside>
 
@@ -83,6 +84,7 @@
 <script src="xcare.js"></script>
 <script src="swipe.js"></script>
 <script src="pwa.js"></script>
+<script src="appbar.js"></script>
 <script src="quick.js"></script>
 <script src="evac.js"></script>
 <script src="shell.js"></script>

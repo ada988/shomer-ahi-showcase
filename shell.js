@@ -77,7 +77,7 @@ var TG = {
   yellow: { c:'#ffd400', en:'DELAYED',   he:'דחוי',   shape:'tri' },
   green:  { c:'#19c37d', en:'NOT URGENT', he:'לא דחוף',     shape:'circ' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', shape:'hex' },
-  black:  { c:'#000000', en:'DECEASED (DOCTOR)', he:'חלל (רופא)',   shape:'sqx' }
+  black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים',   shape:'sqx' }
 };
 var NONE = { c:'#6b7078', en:'NOT TRIAGED', he:'טרם סווג', shape:'circ' };
 function tg(color){ return TG[color] || NONE; }
@@ -145,11 +145,9 @@ function renderOverview(){
     +   '<button class="ch full" onclick="Demo.newFull()"><span class="ch-i">' + ico('file-text', 34) + '</span><b>' + L('ONE PATIENT','נפגע אחד') + '</b><strong>' + L('FULL FORM 101','טופס 101 מלא') + '</strong><small>' + L('The complete care record: body map, vitals, every drug and time.','תיק הטיפול המלא: מפת גוף, מדדים, כל תרופה וזמן.') + '</small></button>'
     +   '<button class="ch quick" onclick="Quick.open()"><span class="ch-i">' + ico('zap', 34) + '</span><b>' + L('MANY CASUALTIES','נפגעים רבים') + '</b><strong>' + L('QUICK TRIAGE','מיון מהיר') + '</strong><small>' + L('A colour for each casualty in seconds. Open the full form 101 later.','צבע לכל נפגע תוך שניות. את טופס 101 המלא פותחים אחר כך.') + '</small></button>'
     + '</div>'
-    + '<div class="sec-label">' + L('OTHER','אחר') + '</div>'
-    + go('file-text', L('Open a sample casualty card','פתחו כרטיס נפגע לדוגמה'), L('Casualty A: a complete Form 101','נפגע א׳: טופס 101 מלא'), "Demo.go('casualty')")
-    + go('ambulance', L('Evacuate','פינוי'), L('Ambulances, who is on board, time to hospital','אמבולנסים, מי על הסיפון, זמן לבית חולים'), "Demo.tab('evac')")
-    + go('scan-line', L('Scan a wristband','סריקת צמיד'), L('The QR code carries the patient’s record','קוד ה-QR נושא את תיק הנפגע'), "Demo.go('scan')")
-    + go('play', L('Take the guided tour','סיור מודרך'), L('About 90 seconds, thirteen short steps','כ-90 שניות, שלושה עשר שלבים קצרים'), 'Tour.start()')
+    + '<div class="sec-label">' + L('SEE IT WORK','ראו איך זה עובד') + '</div>'
+    + go('play', L('Take the guided tour','סיור מודרך'), L('About 60 seconds, 8 steps','כ-60 שניות, 8 שלבים'), 'Tour.start()', true)
+    + go('scan-line', L('Scan a wristband','סריקת צמיד'), L('The QR code carries the casualty’s record','קוד ה-QR נושא את תיק הנפגע'), "Demo.go('scan')")
     + '<div class="sec-label">' + L('INCIDENT','אירוע') + '</div>'
     + '<dl class="kv">'
     +   '<div><dt>' + L('Location','מיקום') + '</dt><dd>' + esc(T(a.location || '')) + '</dd></div>'
@@ -322,7 +320,7 @@ var Demo = w.Demo = {
     var row = function(icon, title, sub, fn){ return '<button class="sheet-row" onclick="' + fn + '"><span class="gi">' + ico(icon, 28) + '</span><span><b>' + title + '</b><small>' + sub + '</small></span></button>'; };
     s.innerHTML = '<div class="sheet-dim" onclick="Demo.closeMenu()"></div><div class="sheet" role="dialog" aria-label="' + L('Menu','תפריט') + '"><div class="sheet-grab"></div><h3>' + L('Menu','תפריט') + '</h3>'
       + '<div class="lang-pick"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\');Demo.closeMenu()">ENGLISH</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\');Demo.closeMenu()">עברית</button></div>'
-      + row('play', L('Guided tour','סיור מודרך'), L('About 90 seconds, thirteen steps','כ-90 שניות, שלושה עשר שלבים'), 'Demo.closeMenu();Tour.start()')
+      + row('play', L('Guided tour','סיור מודרך'), L('About 60 seconds, 8 steps','כ-60 שניות, 8 שלבים'), 'Demo.closeMenu();Tour.start()')
       + row('triangle-alert', L('Important notice','הודעה חשובה'), L('Early beta. Do not use on real patients.','בטא מוקדמת. אין להשתמש בנפגעים אמיתיים.'), 'Demo.closeMenu();Disclaimer.open()')
       + row('rotate-ccw', L('Reset demo','איפוס הדמו'), L('Restore the original six casualties','החזרת ששת הנפגעים המקוריים'), 'Demo.closeMenu();Demo.reset()')
       + '</div>';
@@ -362,43 +360,31 @@ function renderSide(){
   var f = document.getElementById('facts'), q = document.getElementById('phone-qr');
   if (f){
     var items = [
-      ['file-text', L('Form 101 on a phone: body map, vitals, interventions with timestamps','טופס 101 בטלפון: מפת גוף, מדדים, התערבויות עם חותמות זמן')],
-      ['activity', L('Decision support that follows MARCH and flags shock, TBI and drug time windows','תמיכה בהחלטות לפי MARCH שמתריעה על הלם, TBI וחלונות תרופות')],
-      ['ambulance', L('Evacuation board and a driver-proof Transport screen with a live ETA','לוח פינוי ומסך הובלה ברור לנהג עם ETA חי')],
-      ['qr-code', L('QR wristbands carry the record, so any responder can read it, even offline','צמידי QR נושאים את התיק, וכל מגיב יכול לקרוא אותו, גם בלי רשת')]
+      ['list-checks', L('Follows the IDF 2026 X-CARE protocol step by step: bleeding first, then circulation, airway, breathing, evacuation','עוקב אחר פרוטוקול X-CARE של צה״ל (2026) שלב אחר שלב: קודם דימום, אחר כך מחזור דם, נתיב אוויר, נשימה, פינוי')],
+      ['zap', L('Mass casualties: a colour for each casualty in seconds, then the full Form 101 when there is time','אר״ן: צבע לכל נפגע תוך שניות, ואת טופס 101 המלא כשיש זמן')],
+      ['ambulance', L('Evacuation board with live ambulance ETAs and a pre-alert for the hospital','לוח פינוי עם זמני הגעה חיים של אמבולנסים והתרעה מוקדמת לבית החולים')],
+      ['qr-code', L('The record travels on the casualty: a QR wristband any phone camera can read, offline','התיק נוסע עם הנפגע: צמיד QR שכל מצלמת טלפון קוראת, גם בלי רשת')],
+      ['smartphone', L('Built for gloves and stress: huge targets, words on every icon, works as an installed phone app','בנוי לכפפות וללחץ: יעדי מגע ענקיים, מילה ליד כל סמל, עובד כאפליקציה מותקנת')]
     ];
     f.innerHTML = items.map(function(i){ return '<li>' + ico(i[0], 22) + '<span>' + i[1] + '</span></li>'; }).join('');
   }
   if (q && w.qrcode){
-    var url = location.href.split('#')[0].split('?')[0];
-    var qq = w.qrcode(0, 'M'); qq.addData(url); qq.make();
+    // the wow on a laptop: scan Casualty A's wristband with your own phone camera
+    var c0 = (w._incidentCasualties || [])[0], url = c0 && w.Bracelet ? w.Bracelet.linkFor(c0) : 'https://ada988.github.io/shomer-ahi-showcase/';
+    var qq; try { qq = w.qrcode(0, 'L'); qq.addData(url); qq.make(); } catch (e) { return; }
     var n = qq.getModuleCount(), d = '';
-    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qq.isDark(r, c)) d += 'M' + (c + 2) + ' ' + (r + 2) + 'h1v1h-1z';
-    q.innerHTML = '<svg class="qr" viewBox="0 0 ' + (n + 4) + ' ' + (n + 4) + '" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '"/></svg>'
-      + '<p><b>' + L('Open it on your phone','פתחו בטלפון') + '</b>' + L('Scan to try the touch experience.','סרקו כדי לנסות במגע.') + '</p>';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qq.isDark(r, c)) d += 'M' + (c + 3) + ' ' + (r + 3) + 'h1v1h-1z';
+    q.innerHTML = '<svg class="qr" viewBox="0 0 ' + (n + 6) + ' ' + (n + 6) + '" shape-rendering="crispEdges" role="img" aria-label="' + L('Wristband QR of Casualty A','QR של צמיד נפגע א׳') + '"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '"/></svg>'
+      + '<p><b>' + L('Point your phone camera here','כוונו את מצלמת הטלפון לכאן') + '</b>' + L('Casualty A’s wristband. The record opens on your phone: no app, no login, no network.','הצמיד של נפגע א׳. התיק נפתח בטלפון: בלי אפליקציה, בלי התחברות, בלי רשת.') + '</p>';
   }
 }
+Demo.renderSide = renderSide;
 document.addEventListener('DOMContentLoaded', function(){
   var s = w.ShowcaseI18n; if (!s) return;
   var orig = s.setLang; s.setLang = function(l){ orig(l); renderSide(); };
 });
 
-// ── The top bar slides away while reading down the page and returns on scroll up ──
-(function(){
-  var lastY = 0, lock = 0;
-  function bind(){
-    var c = document.getElementById('incident-content'), bar = document.querySelector('.appbar'); if (!c || !bar) return;
-    c.addEventListener('scroll', function(){
-      var y = c.scrollTop, d = y - lastY, now = Date.now(); if (now < lock || Math.abs(d) < 12) return;
-      if (d > 0 && y > 110 && !bar.classList.contains('hide')){ bar.classList.add('hide'); lock = now + 350; }
-      else if ((d < 0 || y < 40) && bar.classList.contains('hide')){ bar.classList.remove('hide'); lock = now + 350; }
-      lastY = y;
-    }, { passive:true });
-    var seenView = c.dataset.view;
-    new MutationObserver(function(){ if (c.dataset.view !== seenView){ seenView = c.dataset.view; bar.classList.remove('hide'); lastY = 0; } }).observe(c, { attributes:true, attributeFilter:['data-view'] });
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
-})();
+// (top-bar collapse lives in appbar.js)
 
 // ── Keep engine overlays inside the device frame ───────────────
 new MutationObserver(function(list){

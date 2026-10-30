@@ -207,7 +207,7 @@ function decodeSnap(txt){
   if (!d) throw new Error('payload schema');
   return d;
 }
-function baseUrl(){ return location.origin + location.pathname; }
+function baseUrl(){ return /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname) ? 'https://ada988.github.io/shomer-ahi-showcase/' : location.origin + location.pathname; }
 function linkFor(c){ var s = snapshot(c); return baseUrl() + '#b=' + s.s + '.' + encodeSnap(s); }
 function parseScan(text){
   text = String(text || '').slice(0, 20000).trim();

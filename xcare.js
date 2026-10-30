@@ -126,7 +126,7 @@ Field.xcareHtml = function(){
   var tabs = '<div class="xc-tabs" role="tablist">'
     + '<button role="tab" aria-selected="' + !sec + '" class="' + (!sec ? 'on' : '') + '" onclick="Field.xcStage(\'primary\')"><b>' + L('PRIMARY SURVEY','סקר ראשוני') + '</b><small>X·C·A·R·E</small></button>'
     + '<button role="tab" aria-selected="' + sec + '" class="' + (sec ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C·A·R·E·PFC</small></button></div>';
-  return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + groupsHtml(sec);
+  return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + '<p class="xc-src">' + L('Source: IDF Trauma and Operational Medicine Book, January 2026, chapter 1.','מקור: ספר הטראומה והרפואה המבצעית של צה״ל, ינואר 2026, פרק 1.') + '</p>' + groupsHtml(sec);
 };
 Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; Field._xfo = {}; W.MedHost.renderIncidentPage(); };
 Field.xcOpen = function(key, v){ Field._xo[key] = !!v; W.MedHost.renderIncidentPage(); };

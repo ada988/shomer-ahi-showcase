@@ -12,7 +12,7 @@ function hhmm(iso){ var d = new Date(iso); return String(d.getHours()).padStart(
 function minsAgo(iso){ return Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); }
 function app(){ return document.getElementById('app'); }
 
-var TRI = [['red','URGENT','דחוף'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['yellow','DELAYED','דחוי'], ['black','DECEASED (DOCTOR)','חלל (רופא)']];
+var TRI = [['red','URGENT','דחוף'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['yellow','DELAYED','דחוי'], ['black','NO SIGNS OF LIFE','ללא סימני חיים']];
 var EVAC = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant', black:'' };
 if (W.ShowcaseI18n && W.ShowcaseI18n.extend){ var _td = {}; TRI.forEach(function(t){ _td['טריאז׳ — ' + t[2]] = 'Triage — ' + t[1]; }); _td['הלם — קטמין קו ראשון; מורפין 2mg בלבד; ללא Actiq / פנטניל'] = 'Shock: ketamine first line; morphine 2 mg only; no Actiq or fentanyl'; _td['מורפין 2mg IV (הלם)'] = 'Morphine 2 mg IV (shock)'; _td['הערכה חוזרת: ללא החמרה, הולכת'] = 'Reassessment: no deterioration, walking'; _td['אדום — דחוף'] = 'Red — URGENT'; _td['צהוב — דחוי'] = 'Yellow — DELAYED'; _td['ירוק — לא דחוף'] = 'Green — NOT URGENT'; _td['אפור — ממתין'] = 'Gray — WAITING'; _td['שחור — ללא סימני חיים'] = 'Black — NO SIGNS OF LIFE'; W.ShowcaseI18n.extend(_td); }
 var SITES = [['r_upper_arm','RIGHT ARM','יד ימין'], ['l_upper_arm','LEFT ARM','יד שמאל'], ['r_thigh','RIGHT LEG (THIGH)','רגל ימין (ירך)'], ['l_thigh','LEFT LEG (THIGH)','רגל שמאל (ירך)'], ['r_shin','RIGHT LOWER LEG','שוק ימין'], ['l_shin','LEFT LOWER LEG','שוק שמאל']];
@@ -252,7 +252,7 @@ var Field = {
       + '<div class="kp-label">' + L(f.en, f.he) + '</div>'
       + '<div class="kp-val"><b>' + (cur === '' ? '—' : cur) + '</b><span>' + f.unit + '</span></div>'
       + '<div class="kp-hint' + (K.err ? ' bad' : '') + '" role="status">' + (K.err || L('Allowed: ' + f.min + ' to ' + f.max + (f.k === 'pulse' || f.k === 'rr' ? ', or 0 for none' : ''), 'טווח מותר: ' + f.min + ' עד ' + f.max + (f.k === 'pulse' || f.k === 'rr' ? ', או 0 אם אין' : ''))) + '</div>'
-      + '<div class="kp-keys">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.kpKey(\'' + k + '\')">' + (k === 'OK' ? (last ? L('SAVE','שמור') : L('NEXT','הבא')) : (k === '⌫' ? ico('undo-2', 30) : k)) + '</button>'; }).join('') + '</div>'
+      + '<div class="kp-keys">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.kpKey(\'' + k + '\')">' + (k === 'OK' ? (last ? L('SAVE','שמור') : L('NEXT','הבא')) : (k === '⌫' ? '<span class="kp-del">' + ico('arrow-left', 26) + L('DELETE','מחק') + '</span>' : k)) + '</button>'; }).join('') + '</div>'
       + (lastVal(f.k) != null ? '<button class="xbtn kp-same" onclick="Field.kpSame()">' + L('SAME AS LAST: ','כמו הקודם: ') + lastVal(f.k) + '</button>' : '') + '<div class="kp-row"><button class="xbtn" onclick="Field.kpSkip()">' + L('SKIP','דלג') + '</button><button class="xbtn xbtn-primary" onclick="Field.kpSave()">' + L('SAVE NOW','שמור עכשיו') + '</button></div></div>';
   },
   // Returns '' when the field is fine, otherwise a sentence saying why not.

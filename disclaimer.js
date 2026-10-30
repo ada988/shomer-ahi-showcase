@@ -42,8 +42,8 @@ function open(gate, cb){
   el.innerHTML = '<div class="dn-top">'
     + '<div class="dn-badge">' + ico('triangle-alert', 30) + '<span>' + L('EARLY BETA','בטא מוקדמת') + '</span></div>'
     + '<h2>' + L('Do not use on real patients','אין להשתמש בנפגעים אמיתיים') + '</h2>'
-    + '<p class="dn-sub">' + L('This is a demo of an unfinished product. Read this first.','זהו דמו של מוצר לא גמור. קראו קודם.') + '</p></div>'
-    + '<div class="dn-body">' + pointsHtml() + '</div>'
+    + '<p class="dn-sub">' + L('Early beta showcase of a product in development.','תצוגת בטא מוקדמת של מוצר בפיתוח.') + '</p></div>'
+    + (gate && !open._full ? '<div class="dn-body dn-short"><p class="dn-one">' + L('Fictional patients. Not a medical device. Software suggestions can be wrong; only a qualified medical professional makes medical decisions.','נפגעים בדויים. אינו מכשיר רפואי. הצעות התוכנה עלולות לטעות; רק איש צוות רפואי מוסמך מקבל החלטות רפואיות.') + '</p><button class="dn-more" onclick="Disclaimer.full()">' + L('Read the full notice','קראו את ההודעה המלאה') + '</button></div>' : '<div class="dn-body">' + pointsHtml() + '</div>')
     + '<div class="dn-foot">'
     + '<div class="dn-lang"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\')">ENGLISH</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\')">עברית</button></div>'
     + (gate ? '<button class="dn-ok" data-autofocus onclick="Disclaimer.ack()">' + L('I understand — show the demo','הבנתי — הצג את הדמו') + '</button>'
@@ -68,5 +68,5 @@ function gate(cb){ if (needed()) open(true, cb); else if (cb) cb(); }
 function docBanner(){ return '<div style="border:3px solid #b00020;color:#b00020;padding:10px 14px;margin:0 0 14px;font:700 14px/1.35 Arial,sans-serif;text-align:center">' + short() + '</div>'; }
 function textFooter(){ return '\n— ' + (lang() === 'he' ? 'דמו בטא מוקדמת, נתונים בדויים, לא לשימוש קליני —' : 'EARLY BETA DEMO, FICTIONAL DATA, NOT FOR CLINICAL USE —'); }
 
-W.Disclaimer = { relang: function(){ var g = el && el.getAttribute('role') === 'alertdialog'; var cb = onOk; if (el) open(g, cb); }, open: function(){ open(false); }, gate: gate, ack: ack, close: close, short: short, docBanner: docBanner, textFooter: textFooter, pointsHtml: pointsHtml };
+W.Disclaimer = { full: function(){ open._full = true; var g = el && el.getAttribute('role') === 'alertdialog'; open(g, onOk); }, relang: function(){ var g = el && el.getAttribute('role') === 'alertdialog'; var cb = onOk; if (el) open(g, cb); }, open: function(){ open(false); }, gate: gate, ack: ack, close: close, short: short, docBanner: docBanner, textFooter: textFooter, pointsHtml: pointsHtml };
 })();

@@ -33,6 +33,14 @@ var state = { driver:false, view:null, picker:null };
 
 // ── Helpers ────────────────────────────────────────────────────
 function name(v){ return v.name || (L('AMBULANCE ','אמבולנס ') + (vehicles().indexOf(v) + 1)); }
+function rushPlan(){
+  var c = casualties().filter(function(x){ return x.triageColor === 'red' && !W.isCasualtyAssignedToVehicle(x); })[0];
+  if (!c) return null;
+  var rank = { arrived:0, enroute:1 };
+  var v = vehicles().filter(function(x){ return (x.status === 'arrived' || x.status === 'enroute') && used(x).litters < (x.litter || 0); })
+    .sort(function(a, b){ return (rank[a.status] || 9) - (rank[b.status] || 9); })[0];
+  return v ? { c:c, v:v } : null;
+}
 function used(v){ var s = 0, l = 0; (v.casualties || []).forEach(function(i){ if (i && i.pos === 'litter') l++; else s++; }); return { seats:s, litters:l }; }
 function hospital(v){ return HOSPITALS.filter(function(h){ return h.id === v.hospitalId; })[0]; }
 function remaining(v){ return v.etaMinutes != null && v.etaStartAt ? v.etaMinutes * 60 - (Date.now() - v.etaStartAt) / 1000 : null; }
@@ -123,7 +131,9 @@ function render(){
   var road = vs.filter(function(v){ return v.status === 'evacuating'; }), fleet = vs.filter(function(v){ return v.status !== 'evacuating' && v.status !== 'athospital'; }), done = vs.filter(function(v){ return v.status === 'athospital'; });
   var h = '<div class="pl-head"><div><h2>' + L('Evacuate','פינוי') + '</h2><p>' + L('Who is on which ambulance, and when they arrive.','מי על איזה אמבולנס, ומתי יגיעו.') + '</p></div></div>';
   var waiting = casualties().filter(function(c){ return c.triageColor === 'red' && !W.isCasualtyAssignedToVehicle(c); }).length;
-  if (waiting) h += '<div class="b-alert ev-alert">' + ico('triangle-alert', 30) + '<span>' + L(waiting + ' URGENT ' + (waiting > 1 ? 'CASUALTIES' : 'CASUALTY') + ' STILL ON SCENE', waiting + ' נפגעים מיידיים עדיין בזירה') + '</span></div>';
+  if (waiting) h += '<div class="b-alert ev-alert">' + ico('triangle-alert', 30) + '<span>' + L(waiting + ' URGENT ' + (waiting > 1 ? 'CASUALTIES' : 'CASUALTY') + ' STILL ON SCENE', waiting + ' נפגעים דחופים עדיין בזירה') + '</span></div>';
+  var rp = rushPlan();
+  if (rp) h += '<button class="ev-rush" onclick="Evac.rush()">' + ico('ambulance', 34) + '<span><b>' + L('LOAD AND GO','העמסה ויציאה') + '</b><small>' + esc(T(rp.c.name)) + L(' on ',' על ') + name(rp.v) + L(' · nearest trauma centre',' · מרכז הטראומה הקרוב') + '</small></span></button>';
   road.forEach(function(v){ h += transportCard(v); });
   fleet.forEach(function(v){ h += fleetCard(v); });
   done.forEach(function(v){ h += '<section class="ev-card done"><b>' + name(v) + '</b><span>' + L('AT HOSPITAL — handed over','בבית חולים — נמסרו') + ' (' + (v.casualties || []).length + ')</span></section>'; });
@@ -210,6 +220,17 @@ var Evac = {
   },
   etaSet: function(id, n){ var v = veh(id); if (!v) return; v.etaMinutes = n; v.etaStartAt = Date.now(); v._a2 = v._a1 = false; rerender(); },
   assign: function(id){ var v = veh(id); if (v) assignSheet(v); },
+  // One tap: put the most urgent casualty still on scene on the best ambulance, pick the nearest ready trauma centre, depart.
+  rush: function(){
+    var rp = rushPlan(); if (!rp) return;
+    var v = rp.v, c = rp.c, before = { cas:v.casualties.slice(), status:v.status, hid:v.hospitalId, dest:v.destination, eta:v.etaMinutes, at:v.etaStartAt };
+    var h = HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0];
+    v.casualties.push({ docId:c._docId, name:c.name, pos:'litter' });
+    v.hospitalId = h.id; v.destination = h.he; v.etaMinutes = h.eta; v.etaStartAt = Date.now(); v._a2 = v._a1 = false; v.status = 'evacuating';
+    state.view = v.id; rerender();
+    var cc = document.getElementById('incident-content'); if (cc) cc.scrollTop = 0;
+    undoToast(esc(T(c.name)) + L(' is on the road to ',' בדרך ל-') + L(h.en, h.he), function(){ v.casualties = before.cas; v.status = before.status; v.hospitalId = before.hid; v.destination = before.dest; v.etaMinutes = before.eta; v.etaStartAt = before.at; state.view = null; rerender(); });
+  },
   doAssign: function(id, docId, pos){
     var v = veh(id), c = byId(docId); if (!v || !c) return;
     Evac.closeSheet('ev-assign-sheet');
