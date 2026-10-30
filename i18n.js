@@ -35,21 +35,23 @@ var ATTRS = ['placeholder','title','aria-label','alt'];
 // Hebrew mode: the engine still emits a few raw English keys (injury / treatment type ids, one alert title). Map them for display.
 var HE_WORDS = { 'penetrating':'חודר', 'hemorrhage':'דימום', 'fracture':'שבר', 'burn':'כוויה', 'bandage':'חבישה', 'tourniquet':'חוסם עורקים', 'pressureDressing':'תחבושת לחץ', 'hemostatic':'המוסטטי', 'tubeThora':'נקז חזה', 'splint':'קיבוע שבר', 'pelvicBinder':'מקבע אגן', 'woundPacking':'אריזת פצע', 'chestSeal':'אטם חזה', 'Lethal Triad':'שלישיית המוות', 'greater trochanter':'הטרוכנטר הגדול', 'Temp':'חום' };
 var HE_WORD_RX = /(?<![A-Za-z])(?:penetrating|hemorrhage|fracture|burn|bandage|tourniquet|pressureDressing|hemostatic|tubeThora|splint|pelvicBinder|woundPacking|chestSeal|Lethal Triad|greater trochanter|Temp)(?![A-Za-z])/g;
+// text inside .no-tr (user-typed notes, names) is shown exactly as written
+function raw(el){ return !!(el && el.closest && el.closest('.no-tr')); }
 function heFix(str){ return str.replace(HE_WORD_RX, function(m){ return HE_WORDS[m]; }); }
 function walkHe(root){
-  if (root.nodeType === 3){ if (/[A-Za-z]/.test(root.nodeValue) && !(root.parentElement && /^(SCRIPT|STYLE|TEXTAREA)$/.test(root.parentElement.tagName))){ var t = heFix(root.nodeValue); if (t !== root.nodeValue) root.nodeValue = t; } return; }
+  if (root.nodeType === 3){ if (/[A-Za-z]/.test(root.nodeValue) && !raw(root.parentElement) && !(root.parentElement && /^(SCRIPT|STYLE|TEXTAREA)$/.test(root.parentElement.tagName))){ var t = heFix(root.nodeValue); if (t !== root.nodeValue) root.nodeValue = t; } return; }
   if (root.nodeType !== 1 || /^(SCRIPT|STYLE)$/.test(root.tagName)) return;
   var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT), n = root, nodes = [];
   do { nodes.push(n); } while ((n = tw.nextNode()));
   nodes.forEach(function(x){
-    if (x.nodeType === 3){ if (/[A-Za-z]/.test(x.nodeValue) && !(x.parentElement && /^(SCRIPT|STYLE|TEXTAREA)$/.test(x.parentElement.tagName))){ var t = heFix(x.nodeValue); if (t !== x.nodeValue) x.nodeValue = t; } }
+    if (x.nodeType === 3){ if (/[A-Za-z]/.test(x.nodeValue) && !raw(x.parentElement) && !(x.parentElement && /^(SCRIPT|STYLE|TEXTAREA)$/.test(x.parentElement.tagName))){ var t = heFix(x.nodeValue); if (t !== x.nodeValue) x.nodeValue = t; } }
     else if (x.getAttribute){ ['title','aria-label'].forEach(function(a){ var v = x.getAttribute(a); if (v && /[A-Za-z]/.test(v)){ var t = heFix(v); if (t !== v) x.setAttribute(a, t); } }); }
   });
 }
 function walk(root){
   if (!root) return;
   if (lang !== 'en') return walkHe(root);
-  if (root.nodeType === 3){ if (HE.test(root.nodeValue)) root.nodeValue = tr(root.nodeValue); return; }
+  if (root.nodeType === 3){ if (HE.test(root.nodeValue) && !raw(root.parentElement)) root.nodeValue = tr(root.nodeValue); return; }
   if (root.nodeType !== 1) return;
   var tag = root.tagName;
   if (tag === 'SCRIPT' || tag === 'STYLE') return;
@@ -58,7 +60,7 @@ function walk(root){
   do { nodes.push(n); } while ((n = tw.nextNode()));
   nodes.forEach(function(x){
     if (x.nodeType === 3){
-      if (HE.test(x.nodeValue)){
+      if (HE.test(x.nodeValue) && !raw(x.parentElement)){
         var par = x.parentElement;
         // MCI card badge is a 24px token: use the one-letter triage codes there.
         x.nodeValue = (par && par.classList && par.classList.contains('mci-triage-letter') && TRIAGE_CODES[x.nodeValue.trim()])

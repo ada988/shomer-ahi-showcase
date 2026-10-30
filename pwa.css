@@ -70,3 +70,51 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 #incident-content .ov-tile b{grid-area:n;font-size:40px!important;line-height:1;min-width:0}
 #incident-content .ov-tile span{grid-area:w;flex-basis:auto!important;font-size:17px!important;font-weight:900;line-height:1.1;margin:0!important}
 .phone-qr{margin-bottom:22px}
+
+/* Form 101 polish */
+body.in-form .appbar .ttl b{-webkit-line-clamp:1!important;font-size:19px!important}
+.body-map-wrap svg{max-height:min(62vh,560px);width:auto;height:auto}
+.f-inj{display:flex;flex-direction:column;gap:6px;margin:0 0 14px;padding:12px;border-radius:16px;border:3px solid var(--line);background:var(--c2)}
+.f-inj.unset{border-color:#c68a00}
+.f-inj.late{border-color:#8a8f99}
+.f-inj label{font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--t2)}
+.f-inj-r{display:grid;grid-template-columns:1fr auto;gap:10px}
+.f-inj-r input{min-height:60px;font-size:26px;font-weight:900;text-align:center;border:3px solid var(--line);border-radius:12px;background:var(--bg);color:#fff;width:100%;box-sizing:border-box;color-scheme:dark}
+.f-inj-r .xbtn{min-height:60px;min-width:96px;font-size:19px;font-weight:900}
+.f-inj small{font-size:17px;font-weight:800;color:#ffd35c}
+.f-inj.late small{color:var(--t2)}
+
+.xc-avpu{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 14px 12px}
+.xc-avpu button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:68px;padding:4px 2px;border-radius:12px;border:3px solid var(--line);background:var(--bg);color:#fff}
+.xc-avpu b{font-size:26px;font-weight:900;line-height:1}
+.xc-avpu span{font-size:14px;font-weight:900;line-height:1.1;text-align:center}
+.xc-avpu button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+
+.xc-rad{margin:0 14px 12px;display:flex;flex-direction:column;gap:6px}
+.xc-rad small{font-size:15px;font-weight:900;letter-spacing:.06em;color:var(--t2)}
+.xc-rad>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.xc-rad button{min-height:60px;border-radius:12px;border:3px solid var(--line);background:var(--bg);color:#fff;font-size:18px;font-weight:900}
+.xc-rad button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+.xc-rad button.on.bad{background:#d01a20;color:#fff;border-color:#fff}
+
+/* ═══ Timeline ═══ */
+.jb{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+.jb button{font-size:15px!important;padding:0 2px!important}
+.tl-add{width:100%;min-height:60px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;font-weight:900;margin:0 0 12px}
+.tl-empty{font-size:17px;color:var(--t2)}
+.tl-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;position:relative}
+.tl-i{display:grid;grid-template-columns:64px 1fr;grid-template-areas:'w t' 'w d';gap:4px 10px;padding:10px;border-radius:14px;border:2px solid var(--line);background:var(--c2)}
+.tl-when{grid-area:w;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.tl-when b{font:900 19px ui-monospace,Menlo,Consolas,monospace}
+.tl-when small{font-size:14px;font-weight:800;color:var(--t2)}
+.tl-what{grid-area:t;min-width:0}
+.tl-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px 2px 2px;border-radius:8px;background:var(--xc,#3a3f4a);color:#fff;font-size:14px;font-weight:900;letter-spacing:.04em}
+.tl-chip b{display:grid;place-items:center;min-width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,.3);font-size:16px}
+.tl-what p{margin:6px 0 0;font-size:17px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.tl-what p small{display:block;font-size:15px;font-weight:600;color:var(--t2);margin-top:2px}
+.tl-inj{--xc:#9b1c5a}.tl-tri{--xc:#5a5f6a}.tl-vit{--xc:#3b4656}.tl-note{--xc:#6b5a1c}
+.tl-del{grid-area:d;justify-self:end;display:inline-flex;align-items:center;gap:6px;min-height:48px;padding:0 12px;border-radius:10px;border:2px solid #ff6b6b;background:transparent;color:#ffb3b3;font-size:15px;font-weight:900}
+.tl-more{width:100%;min-height:56px;margin-top:10px;font-size:17px;font-weight:900}
+.tl-i{grid-template-columns:64px minmax(0,1fr) auto!important;grid-template-areas:'w t d'!important;align-items:center}
+.tl-del{align-self:center;padding:0 10px!important;flex-direction:column;gap:0!important;min-width:64px;min-height:56px}
+.tl-del span{font-size:14px}

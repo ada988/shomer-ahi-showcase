@@ -3972,17 +3972,14 @@ function renderCasualtyIdentityTable(){
   const ex=_ensureExtra();const id=ex.identity||{};
   // Row 1: מ.א/ת.ז · שם פרטי · שם משפחה · גיל · דרגה · יחידה · סוג שירות
   const row1=[
-    {k:'idNumber',l:'מ.א / ת.ז'},
     {k:'firstName',l:'שם פרטי'},
     {k:'lastName',l:'שם משפחה'},
-    {k:'age',l:'גיל',type:'number'},
     {k:'rank',l:'דרגה'},
     {k:'unit',l:'יחידה (שם/ד.צ)'},
     {k:'serviceType',l:'סוג שירות',options:['חובה','קבע','מילואים','אזרח','אחר']}
   ];
   // Row 2: זמן פציעה · מקום פציעה · שעת קבלה · יחידה מטפלת · דרג מטפל · חייל/אזרח/אויב/אחר · שייכות
   const row2=[
-    {k:'injuryTime',l:'זמן פציעה',type:'time'},
     {k:'injuryLocation',l:'מקום פציעה'},
     {k:'receiveTime',l:'שעת קבלה',type:'time'},
     {k:'caringUnit',l:'יחידה מטפלת'},

@@ -78,7 +78,7 @@ function html(){
   var tile = function(label, big, sub, cls){ return '<div class="f-clock ' + (cls || '') + '"><small>' + label + '</small><b>' + big + '</b><span>' + sub + '</span></div>'; };
   h += '<div class="f-clocks">'
     + (tq0 ? tile(L('TOURNIQUET ON','חוסם עורקים'), minsAgo(tq0.time) + '<u>' + L('MIN','ד׳') + '</u>', L('since ','מאז ') + hhmm(tq0.time), minsAgo(tq0.time) >= 120 ? 'bad' : 'warn') : tile(L('TOURNIQUET','חוסם עורקים'), L('NONE','אין'), L('none applied','לא הונח'), ''))
-    + (txa ? tile('TXA', minsAgo(txa.time) + '<u>' + L('MIN','ד׳') + '</u>', L('given ','ניתן ') + hhmm(txa.time), 'ok') : tile('TXA', L('NOT GIVEN','לא ניתן'), L('3-hour window','חלון 3 שעות'), ''))
+    + (txa ? tile('TXA', minsAgo(txa.time) + '<u>' + L('MIN','ד׳') + '</u>', L('given ','ניתן ') + hhmm(txa.time), 'ok') : (function(){ var ii = injuryInfo(); return !ii ? tile('TXA', L('NOT GIVEN','לא ניתן'), L('set time of injury','קבעו שעת פציעה'), 'warn') : ii.left > 0 ? tile('TXA', ii.left + '<u>' + L('MIN LEFT','דק׳ נותרו') + '</u>', L('of the 3-hour window','מחלון 3 השעות'), ii.left <= 30 ? 'bad' : 'warn') : tile('TXA', L('WINDOW CLOSED','החלון נסגר'), L('over 3 h since injury','מעל 3 שעות מהפציעה'), ''); })())
     + (lv ? tile(L('LAST VITALS','מדדים אחרונים'), minsAgo(lv.time) + '<u>' + L('MIN AGO','ד׳ לפני') + '</u>', L('logged ','נרשם ') + hhmm(lv.time), minsAgo(lv.time) > 10 ? 'warn' : '') : tile(L('VITALS','מדדים'), L('NONE','אין'), L('not measured','לא נמדדו'), 'warn'))
     + (veh ? tile(L('AMBULANCE','אמבולנס'), (W.Evac ? W.Evac.etaText(veh) : '—'), L('on board','על הסיפון'), 'ok') : tile(L('AMBULANCE','אמבולנס'), L('NOT YET','עדיין לא'), L('not assigned','לא שויך'), ''))
     + '</div>';
@@ -106,16 +106,44 @@ function vt(label, val, unit, idx, bad){
 function lastVal(k){ var v = (W._casualtyVitals || []).slice(-1)[0]; return v && v[k] != null ? v[k] : null; }
 // ── Actions ────────────────────────────────────────────────────
 function render(){ W.MedHost.renderIncidentPage(); }
+function injuryInfo(){
+  var e = ctx().e, t = e.timeOfInjury ? Date.parse(e.timeOfInjury) : NaN;
+  if (isNaN(t)) return null;
+  var mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+  return { t:t, mins:mins, left:180 - mins };
+}
+function hm(t){ var d = new Date(t); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function injuryHtml(){
+  var ii = injuryInfo(), val = ii ? hm(ii.t) : '';
+  var note = !ii ? L('Needed for the TXA 3-hour window','נדרש לחלון TXA של 3 שעות')
+    : ii.left > 0 ? L(ii.mins + ' min ago · TXA window: ' + ii.left + ' min left', 'לפני ' + ii.mins + ' דק׳ · חלון TXA: נותרו ' + ii.left + ' דק׳')
+    : L(ii.mins + ' min ago · TXA window closed (over 3 h)', 'לפני ' + ii.mins + ' דק׳ · חלון TXA נסגר (מעל 3 שעות)');
+  return '<div class="f-inj' + (ii && ii.left <= 0 ? ' late' : !ii ? ' unset' : '') + '"><label for="pat-inj">' + L('TIME OF INJURY','שעת הפציעה') + '</label>'
+    + '<div class="f-inj-r"><input id="pat-inj" type="time" value="' + val + '" onchange="Field.setInjury(this.value)">'
+    + '<button class="xbtn" onclick="Field.setInjury(\'now\')">' + L('NOW','עכשיו') + '</button></div><small>' + note + '</small></div>';
+}
 function patientHtml(){
   var e = ctx().e, sx = e.sex === 'M' || e.sex === 'male' ? 'M' : (e.sex === 'F' || e.sex === 'female' ? 'F' : '');
   var v = function(x){ return x == null || x === '' ? '' : esc(String(x)); };
-  return '<div class="f-pat"><div class="f-pat-f"><label for="pat-age">' + L('AGE (YEARS)','גיל (שנים)') + '</label><input id="pat-age" data-k="age" class="fi" type="number" inputmode="numeric" min="0" max="120" placeholder="—" value="' + v(e.ageYears) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
+  return injuryHtml() + '<div class="f-pat"><div class="f-pat-f"><label for="pat-age">' + L('AGE (YEARS)','גיל (שנים)') + '</label><input id="pat-age" data-k="age" class="fi" type="number" inputmode="numeric" min="0" max="120" placeholder="—" value="' + v(e.ageYears) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
     + '<div class="f-pat-f"><label for="pat-wt">' + L('WEIGHT (KG)','משקל (ק״ג)') + '</label><input id="pat-wt" data-k="wt" class="fi" type="number" inputmode="decimal" min="1" max="250" placeholder="—" value="' + v(e.weightKg) + '" oninput="Field.patIn(this.dataset.k,this.value)" onchange="Field.patDone(this.dataset.k,this.value)"></div>'
     + '<div class="f-pat-sex" role="group" aria-label="' + L('Sex','מין') + '"><button class="' + (sx === 'M' ? 'on' : '') + '" aria-pressed="' + (sx === 'M') + '" onclick="Field.setSex(this.dataset.s)" data-s="M">' + (sx === 'M' ? ico('check', 24) : '') + L('MALE','זכר') + '</button><button class="' + (sx === 'F' ? 'on' : '') + '" aria-pressed="' + (sx === 'F') + '" onclick="Field.setSex(this.dataset.s)" data-s="F">' + (sx === 'F' ? ico('check', 24) : '') + L('FEMALE','נקבה') + '</button></div></div>';
 }
 var Field = {
   html: html,
   patientHtml: patientHtml,
+  injuryInfo: injuryInfo,
+  setInjury: function(val){
+    var X = W._casualtyXABCDE; if (!X) return; X.e = X.e || {};
+    var d = new Date();
+    if (val === 'now') d.setSeconds(0, 0);
+    else { var m = /^(\d{1,2}):(\d{2})$/.exec(val || ''); if (!m) return; d.setHours(+m[1], +m[2], 0, 0); if (d.getTime() > Date.now() + 60000) d.setDate(d.getDate() - 1); }
+    snapshot();
+    X.e.timeOfInjury = d.toISOString();
+    if (W.addTimestampedAction) W.addTimestampedAction('injury', 'שעת פציעה ' + hm(d.getTime()), '');
+    W.MedHost.triggerAutoSave(); render();
+    undoToast(L('Time of injury: ' + hm(d.getTime()), 'שעת פציעה: ' + hm(d.getTime())), doUndo);
+  },
   patIn: function(k, val){
     var X = W._casualtyXABCDE; if (!X) return; X.e = X.e || {}; var n = parseFloat(val);
     if (!Field._patPend){ snapshot(); Field._patPend = true; }   // UNDO must return to the value from BEFORE the first keystroke

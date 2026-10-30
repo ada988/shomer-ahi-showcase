@@ -24,9 +24,9 @@ var PRIMARY = [
   ]},
   { k:'C', en:'CIRCULATION', he:'מחזור דם', sub:['Hidden bleeding, shock check, blood.','דימום נסתר, בדיקת הלם, דם.'], items:[
     ['p_c1','Find and stop other bleeding','איתור ועצירת דימומים נוספים','Strip and roll: head, chest, armpits, back, groin.','הפשטה והפיכה: ראש, חזה, בתי שחי, גב, מפשעה.'],
-    ['p_c2','Consciousness (AVPU)','הכרה (AVPU)','Alert, Voice, Pain, Unresponsive. No breathing or no pain response: jaw thrust + airway.','ער, קול, כאב, אין תגובה. אין נשימה או תגובה לכאב: דחיקת לסת ומנתב.','VITALS','מדדים','Field.keypad(0)', function(){ return !!((X().d || {}).avpu); }],
+    ['p_c2','Consciousness (AVPU)','הכרה (AVPU)','Alert, Voice, Pain, Unresponsive. No breathing or no pain response: jaw thrust + airway.','ער, קול, כאב, אין תגובה. אין נשימה או תגובה לכאב: דחיקת לסת ומנתב.',null,null,null, function(){ return !!((X().d || {}).avpu); }],
     ['p_c3','Blood pressure','לחץ דם','Cuff on early. Under 90 = deep shock.','שרוול מוקדם. מתחת ל-90 = הלם עמוק.','ENTER BP','הזינו ל״ד','Field.keypad(1)', function(){ return vitalsHave('bpSys'); }],
-    ['p_c4','Pulse: strength and rate','דופק: חוזק וקצב','Radial pulse. None: carotid. Count 15 s if no reading.','דופק רדיאלי. אין: קרוטידי. ספרו 15 שניות אם אין קריאה.','TAP PULSE','הקישו דופק',"Field.tapStart('pulse')", function(){ return vitalsHave('pulse'); }],
+    ['p_c4','Pulse: strength and rate','דופק: חוזק וקצב','Radial pulse. None: carotid. Count 15 s if no reading.','דופק רדיאלי. אין: קרוטידי. ספרו 15 שניות אם אין קריאה.','TAP PULSE','הקישו דופק',"Field.tapStart('pulse')", function(){ return vitalsHave('pulse') || vitalsHave('radialPulse'); }],
     ['p_c5','Oxygen saturation','סטורציה','Pulse oximeter. Unreliable in deep shock.','מד סטורציה. לא אמין בהלם עמוק.','ENTER SpO₂','הזינו סטורציה','Field.keypad(3)', function(){ return vitalsHave('spo2'); }],
     ['p_c6','Deep shock: IV and blood now','הלם עמוק: עירוי ודם עכשיו','BP under 90, or no BP reading with no radial pulse or an altered mind (not from a head injury). Medics set the line.','ל״ד מתחת ל-90, או אין קריאת ל״ד יחד עם היעדר דופק רדיאלי או שינוי הכרה (לא מפגיעת ראש). החובשים מכניסים עירוי.','WHOLE BLOOD','דם מלא',"Field.give('blood')", function(){ return ((X().c || {}).fluids || []).length; }]
   ]},
@@ -91,6 +91,22 @@ var SECONDARY = [
 Field._xs = 'primary'; Field._xo = {};
 function done(it){ var m = (X().xcare || {})[it[0]]; if (m) return m; return it[8] && it[8]() ? true : false; }
 
+var AVPU = [['A','ALERT','ער'], ['V','VOICE','קול'], ['P','PAIN','כאב'], ['U','NO RESPONSE','ללא תגובה']];
+function avpuHtml(){
+  var cur = ((X().d || {}).avpu || '').toUpperCase();
+  return '<div class="xc-avpu" role="group" aria-label="AVPU">' + AVPU.map(function(a){
+    var on = cur === a[0];
+    return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Field.setAvpu(\'' + a[0] + '\')"><b>' + a[0] + '</b><span>' + L(a[1], a[2]) + '</span></button>';
+  }).join('') + '</div>';
+}
+var RADIAL = [['normal','STRONG','חזק'], ['weak','WEAK','חלש'], ['absent','NONE','אין']];
+function radialHtml(){
+  var v = (W._casualtyVitals || []).slice(-1)[0] || {}, cur = v.radialPulse || '';
+  return '<div class="xc-rad" role="group" aria-label="' + L('Radial pulse','דופק רדיאלי') + '"><small>' + L('RADIAL PULSE','דופק רדיאלי') + '</small><div>' + RADIAL.map(function(r){
+    var on = cur === r[0];
+    return '<button class="' + (on ? 'on' : '') + (r[0] !== 'normal' ? ' bad' : '') + '" aria-pressed="' + on + '" onclick="Field.setRadial(\'' + r[0] + '\')">' + L(r[1], r[2]) + '</button>';
+  }).join('') + '</div></div>';
+}
 function groupsHtml(sec){
   var all = sec ? SECONDARY : PRIMARY, pf = sec ? 's' : 'p', firstOpen = null, h = '<div class="xc-list">';
   // Open/closed state belongs to ONE casualty: switching patient resets it. The default open group is chosen once
@@ -112,7 +128,8 @@ function groupsHtml(sec){
       g.items.forEach(function(it){
         var d = done(it), manual = (X().xcare || {})[it[0]], auto = d && !manual;
         h += '<div class="xc-i' + (d ? ' done' : '') + '"><button class="xc-row" role="checkbox" aria-checked="' + !!d + '" onclick="Field.xcToggle(\'' + it[0] + '\')"><span class="xc-box">' + (d ? ico('check', 26) : '') + '</span><span class="xc-t"><b>' + L(it[1], it[2]) + '</b><small>' + L(it[3], it[4]) + '</small>' + (manual && manual !== true ? '<em>' + L('DONE ','בוצע ') + hhmm(manual) + '</em>' : (auto ? '<em>' + L('FROM THE RECORD','מתוך התיק') + '</em>' : '')) + '</span></button>'
-          + (it[7] ? '<button class="xc-act" onclick="' + it[7] + '">' + L(it[5], it[6]) + '</button>' : '') + '</div>';
+          + (it[7] ? '<button class="xc-act" onclick="' + it[7] + '">' + L(it[5], it[6]) + '</button>' : '')
+          + (it[0] === 'p_c2' ? avpuHtml() : '') + (it[0] === 'p_c4' ? radialHtml() : '') + '</div>';
       });
       h += '</div>';
     }
@@ -127,6 +144,26 @@ Field.xcareHtml = function(){
     + '<button role="tab" aria-selected="' + !sec + '" class="' + (!sec ? 'on' : '') + '" onclick="Field.xcStage(\'primary\')"><b>' + L('PRIMARY SURVEY','סקר ראשוני') + '</b><small>X·C·A·R·E</small></button>'
     + '<button role="tab" aria-selected="' + sec + '" class="' + (sec ? 'on' : '') + '" onclick="Field.xcStage(\'secondary\')"><b>' + L('SECONDARY SURVEY','סקר שניוני') + '</b><small>C·A·R·E·PFC</small></button></div>';
   return '<div class="f-h">' + L('X-CARE PROTOCOL','פרוטוקול X-CARE') + '</div>' + tabs + '<p class="xc-src">' + L('Source: IDF Trauma and Operational Medicine Book, January 2026, chapter 1.','מקור: ספר הטראומה והרפואה המבצעית של צה״ל, ינואר 2026, פרק 1.') + '</p>' + groupsHtml(sec);
+};
+Field.setRadial = function(v){
+  var vi = (W._casualtyVitalsInput = W._casualtyVitalsInput || {});
+  if (W.pushMedHistory) W.pushMedHistory();
+  ['pulse','rr','spo2','bpSys','bpDia','temp','etco2'].forEach(function(k){ vi[k] = ''; });   // a radial-pulse check is its own reading
+  vi.radialPulse = v;
+  if (W.addVitalsReading) W.addVitalsReading();
+  vi.radialPulse = '';
+  W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage();
+  var w = { normal:L('strong','חזק'), weak:L('weak','חלש'), absent:L('none','אין') }[v];
+  if (W.Field && W.Field.toast) W.Field.toast(L('Radial pulse: ','דופק רדיאלי: ') + w, function(){ W.medUndo(); });
+};
+Field.setAvpu = function(v){
+  var Xo = X(); if (!Xo) return; Xo.d = Xo.d || {};
+  if ((Xo.d.avpu || '').toUpperCase() === v) return;
+  if (W.pushMedHistory) W.pushMedHistory();
+  Xo.d.avpu = v;
+  if (W.addTimestampedAction) W.addTimestampedAction('d', 'AVPU: ' + v, '');
+  W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage();
+  if (W.Field && W.Field.toast) W.Field.toast(L('Consciousness: ', 'הכרה: ') + v, function(){ W.medUndo(); });
 };
 Field.xcStage = function(s){ Field._xs = s; Field._xo = {}; Field._xfo = {}; W.MedHost.renderIncidentPage(); };
 Field.xcOpen = function(key, v){ Field._xo[key] = !!v; W.MedHost.renderIncidentPage(); };

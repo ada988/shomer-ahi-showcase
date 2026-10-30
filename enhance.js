@@ -76,7 +76,7 @@ function enhanceForm(c){
     if (on){ bt.classList.add('sel'); bt.insertAdjacentHTML('afterbegin', ico('check', 22)); }
   });
   var sCare = document.createElement('div'); sCare.className = 'fs-more-b';
-  var fVit = fold('vit', '<span>' + L('Enter all vitals','הזנת כל המדדים') + '</span>'); put(fVit, ventry); put(fVit, savevit); sCare.appendChild(fVit);
+  var fVit = fold('vit', '<span>' + L('More vitals: temperature, EtCO₂, radial pulse','עוד מדדים: חום, EtCO₂, דופק רדיאלי') + '</span>'); put(fVit, ventry); put(fVit, savevit); sCare.appendChild(fVit);
   if (urgency){
     // selected = filled button + tick + aria-pressed (not colour alone)
     [].slice.call(urgency.querySelectorAll('button[onclick*="_casualtyEvacPriority"]')).forEach(function(bt){
@@ -90,10 +90,10 @@ function enhanceForm(c){
   var sRec = section('fs-record', L('Record','תיק'), L('Who, what happened, timeline','מי, מה קרה, ציר זמן'));
   var patient = document.createElement('div'); patient.className = 'fs-patient';
   var pat = document.createElement('div'); pat.innerHTML = W.Field && W.Field.patientHtml ? W.Field.patientHtml() : '';
-  [nameRow, pat.firstChild, moi].forEach(function(el){ if (el) patient.appendChild(el); });
+  [nameRow].concat([].slice.call(pat.children)).concat([moi]).forEach(function(el){ if (el) patient.appendChild(el); });
   var rec = sRec.querySelector('.fs-b'); rec.appendChild(patient);
   if (peds) rec.appendChild(peds);
-  if (timeline) rec.appendChild(timeline);
+  // the engine's timeline fold is replaced by the Timeline section (timeline.js)
   var cdet = details.filter(function(el){ return /פרטי הפצוע/.test(txt(el)); })[0]; if (cdet) rec.appendChild(cdet);
 
   var m = sBody.querySelector('.body-map-wrap'); if (m) m.setAttribute('data-tour', 'bodymap');
@@ -109,13 +109,14 @@ function enhanceForm(c){
   var fieldWrap = document.createElement('div'); fieldWrap.innerHTML = W.Field ? W.Field.html() : '';
   var topSec = fieldWrap.querySelector('#field'), monSec = fieldWrap.querySelector('#fs-more');
   var jb = document.createElement('nav'); jb.className = 'jb'; jb.setAttribute('aria-label', L('Jump to','קפיצה אל'));
-  [['field', L('101 FORM','טופס 101')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-more', L('VITALS + MORE','מדדים ועוד')]].forEach(function(q){
+  [['field', L('101 FORM','טופס 101')], ['fs-body', L('BODY MAP','מפת גוף')], ['fs-time', L('TIMELINE','ציר זמן')], ['fs-more', L('VITALS + MORE','מדדים ועוד')]].forEach(function(q){
     var bt = document.createElement('button'); bt.textContent = q[1]; bt.dataset.t = q[0]; bt.className = (W.FormUI.cur || 'field') === q[0] ? 'on' : ''; if (bt.className) bt.setAttribute('aria-current', 'true'); bt.onclick = function(){ FormUI.jump(q[0]); }; jb.appendChild(bt);
   });
   if (monSec) { monSec.appendChild(sCare); if (recs) monSec.appendChild(sSug); monSec.appendChild(sRec); }   // no suggestions yet = no empty box
   frag.appendChild(jb);
   if (topSec) frag.appendChild(topSec);
   frag.appendChild(sBody);
+  if (W.Field && W.Field.timelineHtml){ var tw = document.createElement('div'); tw.innerHTML = W.Field.timelineHtml(); while (tw.firstChild) frag.appendChild(tw.firstChild); }
   if (monSec) frag.appendChild(monSec);
   var spacer = document.createElement('div'); spacer.className = 'fs-foot'; frag.appendChild(spacer); frag.appendChild(hand); frag.appendChild(bar);
   c.innerHTML = ''; c.appendChild(frag);
@@ -172,7 +173,7 @@ W.FormUI = {
     c.addEventListener('scroll', function(){
       if (c.dataset.view !== 'form') return;
       var top = c.getBoundingClientRect().top, cur = 'field', jb = c.querySelector('.jb'), lim = (jb ? jb.getBoundingClientRect().bottom - top : 84) + 40;
-      ['field','fs-body','fs-more'].forEach(function(id){ var e = document.getElementById(id); if (e && e.getBoundingClientRect().top - top <= lim) cur = id; });
+      ['field','fs-body','fs-time','fs-more'].forEach(function(id){ var e = document.getElementById(id); if (e && e.getBoundingClientRect().top - top <= lim) cur = id; });
       if (cur !== W.FormUI.cur){ W.FormUI.cur = cur; c.querySelectorAll('.jb button').forEach(function(b){ var on = b.dataset.t === cur; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); }); }
     }, { passive:true });
   },
@@ -182,7 +183,7 @@ W.FormUI = {
     if (id === 'fs-now'){ W.FormUI.open.sug = true; e.setAttribute('open', ''); }
     var jb = c.querySelector('.jb'), off = jb ? jb.getBoundingClientRect().bottom - c.getBoundingClientRect().top + 6 : 60;
     c.scrollTo({ top: id === 'field' ? 0 : c.scrollTop + e.getBoundingClientRect().top - c.getBoundingClientRect().top - off, behavior: 'smooth' });
-    if (['field','fs-body','fs-more'].indexOf(id) >= 0){ W.FormUI.cur = id; c.querySelectorAll('.jb button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === id); }); }
+    if (['field','fs-body','fs-time','fs-more'].indexOf(id) >= 0){ W.FormUI.cur = id; c.querySelectorAll('.jb button').forEach(function(b){ b.classList.toggle('on', b.dataset.t === id); }); }
   },
   handoff: function(){
     var app = document.getElementById('app'); if (document.getElementById('fs-sheet')) return;
