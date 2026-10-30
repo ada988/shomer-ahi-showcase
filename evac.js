@@ -80,7 +80,7 @@ function seed(){
   var now = Date.now();
   vehicles().length = 0;
   vehicles().push({ id:'v_a1', type:'אמבולנס', typeKey:'', name:'', seats:4, litter:2, status:'arrived', destination:'', hospitalId:null, casualties:[], etaMinutes:null, etaStartAt:null, _alertedOneMin:false });
-  vehicles().push({ id:'v_a2', type:'אמבולנס', typeKey:'', name:'', seats:4, litter:2, status:'evacuating', destination:'', hospitalId:'h1', casualties:[{ docId:'demo_c3', pos:'litter' }, { docId:'demo_c4', pos:'seat' }], etaMinutes:12, etaStartAt:now - 3 * 60000, _alertedOneMin:false });
+  vehicles().push({ id:'v_a2', type:'אמבולנס', typeKey:'', name:'', seats:4, litter:2, status:'evacuating', destination:'', hospitalId:'h1', casualties:[{ docId:'demo_c2', pos:'litter' }, { docId:'demo_c3', pos:'litter' }], etaMinutes:12, etaStartAt:now - 3 * 60000, _alertedOneMin:false });
 }
 
 // ── Fleet board ────────────────────────────────────────────────
@@ -159,7 +159,7 @@ function renderTransport(v){
       var x = tq(c), mins = x ? Math.max(0, Math.round((Date.now() - Date.parse(x.time)) / 60000)) : null, lv = (c.vitalsHistory || []).slice(-1)[0] || {};
       return '<button class="tp-pt" onclick="Evac.openCasualty(\'' + esc(c._docId) + '\')">' + W.TriageUI.chip(c.triageColor, true) + '<span class="tp-pn"><b>' + esc(T(c.name)) + '</b>'
         + (mins != null ? '<em>' + L('TOURNIQUET ON ','חוסם עורקים ') + mins + L(' MIN',' ד׳') + '</em>' : '')
-        + '<span class="tp-v">' + (lv.pulse != null ? 'HR <i>' + lv.pulse + '</i> ' : '') + (lv.bpSys ? 'BP <i>' + lv.bpSys + '/' + (lv.bpDia || '–') + '</i> ' : '') + (lv.spo2 ? 'SpO₂ <i>' + lv.spo2 + '</i>' : '') + '</span></span></button>';
+        + '<span class="tp-v">' + (lv.pulse != null ? '<em>HR <i>' + lv.pulse + '</i></em> ' : '') + (lv.bpSys ? '<em>BP <i>' + lv.bpSys + '/' + (lv.bpDia || '–') + '</i></em> ' : '') + (lv.spo2 ? '<em>SpO₂ <i>' + lv.spo2 + '</i></em>' : '') + '</span></span></button>';
     }).join('') + '</div>';
     h += '<div class="ev-h">' + L('HOSPITAL','בית חולים') + '</div><div class="ev-hosp">' + HOSPITALS.map(function(x){
       var on = v.hospitalId === x.id;

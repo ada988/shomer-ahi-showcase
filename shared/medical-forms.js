@@ -658,7 +658,8 @@ function _buildDetailedForm101HTML(){
   // Header
   H+=`<div class="hdr"><div><div class="title">טופס 101 דיגיטלי — שומר אחי</div><div class="sub">דוח מפורט · ${fmt(new Date())}</div></div><div class="triage" style="background:${triageBg};color:${triageCol==='yellow'?'#000':'#fff'}">${esc(triage)}</div></div>`;
   // Section: Identity
-  H+=`<section><h2>1 · זיהוי ופרטים אישיים</h2><table class="kv">`;
+  let secN=0;
+  H+=`<section><h2>${++secN} · זיהוי ופרטים אישיים</h2><table class="kv">`;
   H+=rowSec('שם',name);
   H+=rowSec('מ.א / ת.ז',idNum);
   H+=rowSec('גיל',ageYears!=='—'?ageYears+' שנים':'—');
@@ -666,7 +667,7 @@ function _buildDetailedForm101HTML(){
   H+=rowSec('אלרגיות',allergies);
   if(sexOutName(x.e?.sex))H+=rowSec('מין',sexOutName(x.e.sex));
   if(x.e?.pregnant!=null)H+=rowSec('היריון',x.e.pregnant?'כן':'לא');
-  if(x.e?.npo||x.e?.lastOral)H+=rowSec('צום / אכילה אחרונה',x.e.lastOral||'צום (NPO)');
+  if(x.e?.npo||x.e?.lastOral)H+=rowSec('צום / אכילה אחרונה',[x.e.npo?'צום (NPO)':'',(x.e.lastOral&&x.e.lastOral!=='לא ידוע')?x.e.lastOral:''].filter(Boolean).join(' · ')||'לא ידוע');
   if(x.e?.anticoag)H+=rowSec('נוגדי קרישה',x.e.anticoag);
   {const it=injuryTimeOut(x);if(it)H+=rowSec('שעת פציעה',fmtT(it.t)+(it.approx?' (משוער, מסימון)':''));}
   H+=rowSec('מנגנון פציעה',moiLabel);
@@ -675,9 +676,9 @@ function _buildDetailedForm101HTML(){
   H+=rowSec('חתום ע״י',handoffFrom);
   H+=`</table></section>`;
   // Section: Case story
-  if(caseStory){H+=`<section><h2>2 · סיפור מקרה</h2><p class="narrative">${esc(caseStory)}</p></section>`;}
+  if(caseStory){H+=`<section><h2>${++secN} · סיפור מקרה</h2><p class="narrative">${esc(caseStory)}</p></section>`;}
   // Section: Injuries
-  H+=`<section><h2>3 · פגיעות</h2>`;
+  H+=`<section><h2>${++secN} · פגיעות</h2>`;
   if(burnPct>0)H+=`<div class="pill burn">🔥 שטח כוויה משוער: ${burnPct}% מהגוף</div>`;
   if(injArr.length){
     H+=`<table class="data"><thead><tr><th>אזור</th><th>סוג</th><th>צד</th><th>תיאור</th></tr></thead><tbody>`;
@@ -686,7 +687,7 @@ function _buildDetailedForm101HTML(){
   } else H+=`<p class="empty">לא סומנו פגיעות</p>`;
   H+=`</section>`;
   // Section: Treatments on body
-  H+=`<section><h2>4 · טיפולים שהונחו על הגוף</h2>`;
+  H+=`<section><h2>${++secN} · טיפולים שהונחו על הגוף</h2>`;
   if(txArr.length){
     H+=`<table class="data"><thead><tr><th>סוג</th><th>אזור</th><th>צד</th><th>זמן</th><th>תיאור</th></tr></thead><tbody>`;
     txArr.forEach(t=>{H+=`<tr><td>${esc(txTypeLabel(t.type))}</td><td>${esc(bodyLabel(t.region))}</td><td>${esc(t.side==='front'?'קדמי':'אחורי')}</td><td>${esc(t.time||'—')}</td><td>${esc(t.label||'—')}</td></tr>`;});
@@ -694,7 +695,7 @@ function _buildDetailedForm101HTML(){
   } else H+=`<p class="empty">ללא</p>`;
   H+=`</section>`;
   // Section: Primary X / ABCDE per stage — EVERY field
-  H+=`<section class="page-break"><h2>5 · סקר ראשוני (X → C → A → R → E)</h2>`;
+  H+=`<section class="page-break"><h2>${++secN} · סקר ראשוני (X → C → A → R → E)</h2>`;
   // X
   H+=`<h3 style="color:#c0392b">X — חילוץ + שליטה בדימום</h3><table class="kv">`;
   H+=rowSec('ח״ע שהותקנו',tqs.length?tqs.map(t=>`${esc(bodyLabel(t.site))} @ ${fmtT(t.time)}${minsSince(t.time)!=null?' ('+minsSince(t.time)+' דק׳)':''}${t.converted?.success?' — הומר':''}`).join('<br>'):'ללא');
@@ -743,7 +744,7 @@ function _buildDetailedForm101HTML(){
   H+=rowSec('סיבוכים',x.e?.complications||'אין');
   H+=`</table></section>`;
   // Section: Secondary survey — every checklist item + status + structured fields
-  H+=`<section class="page-break"><h2>6 · X-CARE</h2>`;
+  H+=`<section class="page-break"><h2>${++secN} · X-CARE</h2>`;
   if(window.Field&&Field.xcarePrintHtml)H+=Field.xcarePrintHtml();
   const secSchema=(window.Field&&Field.xcarePrintHtml)?[]:((typeof _SECONDARY_SCHEMA!=='undefined')?_SECONDARY_SCHEMA:[]);
   secSchema.forEach(sec=>{
@@ -781,7 +782,7 @@ function _buildDetailedForm101HTML(){
   });
   H+=`</tbody></table></section>`;
   // Section: Vitals history (all readings)
-  H+=`<section class="page-break"><h2>7 · היסטוריית סימנים חיוניים (${vArr.length} קריאות)</h2>`;
+  H+=`<section class="page-break"><h2>${++secN} · היסטוריית סימנים חיוניים (${vArr.length} קריאות)</h2>`;
   if(vArr.length){
     H+=`<table class="data small"><thead><tr><th>זמן</th><th>דופק</th><th>ל״ד</th><th>SpO₂</th><th>RR</th><th>EtCO₂</th><th>טמפ׳</th><th>רדיאלי</th><th>AVPU</th><th>כאב</th></tr></thead><tbody>`;
     vArr.forEach(v=>{
@@ -792,7 +793,7 @@ function _buildDetailedForm101HTML(){
   } else H+=`<p class="empty">לא נלקחו מדדים</p>`;
   H+=`</section>`;
   // Section: Exam history (structured exam snapshots)
-  H+=`<section><h2>8 · היסטוריית בדיקות גופניות (${eArr.length} תמונות מצב)</h2>`;
+  H+=`<section><h2>${++secN} · היסטוריית בדיקות גופניות (${eArr.length} תמונות מצב)</h2>`;
   if(eArr.length){
     H+=`<table class="data small"><thead><tr><th>זמן</th><th>בטן</th><th>ריאה L</th><th>ריאה R</th><th>נ.א</th><th>דופק LU</th><th>דופק RU</th><th>דופק LL</th><th>דופק RL</th></tr></thead><tbody>`;
     eArr.forEach(ex=>{
@@ -802,9 +803,9 @@ function _buildDetailedForm101HTML(){
   } else H+=`<p class="empty">לא נרשמו בדיקות מובנות</p>`;
   H+=`</section>`;
   // Section: Medications (full log)
-  H+=`<section class="page-break"><h2>9 · תרופות — יומן מלא</h2>`;
+  H+=`<section class="page-break"><h2>${++secN} · תרופות — יומן מלא</h2>`;
   if(meds.length){
-    H+=`<table class="data"><thead><tr><th>זמן</th><th>תרופה</th><th>מנה</th><th>נתיב</th></tr></thead><tbody>`;
+    H+=`<table class="data"><thead><tr><th>זמן</th><th>תרופה</th><th>מינון</th><th>נתיב</th></tr></thead><tbody>`;
     meds.forEach(m=>{H+=`<tr><td>${fmtT(m.time)}</td><td>${esc(m.drug||m.name||'')}</td><td>${esc(String(m.dose||''))}</td><td>${esc(m.route||'')}</td></tr>`;});
     H+=`</tbody></table>`;
     // Totals by drug
@@ -816,7 +817,7 @@ function _buildDetailedForm101HTML(){
   } else H+=`<p class="empty">לא ניתנו תרופות</p>`;
   H+=`</section>`;
   // Section: Fluids (explicit; already in C but here standalone + totals)
-  H+=`<section><h2>10 · נוזלים ומוצרי דם — יומן מלא</h2>`;
+  H+=`<section><h2>${++secN} · נוזלים ומוצרי דם — יומן מלא</h2>`;
   if(fluids.length){
     H+=`<table class="data"><thead><tr><th>זמן</th><th>סוג</th><th>נפח</th><th>פרטי מוצר</th></tr></thead><tbody>`;
     fluids.forEach(f=>{H+=`<tr><td>${fmtT(f.time)}</td><td>${esc(f.type||'')}</td><td>${f.volume||0} ml</td><td>${esc([f.abo,f.unit?'יח׳ '+f.unit:'',f.lot?'Lot '+f.lot:''].filter(Boolean).join(' · ')||'—')}</td></tr>`;});
@@ -830,19 +831,20 @@ function _buildDetailedForm101HTML(){
   } else H+=`<p class="empty">לא ניתנו נוזלים</p>`;
   H+=`</section>`;
   // Section: Timeline
-  H+=`<section class="page-break"><h2>11 · ציר זמן טיפולי (${tlArr.length} אירועים)</h2>`;
+  H+=`<section class="page-break"><h2>${++secN} · ציר זמן טיפולי (${tlArr.length} אירועים)</h2>`;
   if(tlArr.length){
     H+=`<table class="data small"><thead><tr><th>זמן</th><th>קטגוריה</th><th>פעולה</th><th>פירוט</th></tr></thead><tbody>`;
-    const catLbl={x:'X',a:'A',b:'R',c:'C',d:'D',e:'E',vitals:'מדדים',injury:'פציעה',exam:'בדיקה',triage:'טריאז׳'};
-    tlArr.forEach(t=>{H+=`<tr><td>${fmtT(t.time)}</td><td>${esc(catLbl[t.category]||t.category||'')}</td><td>${esc(outLR(t.action||''))}</td><td>${esc(t.detail||'')}</td></tr>`;});
+    const catLbl={x:'X',a:'A',b:'R',c:'C',d:'C',e:'E',vitals:'מדדים',injury:'פציעה',exam:'בדיקה',triage:'מיון'};
+    const tlCat=t=>{const a=String(t.action||'');if(/מקבע אגן/.test(a))return 'C';if((t.category==='e'||t.category==='c')&&!/^נוזלים/.test(a)&&/(TXA|קטמין|מורפין|פנטניל|צפטריאקסון|מטרונידזול|אקמול|אופטלגין|\bmg\b|\bmcg\b)/.test(a))return 'Rx';return catLbl[t.category]||t.category||'';};
+    tlArr.forEach(t=>{H+=`<tr><td>${fmtT(t.time)}</td><td>${esc(tlCat(t))}</td><td>${esc(outLR(t.action||''))}</td><td>${esc(t.detail||'')}</td></tr>`;});
     H+=`</tbody></table>`;
   } else H+=`<p class="empty">ציר זמן ריק</p>`;
   H+=`</section>`;
   // Section: Notes
-  if(notes){H+=`<section><h2>12 · הערות חופשיות</h2><p class="narrative">${esc(notes)}</p></section>`;}
+  if(notes){H+=`<section><h2>${++secN} · הערות חופשיות</h2><p class="narrative">${esc(notes)}</p></section>`;}
   // Section: Handoff (MIST+)
   if(typeof generateMISTPlusReport==='function'){
-    H+=`<section><h2>13 · העברה — MIST+</h2><pre class="hndf">${esc(generateMISTPlusReport())}</pre></section>`;
+    H+=`<section><h2>${++secN} · העברה — MIST+</h2><pre class="hndf">${esc(generateMISTPlusReport())}</pre></section>`;
   }
   // Footer
   H+=`<footer>הופק ${fmt(new Date())} · שומר אחי v3.37 · טופס 101 דיגיטלי מפורט</footer>`;
@@ -1279,6 +1281,7 @@ function _shockInputs(){
 }
 // Age-adjusted minimum systolic BP: adults 90 mmHg; children under 12: 70 + 2 x age (max 90).
 function _sbpMinFor(age){return(age!=null&&age<12)?Math.min(90,70+2*age):90;}
+function _headInjury(){return _casualtyInjuries.some(i=>/head|face/.test(String(i.region||'')));}
 function _headPenetrating(){return _casualtyInjuries.some(i=>i.type==='penetrating'&&['head','back_head'].includes(i.region));}
 function _recentSedation(){
   return(_casualtyXABCDE?.e?.medications||[]).some(m=>{
@@ -1312,7 +1315,7 @@ function _isDeepShock(){
   const rpAbsent=rp==='absent';
   const avpu=(_casualtyXABCDE?.d?.avpu||'').toUpperCase();
   const altered=avpu==='V'||avpu==='P'||avpu==='U';
-  const cleanAltered=altered&&!_headPenetrating()&&!_recentSedation();
+  const cleanAltered=altered&&!_headInjury()&&!_recentSedation();
   // IDF: SBP under the limit, OR no measurable BP together with no radial pulse / altered consciousness not caused by head injury or sedation.
   return sbpLow||(sys===null&&(rpAbsent||cleanAltered));
 }
@@ -3695,7 +3698,7 @@ function renderCasualtyForm(){
     const col=_pedsOn?'var(--bl)':'#9b59b6';
     const msg=_pedsOn?(_pedsAuto?'🧒 מצב פדיאטרי פעיל (אוטו׳ לפי גיל ≤12) — משקל, מנות, ערכי סף מותאמים. cric אסור!':'🧒 מצב פדיאטרי הופעל ידנית'):'⚙ מצב פדיאטרי בוטל ידנית (גיל ≤12)';
     h+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;background:${bg};border:1px solid ${col}33;border-radius:8px;font-size:11px;color:${col};font-weight:700"><span style="flex:1">${msg}</span><button onclick="togglePedsOverride()" style="padding:4px 10px;border-radius:6px;border:1px solid ${col};background:transparent;color:${col};font-family:var(--f);font-size:10px;font-weight:700;cursor:pointer;min-height:30px">${_pedsOn?'בטל':'הפעל'}</button></div>`;
-  } else if(!_pedsOn && _casualtyPedsOverride===null){
+  } else if(!_pedsOn && _casualtyPedsOverride===null && !(_casualtyXABCDE?.e?.ageYears>=18)){
     h+=`<button onclick="togglePedsOverride()" style="display:block;margin:0 0 6px auto;padding:4px 10px;border-radius:6px;border:1px dashed var(--sep);background:transparent;color:var(--t4);font-family:var(--f);font-size:10px;cursor:pointer;min-height:28px">🧒 הפעל מצב פדיאטרי ידנית</button>`;
   }
   // Sticky TQ timer banner — v3.46: long-press opens context menu
@@ -3752,6 +3755,7 @@ function renderCasualtyForm(){
   // Body map (floating tap menu is rendered INSIDE the SVG at the tap
   // point — see renderFloatingRegionMenu — so the old duplicated
   // below-map selector is gone).
+  h+='<div class="bm-side" dir="ltr"><b>'+(_casualtyView==='back'?'שמאל':'ימין')+'</b><b>'+(_casualtyView==='back'?'ימין':'שמאל')+'</b></div>';
   h+='<div class="body-map-wrap">'+renderBodyMap()+'</div>';
   // v3.29 M2: vitals strip below avatar — tap any chip for history
   h+=renderVitalsStrip();
@@ -3875,7 +3879,7 @@ function renderCasualtyForm(){
   // Evacuation priority
   h+='<div class="cas-section"><div class="cas-section-title">דחיפות פינוי</div>';
   h+='<div style="display:flex;gap:6px">';
-  [{v:'immediate',l:'דחוף ≤שעה',c:'#e74c3c'},{v:'urgent',l:'בעדיפות ≤4ש׳',c:'#e67e22'},{v:'routine',l:'שגרתי ≤24ש׳',c:'#2ecc71'},{v:'expectant',l:'ציפייה',c:'#555'}].forEach(e=>{
+  [{v:'immediate',l:'דחוף ≤שעה',c:'#e74c3c'},{v:'urgent',l:'בעדיפות ≤4ש׳',c:'#e67e22'},{v:'routine',l:'שגרתי ≤24ש׳',c:'#2ecc71'},{v:'expectant',l:'פינוי אחרון',c:'#555'}].forEach(e=>{
     const on=_casualtyEvacPriority===e.v;
     h+=`<button onclick="_casualtyEvacPriority='${e.v}';MedHost.triggerAutoSave();MedHost.renderIncidentPage()" style="flex:1;text-align:center;padding:10px 4px;border-radius:10px;background:${on?e.c+'25':'none'};border:2px solid ${e.c};font-size:11px;font-weight:700;color:${e.c};cursor:pointer;font-family:var(--f);min-height:48px">${e.l}</button>`;
   });

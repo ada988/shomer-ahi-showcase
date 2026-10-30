@@ -18,7 +18,7 @@ function ago(sec){ var m = Math.max(0, Math.round((Date.now()/1000 - sec) / 60))
 
 var TRIAGE = {
   red:    { c:'#cc1820', en:'URGENT', he:'דחוף', code:'T1', sh:'oct', tx:'#fff' },
-  yellow: { c:'#f5b82e', en:'DELAYED', he:'עדיפות שנייה', code:'T2', sh:'tri', tx:'#111' },
+  yellow: { c:'#ffd400', en:'DELAYED', he:'עדיפות שנייה', code:'T2', sh:'tri', tx:'#111' },
   green:  { c:'#19a463', en:'NOT URGENT', he:'לא דחוף', code:'T3', sh:'circ', tx:'#fff' },
   gray:   { c:'#b4bbc8', en:'WAITING', he:'ממתין', code:'T4', sh:'hex', tx:'#111' },
   black:  { c:'#000000', en:'NO SIGNS OF LIFE', he:'ללא סימני חיים', code:'T0', sh:'sqx', tx:'#fff' }
@@ -288,11 +288,11 @@ function braceletHtml(c, opts){
     +   '<div class="b2-grid">'
     +     (tq ? '<div class="b2-box set"><small>' + L('TQ','חוסם') + '</small><b>' + hhmm(tq[1]) + '</b><span>' + esc(regionName(tq[0])) + '</span></div>' : '<div class="b2-box blank"><small>' + L('TQ','חוסם') + '</small><b>__ : __</b></div>')
     +     (meds.length ? '<div class="b2-box set"><small>' + L('DRUGS','תרופות') + '</small>' + meds.map(function(m){ return '<span><b style="font-size:1em">' + hhmm(m[3]) + '</b> ' + esc(T(m[0])) + '</span>'; }).join('') + '</div>' : '<div class="b2-box blank"><small>' + L('DRUGS + TIME','תרופות + שעה') + '</small></div>')
-    +     '<div class="b2-box blank"><small>' + L('EVAC ORDER','סדר פינוי') + '</small></div>'
+    +     (evacCat(s) ? '<div class="b2-box set"><small>' + L('EVAC','פינוי') + '</small><span>' + esc(evacCat(s)) + '</span></div>' : '<div class="b2-box blank"><small>' + L('EVAC ORDER','סדר פינוי') + '</small></div>')
     +   '</div>'
     +   '<div class="b2-grid">'
     +     '<div class="b2-box ' + (s.np ? 'set' : 'blank') + '"><small>' + L('NIL BY MOUTH','צום') + '</small><b>' + (s.np ? L('YES','כן') : '☐') + '</b></div>'
-    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('ALLERGY','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 28)) + '</span>' : '') + '</div>'
+    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('ALLERGY','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 60)) + '</span>' : '') + '</div>'
     +     '<div class="b2-box blank"><small>' + L('BLOOD TYPE','סוג דם') + '</small></div>'
     +   '</div>'
     +   '<div class="b2-foot">' + L('DEMO. NOT FOR CLINICAL USE. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
@@ -310,7 +310,7 @@ function injType(t){ var m = { hemorrhage:['Bleeding','דימום'], penetrating
 function moiName(id){ var m = (W.MOI_TYPES || []).filter(function(x){ return x.id === id; })[0]; return m ? T(m.label) : esc(id || ''); }
 // NATO evacuation categories: Urgent <=1 h, Priority <=4 h, Routine <=24 h. An explicit evacPriority wins, otherwise derived from the triage colour.
 function evacCat(s){
-  var byP = { immediate:['Urgent ≤1 h','דחוף ≤שעה'], urgent:['Priority ≤4 h','בעדיפות ≤4 שעות'], routine:['Routine ≤24 h','שגרתי ≤24 שעות'], expectant:['Expectant','ציפייה'] };
+  var byP = { immediate:['Urgent ≤1 h','דחוף ≤שעה'], urgent:['Priority ≤4 h','בעדיפות ≤4 שעות'], routine:['Routine ≤24 h','שגרתי ≤24 שעות'], expectant:['Evacuate last','פינוי אחרון'] };
   var byT = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant' };
   var k = s.p || own(byT, s.t); return own(byP, k) ? L(byP[k][0], byP[k][1]) : '';
 }
@@ -332,7 +332,7 @@ function cardHtml(s, opts){
   if (s._u) h += '<div class="cc-demo cc-untrusted" role="note">' + L('UNVERIFIED DATA FROM A QR OR LINK. Anyone can create it. Nothing was saved. Confirm with the casualty.','נתונים לא מאומתים מ-QR או קישור. כל אחד יכול ליצור אותם. דבר לא נשמר. אמתו מול הנפגע.') + '</div>';
   // 1. Banner: triage + evacuation category + serial
   var ev = evacCat(s);
-  h += '<div class="cc-banner" style="--tg:' + tg.c + '"><div><div class="cc-tri">' + L(tg.en, tg.he) + '</div><div class="cc-sub">' + L('Triage','מיון') + ' ' + tg.code + (ev ? ' · ' + ev : '') + '</div></div><div class="cc-serial">' + esc(s.s) + '</div></div>';
+  h += '<div class="cc-banner" style="--tg:' + tg.c + '"><div><div class="cc-tri">' + L(tg.en, tg.he) + '</div>' + (ev ? '<div class="cc-sub">' + L('Evacuation: ','פינוי: ') + ev + '</div>' : '') + '</div><div class="cc-serial">' + esc(s.s) + '</div></div>';
   h += '<div class="cc-id"><div class="cc-name">' + esc(T(s.n) || L('Unnamed casualty','נפגע ללא שם')) + '</div></div>';
 
   // 2. Time-critical box: tourniquet clock + minutes, then key drug / blood times
@@ -355,14 +355,14 @@ function cardHtml(s, opts){
 
   // 3. Airway / breathing / chest / pelvis strip
   var ab = '';
-  (s.hm || []).forEach(function(q){ ab += cr('M', (q[0] === 'pelvis' ? L('Hemostatic packing — groin','אריזה המוסטטית — מפשעה') : L('Hemostatic','המוסטטי') + (q[0] ? ' — ' + regionName(q[0]) : '')), hm(q[1])); });
-  (s.pd || []).forEach(function(q){ ab += cr('M', L('Pressure dressing','תחבושת לחץ') + (q[0] ? ' — ' + regionName(q[0]) : ''), hm(q[1])); });
-  (s.wp || []).forEach(function(q){ ab += cr('M', L('Wound packing','אריזת פצע') + (q[0] ? ' — ' + regionName(q[0]) : ''), hm(q[1])); });
+  (s.hm || []).forEach(function(q){ ab += cr('X', (q[0] === 'pelvis' ? L('Hemostatic packing — groin','אריזה המוסטטית — מפשעה') : L('Hemostatic','המוסטטי') + (q[0] ? ' — ' + regionName(q[0]) : '')), hm(q[1])); });
+  (s.pd || []).forEach(function(q){ ab += cr('X', L('Pressure dressing','תחבושת לחץ') + (q[0] ? ' — ' + regionName(q[0]) : ''), hm(q[1])); });
+  (s.wp || []).forEach(function(q){ ab += cr('X', L('Wound packing','אריזת פצע') + (q[0] ? ' — ' + regionName(q[0]) : ''), hm(q[1])); });
   if ((s.aw && s.aw[0]) || (s.aw && s.aw[1] && s.aw[1].length)){
     ab += cr('A', L('Airway','נתיב אוויר') + ': ' + (s.aw[0] ? airwayName(s.aw[0]) : '') + (s.aw[1] && s.aw[1].length ? ' · ' + s.aw[1].map(T).join(', ') : ''), '');
   }
-  if (s.bv) ab += cr('R', L('Assisted ventilation (BVM)','הנשמה בסיוע (BVM)') + (s.o2 ? ' · O₂ ' + s.o2 + ' L/min' : ''), hm(s.bv));
-  else if (s.ox) ab += cr('R', L('Oxygen','חמצן') + (s.o2 ? ' ' + s.o2 + ' L/min' : ''), '');
+  if (s.bv) ab += cr('R', L('Assisted ventilation (BVM)','הנשמה בסיוע (BVM)') + (s.o2 ? ' · O₂ ' + s.o2 + L(' L/min',' ליטר לדקה') : ''), hm(s.bv));
+  else if (s.ox) ab += cr('R', L('Oxygen','חמצן') + (s.o2 ? ' ' + s.o2 + L(' L/min',' ליטר לדקה') : ''), '');
   (s.bt || []).forEach(function(b){
     if (b[0] === 'chestSeal') ab += cr('R', L('Chest seal','אטם חזה') + ' — ' + regionName(b[1]), hm(b[2]));
   });
@@ -373,7 +373,7 @@ function cardHtml(s, opts){
   (s.bt || []).forEach(function(b){
     if (b[0] === 'splint' || b[0] === 'bandage') ab += cr('E', (b[0] === 'splint' ? L('Splint','קיבוע שבר') : L('Dressing','חבישה')) + ' — ' + regionName(b[1]), hm(b[2]));
   });
-  if (ab) h += '<section class="cc-sec"><h3>' + L('Airway · breathing · circulation','נתיב אוויר · נשימה · מחזור') + '</h3><ul class="cc-care">' + ab + '</ul></section>';
+  if (ab) h += '<section class="cc-sec"><h3>' + L('X-CARE · care given','X-CARE · טיפול שניתן') + '</h3><ul class="cc-care">' + ab + '</ul></section>';
 
   // 4. Consciousness + pupils
   var cons = [];
@@ -398,7 +398,7 @@ function cardHtml(s, opts){
 
   // 6. Drugs, blood and fluids with clock times (chronological)
   var dr = [];
-  meds.forEach(function(m){ dr.push([m[3], 'P', T(m[0]) + ' ' + m[1] + ' ' + T(m[2])]); });
+  meds.forEach(function(m){ dr.push([m[3], 'Rx', T(m[0]) + ' ' + m[1] + ' ' + T(m[2])]); });
   fl.forEach(function(f){ dr.push([f[2], 'C', T(f[0]) + ' ' + f[1] + ' ml']); });
   dr.sort(function(a, b){ return (a[0] || 0) - (b[0] || 0); });
   if (dr.length) h += '<section class="cc-sec"><h3>' + L('Drugs · blood · fluids','תרופות · דם · נוזלים') + '</h3><ul class="cc-care">' + dr.map(function(r){ return cr(r[1], r[2], hm(r[0])); }).join('') + '</ul></section>';
@@ -526,7 +526,7 @@ function loadJsQR(){
   });
 }
 function scan(){
-  var samples = (W._incidentCasualties || []).map(function(c){ var tg = triageOf(c.triageColor); return '<button class="bs-sample" onclick="Bracelet.open(\'' + esc(c._docId) + '\')"><i style="background:' + tg.c + '"></i><span>' + esc(T(c.name)) + '</span><code>' + serialFor(c) + '</code></button>'; }).join('');
+  var samples = (W._incidentCasualties || []).map(function(c){ var tg = triageOf(c.triageColor); return '<button class="bs-sample" onclick="Bracelet.open(\'' + esc(c._docId) + '\')">' + W.TriageUI.chip(c.triageColor) + '<span class="bs-nm">' + esc(T(c.name)) + '</span><code>' + serialFor(c) + '</code></button>'; }).join('');
   mount(topbar(L('Scan a wristband','סריקת צמיד')) + '<div class="bo-body">'
     + '<div class="bs-view" id="bs-view"><video id="bs-video" playsinline muted></video><div class="bs-frame"></div><div class="bs-msg" id="bs-msg">' + L('Starting camera…','מפעיל מצלמה…') + '</div></div>'
     + '<div class="bs-or">' + L('No camera, or nothing to scan? Use a sample wristband:','אין מצלמה? נסה צמיד לדוגמה:') + '</div>'
@@ -588,7 +588,7 @@ function renderTab(){
     var tg = triageOf(c.triageColor);
     h += '<article class="bt-item"><div class="bt-scale">' + braceletHtml(c, { list:true }) + '</div>'
       + '<div class="bt-row"><div><div class="bt-name">' + esc(T(c.name)) + '</div><div class="bt-sub"><i style="background:' + tg.c + '"></i>' + L(tg.en, tg.he) + (c.formLevel === 'quick' ? ' · ' + L('QUICK TRIAGE','מיון מהיר') : '') + '</div></div>'
-      + '<div class="bt-btns"><button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(c._docId) + '\')">' + L('Scan result','תוצאת סריקה') + '</button>'
+      + '<div class="bt-btns"><button class="xbtn" onclick="Bracelet.viewCard(\'' + esc(c._docId) + '\')">' + ico('scan-line', 24) + L('SCAN RESULT','תוצאת סריקה') + '</button>'
       + '<button class="xbtn" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Print wristband','הדפס צמיד') + '">' + ico('printer', 24) + L('PRINT','הדפס') + '</button></div></div></article>';
   });
   return h + '</div>';

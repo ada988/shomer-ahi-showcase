@@ -182,7 +182,7 @@ function renderPatients(){
       + '<span class="pl-main"><b>' + esc(T(c.name)) + '</b>' + lvl(c)
       + '<span class="pl-sub">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="pl-vit">'
-      + (v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('HIGH','גבוה'), v.pulse > 120) + '</em>' : '')
+      + (v.pulse === 0 ? '<em><i>' + L('NO PULSE','אין דופק') + '</i></em>' : v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('HIGH','גבוה'), v.pulse > 120) + '</em>' : '')
       + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('LOW','נמוך'), v.bpSys < 90) + '</em>' : '')
       + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('LOW','נמוך'), v.spo2 < 92) + '</em>' : '')
       + (tqMin != null ? '<em class="warn">' + ico('timer', 22) + L('TOURNIQUET ','חוסם עורקים ') + '<i>' + tqMin + L(' MIN',' ד׳') + '</i></em>' : '')
@@ -210,7 +210,7 @@ function renderBar(){
   if (w._casualtyEditMode){
     var name = (w._casualtyName || '').trim() || L('New casualty','נפגע חדש');
     back.hidden = false; mark.hidden = true; mb.hidden = true;
-    title.textContent = T(name);
+    title.textContent = String(T(name)).split(' — ')[0];
     sub.textContent = tgWord(w._casualtyTriageColor);
   } else {
     back.hidden = true; mark.hidden = false; mb.hidden = false;
@@ -285,7 +285,7 @@ function renderNow(){
 // ── Demo controller ────────────────────────────────────────────
 w._casView = 'list'; w._plFilter = null;
 function closeOverlays(keepQuick){
-  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
+  ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet','dose-sheet'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
   if (w.Field) w.Field._k = null;
 }
 var Demo = w.Demo = {

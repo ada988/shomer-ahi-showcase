@@ -37,8 +37,8 @@ function counts(){ var c = { red:0, yellow:0, green:0, gray:0, black:0 }; (W._in
 // URGENT includes the optional DELAYED group; WAITING is not breathing; NO SIGNS OF LIFE is counted on its own.
 function groups(){ var c = counts(); return { urgent: c.red, delayed: c.yellow, notUrgent: c.green, waiting: c.gray, dead: c.black, total: c.red + c.yellow + c.green + c.gray + c.black }; }
 function countBar(){
-  var g = groups(), cells = [['red', g.urgent], ['green', g.notUrgent], ['gray', g.waiting]].concat(g.delayed ? [['yellow', g.delayed]] : []).concat(g.dead ? [['black', g.dead]] : []);
-  return '<div class="qt-count" style="grid-template-columns:repeat(' + cells.length + ',minmax(0,1fr))">' + cells.map(function(x){ var k = x[0], t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 24) + '<b>' + x[1] + '</b><em>' + W.TriageUI.word(k) + '</em></span>'; }).join('') + '</div>';
+  var g = groups(), cells = [['red', g.urgent]].concat(g.delayed ? [['yellow', g.delayed]] : []).concat([['green', g.notUrgent], ['gray', g.waiting]]).concat(g.dead ? [['black', g.dead]] : []);
+  return '<div class="qt-count n' + cells.length + '">' + cells.map(function(x){ var k = x[0], t = W.TriageUI.tg(k); return '<span class="t-' + k + '">' + W.TriageUI.shapeSvg(t.shape, 24) + '<b>' + x[1] + '</b><em>' + W.TriageUI.word(k) + '</em></span>'; }).join('') + '</div>';
 }
 function reportLine(){
   var g = groups();

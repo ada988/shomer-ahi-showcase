@@ -12,7 +12,7 @@ function hhmm(iso){ var d = new Date(iso); return String(d.getHours()).padStart(
 function minsAgo(iso){ return Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); }
 function app(){ return document.getElementById('app'); }
 
-var TRI = [['red','URGENT','דחוף'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['yellow','DELAYED','עדיפות שנייה'], ['black','NO SIGNS OF LIFE','ללא סימני חיים']];
+var TRI = [['red','URGENT','דחוף'], ['yellow','DELAYED','עדיפות שנייה'], ['green','NOT URGENT','לא דחוף'], ['gray','WAITING','ממתין'], ['black','NO SIGNS OF LIFE','ללא סימני חיים']];
 var EVAC = { red:'immediate', yellow:'urgent', green:'routine', gray:'expectant', black:'' };
 if (W.ShowcaseI18n && W.ShowcaseI18n.extend){ var _td = {}; TRI.forEach(function(t){ _td['טריאז׳ — ' + t[2]] = 'Triage — ' + t[1]; }); _td['הלם — קטמין קו ראשון; מורפין 2mg בלבד; ללא Actiq / פנטניל'] = 'Shock: ketamine first line; morphine 2 mg only; no Actiq or fentanyl'; _td['מורפין 2mg IV (הלם)'] = 'Morphine 2 mg IV (shock)'; _td['הערכה חוזרת: ללא החמרה, הולכת'] = 'Reassessment: no deterioration, walking'; _td['אדום — דחוף'] = 'Red — URGENT'; _td['צהוב — דחוי'] = 'Yellow — DELAYED'; _td['ירוק — לא דחוף'] = 'Green — NOT URGENT'; _td['אפור — ממתין'] = 'Gray — WAITING'; _td['שחור — ללא סימני חיים'] = 'Black — NO SIGNS OF LIFE'; W.ShowcaseI18n.extend(_td); }
 var SITES = [['r_upper_arm','RIGHT ARM','יד ימין'], ['l_upper_arm','LEFT ARM','יד שמאל'], ['r_thigh','RIGHT LEG (THIGH)','רגל ימין (ירך)'], ['l_thigh','LEFT LEG (THIGH)','רגל שמאל (ירך)'], ['r_shin','RIGHT LOWER LEG','שוק ימין'], ['l_shin','LEFT LOWER LEG','שוק שמאל']];
@@ -58,7 +58,7 @@ function idStrip(){
   var live = (W._casualtyName || '').trim(), name = live ? esc(W.ShowcaseI18n ? W.ShowcaseI18n.tr(live) : live) : L('No name yet','עדיין ללא שם');
   return '<div class="f-id' + (dark ? ' dark' : '') + '" style="--tg:' + (tg ? tg.c : '#3a3f4a') + '">'
     + '<span class="f-id-i">' + (tg ? W.TriageUI.shapeSvg(tg.shape, 44) : ico('circle-help', 44)) + '</span>'
-    + '<span class="f-id-t"><b>' + (tg ? L(tg.en, tg.he) : L('NOT TRIAGED','טרם סווג')) + '</b><em>' + name + '</em>' + (who && !/\d/.test(name) ? '<small>' + who + '</small>' : '') + '</span>'
+    + '<span class="f-id-t"><b>' + (tg ? L(tg.en, tg.he) : L('NOT TRIAGED','טרם סווג')) + '</b><em>' + name + '</em>' + (who && !/\d|—/.test(name) ? '<small>' + who + '</small>' : '') + '</span>'
     + (serial ? '<button class="f-id-b" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Wristband','צמיד') + '"><small>' + L('NO.','מס׳') + '</small><b dir="ltr">' + esc(serial) + '</b><span>' + ico('qr-code', 24) + L('WRISTBAND','צמיד') + '</span></button>' : '')
     + '</div>';
 }
@@ -78,15 +78,15 @@ function html(){
   });
   h += '</div>';
   if (cur === 'black') h += '<p class="f-dead">' + L('Only a doctor declares death. In a mass-casualty event, treat everyone with signs of life first.','רק רופא קובע מוות. באר״ן מטפלים קודם בכל מי שיש לו סימני חיים.') + '</p>';
-  h += shockHtml() + injuryHtml();
-  h += (Field.xcareHtml ? Field.xcareHtml() : '');
+  if (cur !== 'black'){ h += shockHtml() + injuryHtml(); h += (Field.xcareHtml ? Field.xcareHtml() : ''); }
+  h += (Field.doseHtml ? Field.doseHtml() : '');
   var top = h; h = '';
   // 2 · clocks
   var tq0 = tqs[0], txa = lastMed(/^TXA/i), lv = c.vitals.length ? c.vitals[c.vitals.length - 1] : null, veh = vehicleOf();
   var tile = function(label, big, sub, cls){ return '<div class="f-clock ' + (cls || '') + '"><small>' + label + '</small><b>' + big + '</b><span>' + sub + '</span></div>'; };
   h += '<div class="f-clocks">'
     + (tq0 ? tile(L('TOURNIQUET ON','חוסם עורקים'), minsAgo(tq0.time) + '<u>' + L('MIN','ד׳') + '</u>', L('since ','מאז ') + hhmm(tq0.time), minsAgo(tq0.time) >= 120 ? 'bad' : 'warn') : tile(L('TOURNIQUET','חוסם עורקים'), L('NONE','אין'), L('none applied','לא הונח'), ''))
-    + (txa ? tile('TXA', minsAgo(txa.time) + '<u>' + L('MIN','ד׳') + '</u>', L('given ','ניתן ') + hhmm(txa.time), 'ok') : (function(){ var ii = injuryInfo(); return !ii ? tile('TXA', L('NOT GIVEN','לא ניתן'), L('set time of injury','קבעו שעת פציעה'), 'warn') : ii.left > 0 ? tile('TXA', ii.left + '<u>' + L('MIN LEFT','דק׳ נותרו') + '</u>', L('of the 3-hour window','מחלון 3 השעות'), ii.left <= 30 ? 'bad' : 'warn') : tile('TXA', L('WINDOW CLOSED','החלון נסגר'), L('over 3 h since injury','מעל 3 שעות מהפציעה'), ''); })())
+    + (cur === 'black' ? '' : txa ? tile('TXA', minsAgo(txa.time) + '<u>' + L('MIN','ד׳') + '</u>', L('given ','ניתן ') + hhmm(txa.time), 'ok') : (function(){ var ii = injuryInfo(); return !ii ? tile('TXA', L('NOT GIVEN','לא ניתן'), L('set time of injury','קבעו שעת פציעה'), 'warn') : ii.left > 0 ? tile('TXA', ii.left + '<u>' + L('MIN LEFT','דק׳ נותרו') + '</u>', L('of the 3-hour window','מחלון 3 השעות'), ii.left <= 30 ? 'bad' : 'warn') : tile('TXA', L('WINDOW CLOSED','החלון נסגר'), L('over 3 h since injury','מעל 3 שעות מהפציעה'), ''); })())
     + (lv ? tile(L('LAST VITALS','מדדים אחרונים'), minsAgo(lv.time) + '<u>' + L('MIN AGO','ד׳ לפני') + '</u>', L('logged ','נרשם ') + hhmm(lv.time), minsAgo(lv.time) > 10 ? 'warn' : '') : tile(L('VITALS','מדדים'), L('NONE','אין'), L('not measured','לא נמדדו'), 'warn'))
     + (veh ? tile(L('AMBULANCE','אמבולנס'), (W.Evac ? W.Evac.etaText(veh) : '—'), L('on board','על הסיפון'), 'ok') : tile(L('AMBULANCE','אמבולנס'), L('NOT YET','עדיין לא'), L('not assigned','לא שויך'), ''))
     + '</div>';
@@ -102,7 +102,7 @@ function html(){
     + vt('HR', num(v.pulse), '/min', 0, v.pulse > 120 || (v.pulse != null && v.pulse < 50), v.pulse > 120 ? L('HIGH','גבוה') : L('LOW','נמוך'))
     + vt('BP', v.bpSys ? v.bpSys + '/' + (v.bpDia || '–') : '—', '', 1, v.bpSys && v.bpSys < 90, L('LOW','נמוך'))
     + vt('SpO₂', num(v.spo2), '%', 3, v.spo2 != null && v.spo2 < 92, L('LOW','נמוך'))
-    + vt(L('BREATHS','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 30 || v.rr < 10), v.rr > 30 ? L('HIGH','גבוה') : L('LOW','נמוך'))
+    + vt(L('BREATHS','נשימות'), num(v.rr), '/min', 4, v.rr != null && (v.rr > 24 || v.rr < 10), v.rr > 24 ? L('HIGH','גבוה') : L('LOW','נמוך'))
     + '</div>'
     + '<div class="f-tapbar"><button onclick="Field.tapStart(\'pulse\')">' + ico('heart-pulse', 30) + '<span>' + L('TAP THE HEARTBEAT','הקישו את הדופק') + '</span></button><button onclick="Field.tapStart(\'rr\')">' + ico('wind', 30) + '<span>' + L('TAP THE BREATHS','הקישו את הנשימות') + '</span></button></div>';
   return '<section class="field" id="field" data-tour="field">' + top + '</section><section class="field fmon" id="fs-more"><div class="fs-h-wrap"><h2 class="fs-h">' + L('Monitor','ניטור') + '<small>' + L('Clocks, tourniquet, vitals','שעונים, חוסם עורקים, מדדים') + '</small></h2></div>' + h + '</section>';
@@ -250,7 +250,7 @@ var Field = {
       var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
       el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet" role="dialog" aria-label="' + L('Check before giving','בדקו לפני מתן') + '"><div class="sheet-grab"></div><h3>' + L(g.en + ': CHECK FIRST', g.he + ': בדקו קודם') + '</h3>'
         + w.map(function(t){ return '<p class="sheet-p f-warn"><b>' + esc(t) + '</b></p>'; }).join('')
-        + '<button class="xbtn f-cancel" onclick="Field.closeSheet()">' + L('CANCEL','ביטול') + '</button><button class="xbtn xbtn-primary" onclick="Field.closeSheet();Field.give(\'' + key + '\', true)">' + (w.every(function(t){ return /flush|שטפו/i.test(t); }) ? L('FLUSHED — GIVE','נשטף — תנו') : L('GIVE ANYWAY','תנו בכל זאת')) + '</button></div>';
+        + (function(){ var fo = w.every(function(t){ return /flush|שטפו/i.test(t); }); return '<button class="xbtn f-cancel' + (fo ? '' : ' xbtn-primary') + '" onclick="Field.closeSheet()">' + L('CANCEL','ביטול') + '</button><button class="xbtn ' + (fo ? 'xbtn-primary' : 'f-anyway') + '" onclick="Field.closeSheet();Field.give(\'' + key + '\', true)">' + (fo ? L('FLUSHED — GIVE','נשטף — תנו') : L('GIVE ANYWAY','תנו בכל זאת')) + '</button>'; })() + '</div>';
       app().appendChild(el); return;
     }
     snapshot();

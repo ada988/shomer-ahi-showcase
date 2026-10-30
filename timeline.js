@@ -21,6 +21,14 @@ var CAT = {
   injury:['!','tl-inj','INJURY','פציעה'], triage:['T','tl-tri','TRIAGE','מיון'], vitals:['V','tl-vit','VITALS','מדדים'],
   treatment:['+','xc-e','TREATMENT','טיפול'], exam:['?','tl-vit','EXAM','בדיקה'], note:['N','tl-note','NOTE','הערה'], drug:['Rx','tl-drug','DRUG','תרופה']
 };
+// Entry text for display only (the stored record is unchanged).
+function disp(a){
+  var s = String(a || ''), fm = /^נוזלים: (\d+(?:\.\d+)?)\s*ml (.+)$/.exec(s);
+  if (fm) return L(T(fm[2]) + ' ' + fm[1] + ' mL', fm[2] + ' ' + fm[1] + ' מ״ל');
+  if (lang() !== 'he') return T(s);
+  s = s.replace(/^ח"ע\b/, 'חוסם עורקים').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/דרך BVM/g, 'דרך מפוח (BVM)');
+  return W.outLR ? W.outLR(s) : s;
+}
 Field._tlAll = false;
 function list(){
   var tl = W._casualtyTimeline || [];
@@ -33,16 +41,25 @@ Field.timelineHtml = function(){
   if (!all.length) return h + '<p class="tl-empty">' + L('Nothing recorded yet. Every action you take appears here with its time.','עדיין לא נרשם דבר. כל פעולה מופיעה כאן עם השעה.') + '</p></section>';
   h += '<ol class="tl-list">';
   show.forEach(function(r){
-    var e = r.e, c = (isDrug(e) && CAT.drug) || CAT[e.category] || ['•','tl-vit', String(e.category || '').toUpperCase().slice(0, 12), String(e.category || '')];
+    var e = r.e, c = (isDrug(e) && CAT.drug) || (/מקבע אגן/.test(String(e.action || '')) && CAT.c) || CAT[e.category] || ['•','tl-vit', String(e.category || '').toUpperCase().slice(0, 12), String(e.category || '')];
     var mins = r.t ? Math.max(0, Math.round((now - r.t) / 60000)) : null;
-    var note = e.category === 'note', text = note ? String(e.action || '') : T(String(e.action || '')), det = e.details ? (IDS[e.details] ? L(IDS[e.details][0], IDS[e.details][1]) : T(String(e.details))) : '';
+    var note = e.category === 'note', text = note ? String(e.action || '') : disp(e.action), det = e.details ? (IDS[e.details] ? L(IDS[e.details][0], IDS[e.details][1]) : T(String(e.details))) : '';
     h += '<li class="tl-i"><div class="tl-when"><b dir="ltr">' + hm(e.time) + '</b><small>' + (mins == null ? '' : mins < 1 ? L('now','עכשיו') : mins < 60 ? mins + L(' min',' דק׳') : Math.floor(mins / 60) + L(' h ',' ש׳ ') + (mins % 60) + L(' min',' דק׳')) + '</small></div>'
       + '<div class="tl-what ' + c[1] + '"><span class="tl-chip"><b>' + c[0] + '</b>' + L(c[2], c[3]) + '</span><p' + (note ? ' class="no-tr" dir="auto"' : '') + '>' + esc(text) + (det ? '<small>' + esc(det) + '</small>' : '') + '</p></div>'
-      + '<button class="tl-del" onclick="Field.tlDel(' + r.i + ')" aria-label="' + L('Delete this entry','מחיקת הרשומה') + '">' + ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span></button></li>';
+      + (Field._tlArm && Field._tlArm.i === r.i && Date.now() - Field._tlArm.t < 4000
+        ? '<button class="tl-del arm" onclick="Field.tlTap(' + r.i + ')" aria-label="' + L('Confirm delete','אישור מחיקה') + '">' + ico('x', 22) + '<span>' + L('CONFIRM DELETE','אישור מחיקה') + '</span></button></li>'
+        : '<button class="tl-del" onclick="Field.tlTap(' + r.i + ')" aria-label="' + L('Delete this entry','מחיקת הרשומה') + '">' + ico('x', 22) + '<span>' + L('DELETE','מחק') + '</span></button></li>');
   });
   h += '</ol>';
   if (all.length > 8) h += '<button class="xbtn tl-more" onclick="Field.tlAll()">' + (Field._tlAll ? L('SHOW LESS','הצג פחות') : L('SHOW ALL ' + all.length,'הצג את כל ' + all.length)) + '</button>';
   return h + '</section>';
+};
+Field._tlArm = null;
+Field.tlTap = function(i){
+  var a = Field._tlArm;
+  if (a && a.i === i && Date.now() - a.t < 4000){ Field._tlArm = null; Field.tlDel(i); return; }
+  Field._tlArm = { i:i, t:Date.now() }; W.MedHost.renderIncidentPage();
+  setTimeout(function(){ if (Field._tlArm && Date.now() - Field._tlArm.t >= 4000){ Field._tlArm = null; W.MedHost.renderIncidentPage(); } }, 4100);
 };
 Field.tlAll = function(){ Field._tlAll = !Field._tlAll; W.MedHost.renderIncidentPage(); };
 Field.tlDel = function(i){

@@ -11,3 +11,7 @@ Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא �
 Object.assign(window.SHOWCASE_DICT, {'בזירה':'on scene','· מוכן — שייך לרכב':'· Ready: assign to an ambulance'});
 
 Object.assign(window.SHOWCASE_DICT, {'הלם עמוק':'DEEP SHOCK','סימני הלם':'SIGNS OF SHOCK','טריאז׳':'Triage','מנה':'dose','מנות':'doses','קדמי':'Front','אחורי':'Back'});
+
+Object.assign(window.SHOWCASE_DICT, {'פינוי אחרון':'Evacuate last','⚫ פינוי אחרון':'⚫ Evacuate last','ימין':'Right','שמאל':'Left','ללא סימני חיים':'no signs of life','מיון':'Triage'});
+
+Object.assign(window.SHOWCASE_DICT, {'מינון':'Dose'});

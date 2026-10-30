@@ -513,7 +513,7 @@ function renderIncidentCasualties(){
   let h='';
   if(_casualtyEditMode){h=renderCasualtyForm();return h;}
   if(_incidentCasualties.length){
-    const evacLabels={immediate:'🔴 מיידי',urgent:'🟠 דחוף',routine:'🟢 שגרתי',expectant:'⚫ ציפייה'};
+    const evacLabels={immediate:'🔴 מיידי',urgent:'🟠 דחוף',routine:'🟢 שגרתי',expectant:'⚫ פינוי אחרון'};
     const typeLabels={hemorrhage:'דימום',fracture:'שבר',burn:'כוויה',penetrating:'חודר'};
     const typeColors={hemorrhage:'#e74c3c',fracture:'#f1c40f',burn:'#e67e22',penetrating:'#9b59b6'};
     _incidentCasualties.forEach((c,idx)=>{
@@ -720,7 +720,7 @@ function generate9LineMEDEVAC(){
     {num:2,label:'תדר/קריאה',value:defaults.freq||'',placeholder:'הזן תדר וקריאה',editable:true},
     {num:3,label:'דחיפות',value:precParts.join(', ')||'D — ROUTINE',editable:true},
     {num:4,label:'ציוד מיוחד',value:specialEquip.join(', ')||'A — ללא',editable:true},
-    {num:5,label:`מספר נפגעים ${deceased?`+ ${deceased} נפטר`:''}`,value:line5,editable:true},
+    {num:5,label:`מספר נפגעים${deceased?` (+ ${deceased} ללא סימני חיים)`:''}`,value:line5,editable:true},
     {num:6,label:'ביטחון (פיק״א)',value:defaults.security||'',placeholder:'N ללא אויב / P אויב / E מגע / X חמוש',editable:true},
     {num:7,label:'סימון',value:defaults.marking||'',placeholder:'A פאנלים / B פירוטכניקה / C עשן / D עין / E אחר',editable:true},
     {num:8,label:'לאום ומספר',value:defaults.nationality||'',placeholder:'A IL צבא / B IL אזרח / C NATO / D לא-NATO / E שבוי',editable:true},
@@ -741,7 +741,7 @@ function show9LineOverlay(){
   ov.style.cssText='position:'+(host?'absolute':'fixed')+';top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:100500;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom));direction:'+(document.documentElement.dir||'rtl')+';overflow-y:auto';
   ov.className='nl-ov';
   ov.setAttribute('role','dialog');ov.setAttribute('aria-label','9-Line MEDEVAC');
-  let inner='<div class="nl-top"><b>9-Line MEDEVAC</b><button onclick="closeMedevacOverlay()" class="nl-x">✕ סגור</button></div>';
+  let inner='<div class="nl-top"><b dir="ltr">9-Line MEDEVAC</b><button onclick="closeMedevacOverlay()" class="nl-x">✕ סגור</button></div>';
   inner+='<div id="sh-9line-gps-status" style="font-size:11px;color:var(--t3);text-align:center;margin-bottom:8px"></div>';
   lines.forEach(l=>{
     inner+=`<div style="display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:4px">`;

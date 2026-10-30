@@ -166,6 +166,30 @@ function enhanceBoard(c){
   });
 }
 
+// MIST+ text -> labelled blocks. Each value is its own bidi island so Hebrew and numbers never scramble.
+function hoBlocks(text){
+  var E = W.escapeHtml, iso = function(s){ return '<bdi>' + E(s.replace(/[\u2066-\u2069]/g, '').trim()) + '</bdi>'; };
+  var NAMES = { M:L('MECHANISM','מנגנון'), I:L('INJURIES','פציעות'), S:L('SIGNS','סימנים'), T:L('TREATMENT','טיפול') };
+  var lines = String(text).split('\n').filter(function(x){ return x.trim(); }), out = '';
+  lines.forEach(function(ln, n){
+    var clean = ln.replace(/[\u2066-\u2069]/g, '');
+    if (n === 0){ var hp = clean.split(' | '); out += '<div class="ho-title">' + iso(hp[0].replace(/^MIST\+\s*—\s*/, '')) + (hp[1] ? '<small>' + iso(hp[1]) + '</small>' : '') + '</div>'; return; }
+    if (n === 1 && / \| /.test(clean)){ out += '<div class="ho-chips">' + clean.split(' | ').map(function(c){ return '<span>' + iso(c) + '</span>'; }).join('') + '</div>'; return; }
+    var m = /^([^:]{1,40}):\s+(.*)$/.exec(clean);
+    if (!m){ out += '<div class="ho-alert">' + iso(clean) + '</div>'; return; }
+    var key = m[1].trim(), val = m[2], label = NAMES[key] || key;
+    var items;
+    if (key === 'S'){
+      var tm = /^(.*?)\s*\(((?:trend|מגמה)[^:]*):\s*(.*)\)$/.exec(val);
+      items = (tm ? tm[1] : val).split(' · ').map(function(x){ return '<span class="ho-v" dir="ltr">' + E(x) + '</span>'; }).join('');
+      out += '<div class="ho-row"><b>' + E(label) + '</b><div class="ho-vs">' + items + '</div>' + (tm ? '<p>' + E(L('Trend: ','מגמה: ')) + iso(tm[3]) + '</p>' : '') + '</div>';
+      return;
+    }
+    var parts = val.split(/ · |, (?=[^\d])| \| /).filter(function(x){ return x.trim(); });
+    out += '<div class="ho-row"><b>' + E(label) + '</b>' + (parts.length > 1 ? '<ul>' + parts.map(function(x){ return '<li>' + iso(x) + '</li>'; }).join('') + '</ul>' : '<p>' + iso(val) + '</p>') + '</div>';
+  });
+  return '<div class="ho-body">' + out + '</div>';
+}
 W.FormUI = {
   cur: 'field',
   open: {},
@@ -191,9 +215,10 @@ W.FormUI = {
     var app = document.getElementById('app'); if (document.getElementById('fs-sheet')) return;
     var raw = W.generateMISTPlusReport ? W.generateMISTPlusReport() : '';
     var text = W.Polish ? W.Polish.strip((W.ShowcaseI18n ? W.ShowcaseI18n.tr(raw) : raw).replace(/→/g, L(' then ', ' ואז '))) : raw;
+    if (lang() === 'he') text = text.replace(/טריאז׳/g, 'מיון').replace(/(\d+)L\/דק׳/g, '$1 ליטר לדקה').replace(/מסכת NRB/g, 'מסכת העשרה').replace(/ח"ע:/g, 'חוסם עורקים:');
     var s = document.createElement('div'); s.id = 'fs-sheet'; s.className = 'sheet-wrap';
     s.innerHTML = '<div class="sheet-dim" onclick="FormUI.closeSheet()"></div><div class="sheet ho-sheet" role="dialog" aria-label="MIST+"><div class="sheet-grab"></div>'
-      + '<div class="ho-top"><h3>' + L('Handoff report (MIST+)','דוח העברה (MIST+)') + '</h3><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('CLOSE','סגור') + '</button></div><pre class="mist" dir="auto">' + W.escapeHtml(text) + '</pre><p class="mist-warn">' + W.escapeHtml(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
+      + '<div class="ho-top"><h3>' + L('Handoff report (MIST+)','דוח העברה (MIST+)') + '</h3><button class="xbtn" onclick="FormUI.closeSheet()">' + ico('x', 24) + L('CLOSE','סגור') + '</button></div>' + hoBlocks(text) + '<p class="mist-warn">' + W.escapeHtml(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
       + '<div class="bo-actions"><button class="xbtn" onclick="FormUI.closeSheet();FormUI.sheet()">' + ico('share-2', 24) + L('SHARE / PRINT','שיתוף / הדפסה') + '</button><button class="xbtn" onclick="showRadioReadout();FormUI.closeSheet()">' + ico('radio', 24) + L('RADIO SCRIPT','תסריט רדיו') + '</button>'
       + '<button class="xbtn xbtn-primary" onclick="copyMISTPlus()">' + ico('copy', 24) + L('COPY','העתק') + '</button></div></div>';
     app.appendChild(s);
