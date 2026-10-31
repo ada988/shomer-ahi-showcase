@@ -1624,6 +1624,7 @@ function medUndo(){
   if(!_medUndoStack.length){_toast('אין פעולה לביטול');return;}
   _medRedoStack.push(_snapshotMedState());
   _restoreMedState(_medUndoStack.pop());
+  try{_rehydrateRedoses();}catch(e){}
   if(navigator.vibrate)navigator.vibrate(20);
 }
 function medRedo(){
@@ -1892,7 +1893,7 @@ function renderClinicalPriorities(){
     items.push({k:'shock',ic:'🩸',cl:'#e74c3c',obs:`סימני הלם (${parts.join(' · ')||'לפי הערכה קלינית'})`,rec:'הלם — דם מלא / פלזמה, TXA, חימום'});
   }
   if(ctx.hypothermic&&ctx.deepShock){
-    items.push({k:'triad',ic:'☠',cl:'#c0392b',obs:`נמדדה טמפ׳ ${ctx.lastVitals.temp}°C + SBP ${ctx.sys}mmHg — Lethal Triad`,rec:'מומלץ: חימום דחוף (HPMK/פעיל) + דם מלא + TXA 1g IV'});
+    items.push({k:'triad',ic:'☠',cl:'#c0392b',obs:`חשד לשלישיית המוות: קור + ל״ד נמוך (${ctx.lastVitals.temp}°C, SBP ${ctx.sys})`,rec:'מומלץ: חימום דחוף (HPMK/פעיל) + דם מלא + TXA 1g IV'});
   }
   if(ctx.hasTBI){
     if(ctx.tbiBpLow)items.push({k:'tbi-bp',ic:'🧠',cl:'#e74c3c',obs:`חשד TBI + נמדד SBP ${ctx.sys}mmHg (מתחת ל-100)`,rec:'מומלץ: שמירה על SBP ≥100–110 (לפי נוהל TBI) — נוזלים/דם מיידי'});
@@ -2317,32 +2318,40 @@ function editMedication(idx){
   MedHost.triggerAutoSave();
   MedHost.renderIncidentPage();
 }
+// Redose reminders are derived from the medications actually on the record (drug + time), never from a stored list:
+// after Undo, a deleted entry, a reset or a reload there is nothing to remind about. Firing re-checks the record too.
+const _REDOSE_MIN={'קטמין':45,'פנטניל':15};
 function _redoseKey(){return 'sh_redose_'+(_casualtyEditId||'new');}
-function _readRedoses(){try{return JSON.parse(localStorage.getItem(_redoseKey())||'[]');}catch(e){return [];}}
-function _writeRedoses(list){try{localStorage.setItem(_redoseKey(),JSON.stringify(list));}catch(e){}}
-function _scheduleRedose(drug,mins){
-  const dueAt=Date.now()+mins*60000;
-  const list=_readRedoses();list.push({drug,mins,dueAt});_writeRedoses(list);
-  const id=setTimeout(()=>_fireRedose(drug,mins,dueAt),mins*60000);
-  _medRedoseTimers.push(id);
-}
-function _fireRedose(drug,mins,dueAt){
-  if(_casualtyEditMode)MedHost.toast(`⏰ ${drug} — מנה חוזרת אפשרית (${mins} דק')`,false);
-  if(navigator.vibrate)navigator.vibrate([50,30,50]);
-  // Remove from persisted list.
-  const list=_readRedoses().filter(r=>r.dueAt!==dueAt);_writeRedoses(list);
-}
-// Called from editCasualty to rehydrate pending redose alerts for this
-// casualty. Fires immediate alert if due time already passed while the
-// app was backgrounded.
-function _rehydrateRedoses(){
-  const list=_readRedoses();const now=Date.now();const keep=[];
-  list.forEach(r=>{
-    if(r.dueAt<=now){_fireRedose(r.drug,r.mins,r.dueAt);}
-    else{const id=setTimeout(()=>_fireRedose(r.drug,r.mins,r.dueAt),r.dueAt-now);_medRedoseTimers.push(id);keep.push(r);}
+function _readRedoses(){return [];}
+function _writeRedoses(list){try{localStorage.removeItem(_redoseKey());}catch(e){}}
+function _redoseDue(){
+  const now=Date.now(),out=[];
+  const meds=(_casualtyXABCDE&&_casualtyXABCDE.e&&_casualtyXABCDE.e.medications)||[];
+  Object.keys(_REDOSE_MIN).forEach(drug=>{
+    const last=meds.filter(m=>m.drug===drug&&!isNaN(Date.parse(m.time))).sort((a,b)=>Date.parse(a.time)-Date.parse(b.time)).pop();
+    if(last){const dueAt=Date.parse(last.time)+_REDOSE_MIN[drug]*60000;if(dueAt>now)out.push({drug,mins:_REDOSE_MIN[drug],dueAt,time:last.time});}
   });
-  _writeRedoses(keep);
+  return out;
 }
+function _scheduleRedose(drug,mins){ _rehydrateRedoses(); }
+function _fireRedose(drug,mins,dueAt,time,caseId){
+  // still the same casualty, and the dose is still on the record with that time?
+  if(!_casualtyEditMode||caseId!==(_casualtyEditId||_casualtyName))return;
+  const meds=(_casualtyXABCDE&&_casualtyXABCDE.e&&_casualtyXABCDE.e.medications)||[];
+  const newer=meds.filter(m=>m.drug===drug&&Date.parse(m.time)>Date.parse(time)).length;
+  if(!meds.some(m=>m.drug===drug&&m.time===time)||newer)return;
+  MedHost.toast(`⏰ ${drug} — מנה חוזרת אפשרית (${mins} דק')`,false);
+  if(navigator.vibrate)navigator.vibrate([50,30,50]);
+}
+// Called on open / add / undo / delete / time edit: one timer per drug, from the record as it is now.
+function _rehydrateRedoses(){
+  clearRedoseTimers(); _writeRedoses();
+  const caseId=_casualtyEditId||_casualtyName;
+  _redoseDue().forEach(r=>{const id=setTimeout(()=>_fireRedose(r.drug,r.mins,r.dueAt,r.time,caseId),r.dueAt-Date.now());_medRedoseTimers.push(id);});
+}
+// for Demo.reset and similar: drop every pending repeat-dose reminder, or rebuild them from the open record
+window._clearRedoseTimers=function(){clearRedoseTimers();};
+window._resyncRedoses=function(){try{_rehydrateRedoses();}catch(e){}};
 function clearRedoseTimers(){_medRedoseTimers.forEach(id=>clearTimeout(id));_medRedoseTimers=[];}
 
 // Tap-to-rate — no fixed countdown. Tap 1 starts the clock, every tap
@@ -2609,7 +2618,7 @@ function runClinicalAlerts(pulse,rr,spo2,bpSys,temp,etco2,radialPulse){
   }
   // --- IDF 2026 additions: temp, etco2, radial pulse ---
   if(temp!=null){
-    if(temp<35)alerts.push({level:'🔴',msg:`היפותרמיה (${temp}°C) — סיכון Lethal Triad — HPMK + חימום פעיל + פינוי דחוף`});
+    if(temp<35)alerts.push({level:'🔴',msg:`חום גוף ${temp}°C — חשד לשלישיית המוות (קור) — HPMK + חימום פעיל + פינוי דחוף`});
     else if(temp<36)alerts.push({level:'⚠️',msg:`היפותרמיה (${temp}°C) — HPMK עכשיו`});
     else if(temp>38.5)alerts.push({level:'⚠️',msg:`חום גבוה (${temp}°C) — בדוק סביבה, שקול פגיעת חום / פרכוס`});
   }
@@ -6933,7 +6942,7 @@ Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא �
 
 Object.assign(window.SHOWCASE_DICT, {'מוכן — שייך לרכב':'Ready: assign to an ambulance','נפגע דחוף ממתין':'URGENT casualty waiting','נפגעים דחופים ממתינים':'URGENT casualties waiting','לפינוי מעל 15 דק׳':'for evacuation over 15 min'});
 
-Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא נקבע':'Not set','Lethal Triad':'Lethal triad (cold, acidosis, bleeding)'});
+Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא נקבע':'Not set','Lethal Triad':'Suspected lethal-triad risk'});
 
 Object.assign(window.SHOWCASE_DICT, {'בזירה':'on scene','· מוכן — שייך לרכב':'· Ready: assign to an ambulance'});
 
@@ -6958,6 +6967,10 @@ Object.assign(window.SHOWCASE_DICT, {'שאיבת הפרשות':'Suction','אינ
 
 // Form 101 bug round: localised engine lines
 Object.assign(window.SHOWCASE_DICT, {'מקבע אגן (בגובה הטרוכנטרים)':'Pelvic binder (at the greater trochanters)','GCS עיניים':'GCS eyes','GCS דיבור':'GCS voice','GCS תנועה':'GCS movement','מחיקה':'Delete','(אחורי)':'(back)','גישה גרמית (IO)':'IO access'});
+
+Object.assign(window.SHOWCASE_DICT, {'מספר שונה':'Number changed','הוחלף עם נפגע':'swapped with Casualty'});
+
+Object.assign(window.SHOWCASE_DICT, {'חשד לשלישיית המוות: קור + ל״ד נמוך':'Suspected lethal-triad risk: cold + low BP','חשד לשלישיית המוות (קור)':'Suspected lethal-triad risk (cold)','חום גוף':'Body temperature'});
 
 ;
 /* i18n.js */
@@ -7353,10 +7366,14 @@ document.addEventListener('DOMContentLoaded', function(){ setLang(lang); });
   var NUM = /(?:נפגע|Casualty)\s*#?(\d+)/, high = 0;
   window.casNum = function(c){ if (!c) return null; if (c.num) return +c.num; var m = NUM.exec(String(c.name || (c === window ? '' : ''))); return m ? +m[1] : null; };
   window.casLabel = function(c){ var n = window.casNum(c), he = window.ShowcaseI18n && window.ShowcaseI18n.lang === 'he'; return (he ? 'נפגע' : 'Casualty') + (n ? ' ' + n : ''); };
-  window.nextCasNum = function(){   // unique per incident and never reused (a high-water mark, not a count)
+  // Unique per incident and never reused: the high-water mark remembers every number that reached a saved record (even if that
+  // record was later removed). Asking for the next number does not use it up, so a new form closed empty leaves no gap.
+  window.nextCasNum = function(){
     (window._incidentCasualties || []).forEach(function(c){ var n = window.casNum(c); if (n > high) high = n; });
-    return ++high;
+    var open = window._casualtyEditMode ? window.casNum({ name: window._casualtyName }) || 0 : 0;   // the open form's number is taken too
+    return Math.max(high, open) + 1;
   };
+  window.resetCasNum = function(){ high = 0; };   // Reset demo: numbering continues after the demo casualties again
   window.casBadge = function(c, big){ var n = typeof c === 'number' ? c : window.casNum(c); return n ? '<span class="cnum' + (big ? ' lg' : '') + '" aria-hidden="true">' + n + '</span>' : ''; };
   window.casDesc = function(c){ var d = c && (c.desc || String(c.name || '').split(' — ').slice(1).join(' — ')); return d ? (window.ShowcaseI18n ? window.ShowcaseI18n.tr(d) : d) : ''; };
 })();
@@ -7730,23 +7747,23 @@ function braceletHtml(c, opts){
   return '<div class="brc2' + (opts.print ? ' brc-print' : '') + (opts.list ? ' brc-list' : '') + '" style="--tg:' + tg.c + ';--tgt:' + tg.tx + '">'
     + '<div class="b2-tri">' + (no ? '<strong class="b2-num" dir="ltr">' + no + '</strong>' : '') + sh + '<b>' + esc(L(tg.en, tg.he)) + '</b></div>'
     + '<div class="b2-main">'
-    +   '<div class="b2-top"><span>' + L('SHOMER AHI · CASUALTY ID','שומר אחי · זיהוי נפגע') + '</span><em>' + L('DEMO','דמו') + '</em></div>'
-    +   '<div class="b2-no"><small>' + L('NO.','מס׳') + '</small><b dir="ltr">' + esc(s.s) + '</b></div>'
+    +   '<div class="b2-top"><span>' + L('Shomer Ahi · casualty ID','שומר אחי · זיהוי נפגע') + '</span><em>' + L('Demo','דמו') + '</em></div>'
+    +   '<div class="b2-no"><small>' + L('No.','מס׳') + '</small><b dir="ltr">' + esc(s.s) + '</b></div>'
     +   '<div class="b2-who">' + esc(who) + '</div>'
     +   '<div class="b2-grid">'
     +     (tq ? '<div class="b2-box set"><small>' + L('TQ','חוסם') + '</small><b>' + hhmm(tq[1]) + '</b><span>' + esc(regionName(tq[0])) + '</span></div>' : '<div class="b2-box blank"><small>' + L('TQ','חוסם') + '</small><b>__ : __</b></div>')
-    +     (meds.length ? '<div class="b2-box set"><small>' + L('DRUGS','תרופות') + '</small>' + meds.map(function(m){ return '<span><b style="font-size:1em">' + hhmm(m[3]) + '</b> ' + esc(T(m[0])) + '</span>'; }).join('') + '</div>' : '<div class="b2-box blank"><small>' + L('DRUGS + TIME','תרופות + שעה') + '</small></div>')
-    +     (evacCat(s) ? '<div class="b2-box set"><small>' + L('EVAC','פינוי') + '</small><span>' + esc(evacCat(s)) + '</span></div>' : '<div class="b2-box blank"><small>' + L('EVAC ORDER','סדר פינוי') + '</small></div>')
+    +     (meds.length ? '<div class="b2-box set"><small>' + L('Drugs','תרופות') + '</small>' + meds.map(function(m){ return '<span><b style="font-size:1em">' + hhmm(m[3]) + '</b> ' + esc(T(m[0])) + '</span>'; }).join('') + '</div>' : '<div class="b2-box blank"><small>' + L('DRUGS + TIME','תרופות + שעה') + '</small></div>')
+    +     (evacCat(s) ? '<div class="b2-box set"><small>' + L('Evac','פינוי') + '</small><span>' + esc(evacCat(s)) + '</span></div>' : '<div class="b2-box blank"><small>' + L('Evac order','סדר פינוי') + '</small></div>')
     +   '</div>'
     +   '<div class="b2-grid">'
-    +     '<div class="b2-box ' + (s.np ? 'set' : 'blank') + '"><small>' + L('NIL BY MOUTH','צום') + '</small><b>' + (s.np ? L('YES','כן') : '☐') + '</b></div>'
-    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('ALLERGY','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 60)) + '</span>' : '') + '</div>'
-    +     '<div class="b2-box blank"><small>' + L('BLOOD TYPE','סוג דם') + '</small></div>'
+    +     '<div class="b2-box ' + (s.np ? 'set' : 'blank') + '"><small>' + L('Nil by mouth','צום') + '</small><b>' + (s.np ? L('Yes','כן') : '☐') + '</b></div>'
+    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('Allergy','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 60)) + '</span>' : '') + '</div>'
+    +     '<div class="b2-box blank"><small>' + L('Blood type','סוג דם') + '</small></div>'
     +   '</div>'
-    +   '<div class="b2-foot">' + L('DEMO. NOT FOR CLINICAL USE. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
+    +   '<div class="b2-foot">' + L('Demo. Not for clinical use. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
     + '</div>'
-    + '<div class="b2-qr">' + qrSvg(url, opts.print ? 140 : 176) + '<small>' + L('SCAN WITH ANY PHONE CAMERA','סרקו בכל מצלמת טלפון') + '</small></div>'
-    + '<div class="b2-stub"><span>' + L('TEAR OFF · KEEP WITH STRETCHER','גזרו · הצמידו לאלונקה') + '</span><b dir="ltr">' + (no ? '#' + no + ' · ' : '') + esc(s.s) + '</b><span>' + esc(L(tg.en, tg.he)) + '</span></div>'
+    + '<div class="b2-qr">' + qrSvg(url, opts.print ? 140 : 176) + '<small>' + L('Scan with any phone camera','סרקו בכל מצלמת טלפון') + '</small></div>'
+    + '<div class="b2-stub"><span>' + L('Tear off · keep with the stretcher','גזרו · הצמידו לאלונקה') + '</span><b dir="ltr">' + (no ? '#' + no + ' · ' : '') + esc(s.s) + '</b><span>' + esc(L(tg.en, tg.he)) + '</span></div>'
     + '</div>';
 }
 
@@ -7902,8 +7919,8 @@ function close(silent){
   document.body.classList.remove('bo-open');
   if (!silent && /#b=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
 }
-function topbar(title, back){
-  return '<header class="bo-top"><button class="bo-x" onclick="Bracelet.close()" aria-label="' + L('Close','סגור') + '">' + ico(back ? (document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left') : 'x', 24) + '<span>' + (back ? L('Back','חזרה') : L('Close','סגור')) + '</span></button><div class="bo-title">' + title + '</div><button class="beta-pill" onclick="Disclaimer.open()" aria-label="' + L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים') + '">' + ico('triangle-alert', 20) + '<b>' + L('Beta','בטא') + '</b><span>· ' + L('demo','דמו') + '</span></button></header>';
+function topbar(title, back, backJs){
+  return '<header class="bo-top"><button class="bo-x" onclick="' + (backJs || 'Bracelet.close()') + '" aria-label="' + L('Close','סגור') + '">' + ico(back ? (document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left') : 'x', 24) + '<span>' + (back ? L('Back','חזרה') : L('Close','סגור')) + '</span></button><div class="bo-title">' + title + '</div><button class="beta-pill" onclick="Disclaimer.open()" aria-label="' + L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים') + '">' + ico('triangle-alert', 20) + '<b>' + L('Beta','בטא') + '</b><span>· ' + L('demo','דמו') + '</span></button></header>';
 }
 
 function showCard(s, src){
@@ -8074,12 +8091,13 @@ function renderTab(){
 function pick(docId){
   selId = docId;
   if (W.renderIncidentPage) W.renderIncidentPage();
-  setTimeout(function(){ var el = document.getElementById('bt-sel'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 30);
+  setTimeout(function(){ var el = document.getElementById('bt-sel'), sc = document.getElementById('incident-content'); if (!el || !sc) return; var d = el.getBoundingClientRect().top - sc.getBoundingClientRect().top, k = sc.offsetHeight ? sc.getBoundingClientRect().height / sc.offsetHeight || 1 : 1; sc.scrollTo({ top: sc.scrollTop + d / k - 8, behavior:'smooth' }); }, 30);
 }
 
 // ── Hash route: a scanned QR opens the card directly ───────────
 function route(){
   var tg = /#t=/.test(location.hash) ? parseTag(location.hash) : null;
+  if (!tg && /#t=/.test(location.hash)){ history.replaceState(null, '', location.pathname + location.search); (function t(){ if (document.querySelector('.dn')) return setTimeout(t, 400); W.toast(L('That tag link is not valid. Tags look like SA-0427. Scan the tag again, or type its ID in Scan.','קישור התג אינו תקין. תג נראה כך: SA-0427. סרקו שוב את התג, או הקלידו את המספר בסריקה.'), false); })(); return; }
   if (tg){ history.replaceState(null, '', location.pathname + location.search); (function t(){ if (document.querySelector('.dn')) return setTimeout(t, 400); openTag(tg); })(); return; }
   if (!/#b=/.test(location.hash)){ if (overlay && overlay.classList.contains('bo-card')) close(true); return; }
   var s = parseScan(location.hash);
@@ -8114,9 +8132,11 @@ function casList(){ return W._incidentCasualties || []; }
 function byId(id){ return casList().filter(function(c){ return c._docId === id; })[0]; }
 function byTag(t){ return casList().filter(function(c){ return c.tagId === t; })[0]; }
 function nm(c){ return W.casLabel ? W.casLabel(c) : esc(String(T(c.name)).split(' — ')[0]); }
-function freeTags(n){
+var printedTo = 0;   // highest tag number already printed this session
+function readPrinted(){ try { printedTo = Math.max(printedTo, +sessionStorage.getItem('sh_tags_printed') || 0); } catch (e) {} return printedTo; }
+function freeTags(n, fresh){
   var used = {}, out = []; casList().forEach(function(c){ if (c.tagId) used[c.tagId] = 1; });
-  for (var k = TAG_FIRST_BLANK; out.length < n && k < 9999; k++){ var id = 'SA-' + ('000' + k).slice(-4); if (!used[id]) out.push(id); }
+  for (var k = fresh ? Math.max(TAG_FIRST_BLANK, readPrinted() + 1) : TAG_FIRST_BLANK; out.length < n && k < 9999; k++){ var id = 'SA-' + ('000' + k).slice(-4); if (!used[id]) out.push(id); }
   return out;
 }
 function tagSamples(blankOnly){
@@ -8163,15 +8183,7 @@ function tlPop(c, action, where){
 function linkTag(t){
   var mode = scanMode, c = mode && byId(mode.docId); if (!c) return;
   var other = byTag(t);
-  if (other && other._docId !== c._docId){
-    mount(topbar(L('Tag already in use','התג כבר בשימוש'), true) + '<div class="bo-body"><div class="tg-warn">' + ico('triangle-alert', 30)
-      + '<div><b dir="auto">' + L('Tag ' + t + ' is already on ' + nm(other),'התג ' + t + ' כבר מקושר ל' + nm(other)) + '</b><p>' + L('One tag, one casualty. Check the tag on the casualty in front of you.','תג אחד, נפגע אחד. בדקו את התג על הנפגע שמולכם.') + '</p></div></div>'
-      + '<div class="bo-actions"><button class="xbtn xbtn-primary" onclick="Bracelet.close();Demo.openCasualty(\'' + esc(other._docId) + '\')">' + ico('file-text', 24) + L('Open ' + nm(other),'פתיחת ' + nm(other)) + '</button>'
-      + '<button class="xbtn" onclick="Bracelet.scanTag(\'' + esc(c._docId) + '\')">' + ico('scan-line', 24) + L('Scan another tag','סריקת תג אחר') + '</button>'
-      + '<button class="xbtn" onclick="Bracelet.close()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div></div>', 'bo-card bo-tagwarn', null);
-    scanMode = null;
-    return;
-  }
+  if (other && other._docId !== c._docId){ tagInUse(t, c, other); return; }
   scanMode = null; close(true);
   if (other){ W.toast(L(nm(c) + ' is already on tag ' + t, nm(c) + ' כבר מקושר לתג ' + t), false); if (mode.after) mode.after(); return; }
   var prev = c.tagId || '', action = 'קושר לתג ' + t;
@@ -8183,6 +8195,15 @@ function linkTag(t){
   if (W.Field && W.Field.toast) W.Field.toast(msg, undo); else W.toast(msg, false);
   if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
   if (mode.after) mode.after();
+}
+function tagInUse(t, c, other){
+  var back = 'Bracelet.scanTag(\'' + esc(c._docId) + '\')';
+  mount(topbar(L('Tag already in use','התג כבר בשימוש'), true, back) + '<div class="bo-body"><div class="tg-warn">' + ico('triangle-alert', 30)
+    + '<div><b dir="auto">' + L('Tag ' + t + ' is already on ' + nm(other),'התג ' + t + ' כבר מקושר ל' + nm(other)) + '</b><p>' + L('One tag, one casualty. Check the tag on the casualty in front of you.','תג אחד, נפגע אחד. בדקו את התג על הנפגע שמולכם.') + '</p></div></div>'
+    + '<div class="bo-actions"><button class="xbtn xbtn-primary" onclick="Bracelet.close();Demo.openCasualty(\'' + esc(other._docId) + '\')">' + ico('file-text', 24) + L('Open ' + nm(other),'פתיחת ' + nm(other)) + '</button>'
+    + '<button class="xbtn" onclick="' + back + '">' + ico('scan-line', 24) + L('Scan another tag','סריקת תג אחר') + '</button>'
+    + '<button class="xbtn" onclick="Bracelet.close()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div></div>', 'bo-card bo-tagwarn', function(){ tagInUse(t, c, other); });
+  scanMode = null;
 }
 // Link the casualty open in Form 101 (saving a brand-new one first so it has an id).
 function linkForm(){
@@ -8219,7 +8240,8 @@ function tagHtml(id, print){
 }
 function printTags(n){
   n = n || 12;
-  var he = lang() === 'he', ids = freeTags(n);
+  var he = lang() === 'he', ids = freeTags(n, true);
+  printedTo = +ids[ids.length - 1].slice(3); try { sessionStorage.setItem('sh_tags_printed', String(printedTo)); } catch (e) {}
   var css = '*{box-sizing:border-box;margin:0}body{font-family:Inter,Heebo,Arial,sans-serif;background:#eceff3;color:#111;padding:20px}'
     + '.bar{max-width:210mm;margin:0 auto 14px;background:#fff;border-radius:10px;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between}.bar b{display:block;font-size:15px}.bar span{font-size:12px;color:#555}.bar button{background:#111;color:#fff;border:0;border-radius:8px;padding:11px 18px;font:600 14px inherit;cursor:pointer}'
     + '.sheet{max-width:210mm;margin:0 auto;background:#fff;padding:10mm;display:grid;grid-template-columns:repeat(2,1fr);gap:6mm}'
@@ -8636,7 +8658,7 @@ function idStrip(){
   var parts = String(name).split(' — '), sub = parts.slice(1).join(' — ') || who;
   // One compact row: who this is + their wristband. The triage selector right below carries the triage state.
   return '<div class="f-id' + (live ? '' : ' noname') + '">'
-    + (W.casBadge ? W.casBadge({ name: W._casualtyName }, true) : '') + '<span class="f-id-t"><b>' + parts[0] + '</b><button class="f-id-who" onclick="Field.editWho()" aria-label="' + L('Edit age, sex and weight','עריכת גיל, מין ומשקל') + '">' + (who || L('Age · sex · weight','גיל · מין · משקל'))
+    + (W.casBadge ? '<button class="f-id-num" onclick="Field.numSheet()" aria-label="' + L('Change the casualty number','שינוי מספר הנפגע') + '">' + W.casBadge({ name: W._casualtyName }, true) + '<small>' + ico('pencil', 18) + L('Change','שינוי') + '</small></button>' : '') + '<span class="f-id-t"><b>' + parts[0] + '</b><button class="f-id-who" onclick="Field.editWho()" aria-label="' + L('Edit age, sex and weight','עריכת גיל, מין ומשקל') + '">' + (who || L('Age · sex · weight','גיל · מין · משקל'))
     + (e.weightKg ? '' : '<u>' + L('Add weight','הוסיפו משקל') + '</u>') + ico('pencil', 20) + '</button></span>'
     + (c && c.tagId ? '<button class="f-id-b f-id-tag" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Tag ','תג ') + esc(c.tagId) + '">' + ico('tag', 26) + '<b dir="ltr">' + esc(c.tagId) + '</b></button>'
        : '<button class="f-id-b f-id-link" onclick="Bracelet.linkForm()">' + ico('scan-line', 26) + '<b>' + L('Scan tag','סריקת תג') + '</b></button>')
@@ -8697,6 +8719,8 @@ function html(){
   h += me && me.tagId
     ? '<div class="f-taglink done">' + ico('tag', 30) + '<span><b>' + L('Linked to tag','מקושר לתג') + ' <bdi dir="ltr">' + esc(me.tagId) + '</bdi></b><small>' + L('Scanning this tag opens this record.','סריקת התג פותחת את התיק הזה.') + '</small></span><button class="xbtn" onclick="Bracelet.linkForm()">' + ico('scan-line', 24) + L('Change','החלפה') + '</button></div>'
     : '<button class="f-taglink" onclick="Bracelet.linkForm()">' + ico('scan-line', 34) + '<span><b>' + L('Link to tag','קישור לתג') + '</b><small>' + L('Done? Scan the tag on the casualty.','סיימתם? סרקו את התג שעל הנפגע.') + '</small></span></button>';
+  // 7 · delete this casualty (asks first, can be undone)
+  if (me) h += '<button class="f-del" onclick="Demo.deleteAsk(\'' + esc(me._docId) + '\')">' + ico('trash-2', 26) + '<span>' + L('Delete this casualty','מחיקת הנפגע') + '</span></button>';
   return '<section class="field" id="field" data-tour="field">' + top + '</section><section class="field fmon" id="fs-more"><div class="fs-h-wrap"><h2 class="fs-h">' + L('Monitor','ניטור') + '</h2></div>' + h + '</section>';
 }
 function vt(label, val, unit, idx, bad, word){
@@ -8958,6 +8982,58 @@ var Field = {
     W.MedHost.triggerAutoSave(); render(); Field.closeSheet();
     undoToast(L('Cricothyrotomy (' + (m === 'needle' ? 'needle' : 'surgical') + ') recorded, ' + hhmm(now), 'קוניוטומיה (' + (m === 'needle' ? 'מחט' : 'כירורגית') + ') תועדה, ' + hhmm(now)), doUndo);
   },
+  // ── Change the casualty number (numbers are often given physically on scene; the app must match). Never two casualties
+  // with one number: a clash offers a swap or another number. Logged on the timeline, with a named undo.
+  numSheet: function(){ Field._num = { v:'' }; Field._numDraw(); },
+  _numDraw: function(msg, clash){
+    Field.closeSheet();
+    var cur = W.casNum ? W.casNum({ name: W._casualtyName }) : null, N = Field._num || { v:'' };
+    var keys = ['1','2','3','4','5','6','7','8','9','⌫','0','OK'];
+    var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
+    el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet kp f-num" role="dialog" aria-modal="true" aria-labelledby="f-num-t"><div class="sheet-grab"></div>'
+      + '<h3 id="f-num-t">' + ico('pencil', 24) + L('Change number','שינוי מספר') + '</h3>'
+      + '<div class="f-num-v" dir="ltr">' + (W.casBadge ? W.casBadge(cur, true) : cur) + ico('arrow-right', 28) + '<b>' + (N.v || '—') + '</b></div>'
+      + (msg ? '<p class="f-num-msg" role="alert">' + ico('triangle-alert', 22) + '<span>' + msg + '</span></p>' : '<p class="kp-hint">' + L('1 to 999. Never reused.','1 עד 999. מספר לא חוזר.') + '</p>')
+      + (clash ? '<div class="f-acc-g"><button onclick="Field.numApply(' + clash + ', true)">' + ico('rotate-ccw', 24) + '<b>' + L('Swap numbers','החלפת מספרים') + '</b><small>' + L('This one gets ' + clash + ', the other gets ' + cur,'זה יקבל ' + clash + ', השני יקבל ' + cur) + '</small></button><button onclick="Field._num={v:\'\'};Field._numDraw()">' + ico('pencil', 24) + '<b>' + L('Pick another','מספר אחר') + '</b><small>' + L('Type a free number','הקלידו מספר פנוי') + '</small></button></div>'
+        : '<div class="kp-keys" dir="ltr">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.numKey(\'' + k + '\')">' + (k === 'OK' ? ico('check', 26) + L('Save','שמור') : k === '⌫' ? ico('arrow-left', 24) + L('Delete','מחק') : k) + '</button>'; }).join('') + '</div>')
+      + '<button class="xbtn f-cancel" onclick="Field.closeSheet()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div>';
+    app().appendChild(el);
+  },
+  numKey: function(k){
+    var N = Field._num || (Field._num = { v:'' });
+    if (k === '⌫') N.v = N.v.slice(0, -1);
+    else if (k === 'OK'){
+      var n = parseInt(N.v, 10), cur = W.casNum({ name: W._casualtyName });
+      if (!(n >= 1 && n <= 999)) return Field._numDraw(L('Type a number from 1 to 999.','הקלידו מספר בין 1 ל-999.'));
+      if (n === cur) return Field.closeSheet();
+      var other = (W._incidentCasualties || []).filter(function(c){ return c._docId !== W._casualtyEditId && W.casNum(c) === n; })[0];
+      if (other) return Field._numDraw(L('Number ' + n + ' is Casualty ' + n + ' already.','המספר ' + n + ' כבר שייך לנפגע ' + n + '.'), n);
+      return Field.numApply(n, false);
+    }
+    else if (N.v.length < 3) N.v = (N.v === '0' ? '' : N.v) + k;
+    Field._numDraw();
+  },
+  numApply: function(n, swap){
+    var list = W._incidentCasualties || [], cur = W.casNum({ name: W._casualtyName });
+    var me = list.filter(function(c){ return c._docId === W._casualtyEditId; })[0];
+    var other = swap ? list.filter(function(c){ return c._docId !== W._casualtyEditId && W.casNum(c) === n; })[0] : null;
+    var before = { name: W._casualtyName, me: me ? { id: me._docId, name: me.name, num: me.num } : null, other: other ? { id: other._docId, name: other.name, num: other.num } : null };
+    var put = function(id, name, num){ var c = list.filter(function(x){ return x._docId === id; })[0]; if (c){ c.name = name; c.num = num; } if (W._upsertOfflineCasualty) try { W._upsertOfflineCasualty({ _docId:id, name:name, num:num }); } catch (e) {} };
+    W._casualtyName = 'נפגע ' + n;
+    if (me) put(me._docId, W._casualtyName, n);
+    if (other) put(other._docId, 'נפגע ' + cur, cur);
+    var line = { time:new Date(), category:'note', action:'מספר שונה ' + cur + ' → ' + n + (other ? ' (הוחלף עם נפגע ' + n + ')' : ''), details:'' };
+    (W._casualtyTimeline || []).push(line);
+    Field._num = null; Field.closeSheet();
+    if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave(); render();
+    undoToast(L('Number changed ' + cur + ' → ' + n + (other ? ' (swapped)' : ''),'המספר שונה ' + cur + ' → ' + n + (other ? ' (הוחלף)' : '')), function(){
+      W._casualtyName = before.name;
+      if (before.me) put(before.me.id, before.me.name, before.me.num);
+      if (before.other) put(before.other.id, before.other.name, before.other.num);
+      var tl = W._casualtyTimeline || [], j = tl.indexOf(line); if (j >= 0) tl.splice(j, 1);
+      if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave(); render();
+    });
+  },
   injEdit: function(on){ Field._injEdit = !!on; render(); if (on) setTimeout(function(){ var i = document.getElementById('pat-inj'); if (i) i.focus(); }, 60); },
   injStep: function(delta){
     var ii = injuryInfo(); if (!ii) return;
@@ -9011,7 +9087,8 @@ var Field = {
     var s = SITES.filter(function(x){ return x[0] === site; })[0];
     undoToast(L('Tourniquet ON — ' + (s ? s[1] : site) + ' — ' + hhmm(new Date().toISOString()), 'חוסם עורקים הונח — ' + (s ? s[2] : site) + ' — ' + hhmm(new Date().toISOString())), doUndo);
   },
-  closeSheet: function(){ var s = document.getElementById('f-sheet'); if (s) s.remove(); },
+  // remember what was open, so a sheet rebuilt right away (same kind) is treated as an update, not a new sheet
+  closeSheet: function(){ var s = document.getElementById('f-sheet'); if (s){ var in_ = s.querySelector('.sheet'); W._fsSwap = { t:Date.now(), cls:in_ ? in_.className : '', y:in_ ? in_.scrollTop : 0 }; s.remove(); } },
   march: function(tab){
     W._casualtyActiveTab = tab; render();
     setTimeout(function(){ if (W.FormUI) W.FormUI.jump('fs-care'); }, 60);
@@ -9085,8 +9162,7 @@ var Field = {
   // GCS and pupils, quick entry
   // GCS and pupils, quick entry. Best answer first; every option = colour (good → bad) + icon + number + word.
   gcsSheet: function(){
-    var prevS = document.querySelector('#f-sheet .f-gcs'), keepY = prevS ? prevS.scrollTop : 0;
-    Field.closeSheet();
+    var prevS = document.querySelector('#f-sheet .f-gcs');
     var d = ((W._casualtyXABCDE || {}).d) || {}, g = d.gcsDetail || {}, p = d.pupils || {};
     var tone = function(v, max){ var f = (v - 1) / (max - 1); return f >= 0.999 ? 'g-ok' : f >= 0.5 ? 'g-mid' : f > 0 ? 'g-low' : 'g-bad'; };
     var row = function(key, en, he, opts){
@@ -9105,16 +9181,22 @@ var Field = {
       return '<div class="f-gcs-r"><span>' + L(en, he) + '</span><div class="f-pup">' + opt.map(function(o){ var on = cur === o[0]; return '<button class="' + o[4] + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Field.pupil(\'' + side + '\',\'' + o[0] + '\')">' + ico(o[1], 26) + '<span>' + L(o[2], o[3]) + '</span>' + (on ? ico('check', 22, 'g-chk') : '') + '</button>'; }).join('')
         + '<button class="warn' + (q.reactive === false ? ' on' : '') + '" aria-pressed="' + (q.reactive === false) + '" onclick="Field.pupil(\'' + side + '\',\'fixed\')">' + ico('eye-off', 26) + '<span>' + L('No light reaction','לא מגיב לאור') + '</span>' + (q.reactive === false ? ico('check', 22, 'g-chk') : '') + '</button></div></div>';
     };
-    var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
-    el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet f-gcs" role="dialog" aria-modal="true" aria-labelledby="f-gcs-t"><div class="sheet-grab"></div>'
-      + '<div class="g-top"><h3 id="f-gcs-t">GCS</h3><b class="g-tot" dir="ltr">' + (tot == null ? '—' : tot) + '<small>/15</small></b>' + band + '</div>'
+    var body = '<div class="sheet-grab"></div><div class="g-top"><h3 id="f-gcs-t">GCS</h3><b class="g-tot" dir="ltr">' + (tot == null ? '—' : tot) + '<small>/15</small></b>' + band + '</div>'
       + row('eye', 'Eyes', 'עיניים', [['eye','Open by themselves','פקוחות מעצמן'], ['ear','Open to voice','נפתחות לקול'], ['zap','Open to pain','נפתחות לכאב'], ['eye-off','None','אין']])
       + row('verbal', 'Voice', 'דיבור', [['message-circle','Talks, oriented','מדבר, מתמצא'], ['circle-help','Confused','מבולבל'], ['volume-2','Words only','מילים בלבד'], ['audio-lines','Sounds only','קולות בלבד'], ['mic-off','None','אין']])
       + row('motor', 'Movement', 'תנועה', [['thumbs-up','Obeys','מציית לפקודה'], ['target','Points to pain','ממקם כאב'], ['arrow-left','Pulls away','נסוג מכאב'], ['minimize-2','Bends (flexion)','כיפוף לא תקין'], ['maximize-2','Stretches (extension)','יישור לא תקין'], ['x','None','אין']])
       + '<h3>' + L('Pupils','אישונים') + '</h3>' + pup('right', 'Right eye', 'עין ימין') + pup('left', 'Left eye', 'עין שמאל')
-      + '<button class="xbtn xbtn-primary" onclick="Field.closeSheet()">' + ico('check', 26) + L('Done','סיום') + '</button></div>';
+      + '<button class="xbtn xbtn-primary" onclick="Field.closeSheet()">' + ico('check', 26) + L('Done','סיום') + '</button>';
+    // already open: update the contents in place, so the sheet doesn't close and reopen on every tap
+    if (prevS){
+      var y = prevS.scrollTop, fa = document.activeElement && prevS.contains(document.activeElement) ? document.activeElement.getAttribute('onclick') : null;
+      prevS.innerHTML = body; prevS.scrollTop = y;
+      if (fa){ var nb = prevS.querySelector('[onclick="' + fa.replace(/"/g, '\\"') + '"]'); if (nb) nb.focus({ preventScroll:true }); }
+      return;
+    }
+    var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
+    el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet f-gcs" role="dialog" aria-modal="true" aria-labelledby="f-gcs-t">' + body + '</div>';
     app().appendChild(el);
-    var nS = el.querySelector('.f-gcs'); if (nS && keepY) nS.scrollTop = keepY;
   },
   gcs: function(key, v){ snapshot(); if (W.setGCSComponent) W.setGCSComponent(key, v); W.MedHost.triggerAutoSave(); Field.gcsSheet(); },
   pupil: function(side, k){
@@ -9772,6 +9854,7 @@ Field.tlTimeSave = function(){
     e.time = new Date(T0.t);
   } finally { Promise.resolve().then(function(){ W._medPushLock = false; }); }
   Field.tlTimeClose();
+  if (W._rehydrateRedoses) try { W._rehydrateRedoses(); } catch (x) {}   // repeat-dose reminder follows the new time
   if (W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave();
   W.MedHost.renderIncidentPage();
   if (Field.toast) Field.toast(L('Time changed ','השעה שונתה ') + '<bdi dir="ltr">' + hmT(T0.orig) + ' → ' + hmT(T0.t) + '</bdi>', function(){ W.medUndo(); W.MedHost.renderIncidentPage(); });
@@ -9801,6 +9884,7 @@ Field.tlDel = function(i){
     if (!linked && e.category === 'injury' && e.details){ var inj = W._casualtyInjuries || [], ii = inj.findIndex(function(j){ return j.type === e.details && act.indexOf(W.BODY_LABELS ? (W.BODY_LABELS[j.region] || '') : '') >= 0; }); if (ii >= 0){ inj.splice(ii, 1); linked = 'injury'; } }
     if (!linked && e.details && /^טיפול /.test(act)){ var bt2 = W._casualtyTreatments || [], b2 = bt2.findIndex(function(b){ return b.type === e.details && act.indexOf(W.BODY_LABELS ? (W.BODY_LABELS[b.region] || '') : '') >= 0; }); if (b2 >= 0){ bt2.splice(b2, 1); linked = 'treatment'; } }
   } finally { Promise.resolve().then(function(){ W._medPushLock = false; }); }
+  if (W._rehydrateRedoses) try { W._rehydrateRedoses(); } catch (x) {}
   if (W.deleteTimelineEntry) W.deleteTimelineEntry(i); else { if (W.pushMedHistory) W.pushMedHistory(); tl.splice(i, 1); W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage(); }
   if (Field.toast) Field.toast(L('Deleted: ','נמחק: ') + esc(T(String(e.action || '')).slice(0, 40)) + (linked ? L(' (and its record)',' (וגם הרשומה)') : ''), function(){ W.medUndo(); });
 };
@@ -10043,7 +10127,7 @@ function drugs(P){
   D.push(ket);
   D.push({ id:'mor', g:'pain', en:L('Morphine','מורפין'), sub:L('If ketamine did not help after 5 min','אם קטמין לא עזר אחרי 5 דק׳'), eng:'מורפין', match:/מורפין|morphine/i, route:'IV',
     dose: function(){ return { v: P.child ? (P.profound ? r2(0.02 * kg) : r2(0.05 * kg)) : (P.profound ? 2 : 5), u:'mg' }; },
-    rule: (P.child ? L('0.05 mg/kg (0.02 in suspected shock)','0.05 מ״ג/ק״ג (0.02 בחשד להלם)') : L('5 mg (2 mg in suspected shock)','5 מ״ג (2 מ״ג בחשד להלם)')) + (P.profound ? (P.child ? L(' · REDUCED: low blood pressure for age',' · מופחת: לחץ דם נמוך לגיל') : L(' · REDUCED: suspected shock',' · מופחת: חשד להלם')) : ''),
+    rule: (P.child ? L('0.05 mg/kg (0.02 in suspected shock)','0.05 מ״ג/ק״ג (0.02 בחשד להלם)') : L('5 mg (2 mg in suspected shock)','5 מ״ג (2 מ״ג בחשד להלם)')) + (P.profound ? (P.child ? L(' · REDUCED: low blood pressure for age',' · מופחת: לחץ דם נמוך לגיל') : L(' · Reduced: suspected shock',' · מופחת: חשד להלם')) : ''),
     prep: L('Repeat every 15 min while pain stays 5 or more.','חזרה כל 15 דק׳ כל עוד הכאב 5 ומעלה.') + (P.child ? L(' No IV: 0.1 mg/kg IM once.',' אין וריד: 0.1 מ״ג/ק״ג לשריר פעם אחת.') : ''),
     every: 15, chg: function(){ return P.profound ? (P.child ? L('0.02 mg/kg instead of 0.05 · ','0.02 מ״ג/ק״ג במקום 0.05 · ') : L('2 mg instead of 5 mg · ','2 מ״ג במקום 5 מ״ג · ')) + (P.evid.length ? shockW(P) : L('suspected shock','חשד להלם')) + ' · ' + L('book ch. 15','ספר פרק 15') : null; },
     why: function(){ if (!(P.pain != null && P.pain >= 5)) return null; var k = givenOf(P, ket); if (!k.length) return null; return minsSince(k[k.length - 1].time) >= 5 ? L('Pain still ' + P.pain + ' after ketamine','כאב עדיין ' + P.pain + ' אחרי קטמין') : null; } });
@@ -10453,7 +10537,7 @@ function safetySheet(id){
     + '<button class="xbtn dz-sf-close" onclick="Field.doseSafetyClose()">' + ico('x', 24) + '<span>' + L('Close','סגירה') + '</span></button></div>';
   var el = document.createElement('div'); el.id = 'dz-sf'; el.className = 'dz-rb-wrap dz-sf-wrap'; el.innerHTML = h;
   el.addEventListener('click', function(ev){ if (ev.target === el) Field.doseSafetyClose(); });
-  document.getElementById('dose-sheet').appendChild(el);
+  (document.getElementById('app') || document.body).appendChild(el);   // not inside the scrolled calculator: it would open off-screen
   var b = el.querySelector('.dz-sf'); try { b.focus({ preventScroll:true }); } catch (e){}
 }
 Field.doseSafety = function(id){ S.sf = id; safetySheet(id); };
@@ -10582,7 +10666,7 @@ function readback(id){
     + '<div class="dz-rb-b"><button class="xbtn' + (s.wait > 0 ? ' xbtn-primary' : '') + '" onclick="Field.doseRbClose()">' + ico('x', 24) + '<span>' + L('Cancel','ביטול') + '</span></button>'
     + '<button class="xbtn ' + (s.wait > 0 ? 'dz-early' : 'xbtn-primary') + '" onclick="Field.doseGive(\'' + id + '\')">' + ico('check', 24) + '<span>' + (s.wait > 0 ? L('Give anyway','לתת בכל זאת') : L('Given: record it','ניתן: לתעד')) + '</span></button></div>'
     + '</div>';
-  document.getElementById('dose-sheet').appendChild(el);
+  (document.getElementById('app') || document.body).appendChild(el);   // not inside the scrolled calculator: it would open off-screen
 }
 Field.doseCheck = function(id){ S.rb = id; readback(id); var b = document.querySelector('#dz-rb .dz-rb'); if (b){ b.tabIndex = -1; try { b.focus({ preventScroll:true }); } catch (e){} } };
 Field.doseRbClose = function(){ S.rb = null; var r = document.getElementById('dz-rb'); if (r) r.remove(); };
@@ -10633,7 +10717,7 @@ Field.doseAccess = function(kind){
   draw();
 };
 Field.doseSyr = function(z){ S.syr = z; try { sessionStorage.setItem('dz-syr', String(z)); } catch (e){} draw(); };
-Field.doseClose = function(){ S.rb = null; S.sf = null; var s = document.getElementById('dose-sheet'); if (s) s.remove(); };
+Field.doseClose = function(){ S.rb = null; S.sf = null; ['dose-sheet','dz-sf','dz-rb'].forEach(function(id){ var s = document.getElementById(id); if (s) s.remove(); }); document.querySelectorAll('#app > .dz-rb-wrap').forEach(function(n){ n.remove(); }); };
 Field.doseEdit = function(k){ S.edit = S.edit === k ? null : k; draw(); };
 Field.doseTab = function(t){ S.tab = t; try { sessionStorage.setItem('dz-tab', t); } catch (e){} draw(); var el = document.getElementById('dose-sheet'), n = el && el.querySelector('.dz-tabs'); if (n && el.scrollTop > n.offsetTop) el.scrollTop = Math.max(0, n.offsetTop - 80); };
 Field.doseSet = function(k, v){
@@ -10748,7 +10832,7 @@ function iosSheet(){
     + '<li><b>1</b><span>' + (ios ? L('Tap the Share button in Safari (square with an arrow).','לחצו על כפתור השיתוף ב-Safari (ריבוע עם חץ).') : L('Open the browser menu (three dots).','פתחו את תפריט הדפדפן (שלוש נקודות).')) + '</span></li>'
     + '<li><b>2</b><span>' + (ios ? L('Choose “Add to Home Screen”.','בחרו “הוסף למסך הבית”.') : L('Choose “Install app” or “Add to Home screen”.','בחרו “התקן אפליקציה” או “הוסף למסך הבית”.')) + '</span></li>'
     + '<li><b>3</b><span>' + L('Open it from the icon. It runs full screen, even without a network.','פתחו מהסמל. היא רצה במסך מלא, גם בלי רשת.') + '</span></li></ol>'
-    + '<button class="xbtn xbtn-primary pwa-ok" onclick="PWA.close()">' + L('GOT IT','הבנתי') + '</button></div>';
+    + '<button class="xbtn xbtn-primary pwa-ok" onclick="PWA.close()">' + ico('check', 26) + L('Got it','הבנתי') + '</button></div>';
   (document.getElementById('app') || document.body).appendChild(s);
 }
 function install(){
@@ -10767,6 +10851,11 @@ function schedule(){ clearTimeout(timer); timer = setTimeout(bar, 4000); }
 if (!standalone && mobile && ios) schedule();
 else if (!standalone && mobile) timer = setTimeout(function(){ if (!deferred) return; bar(); }, 8000);
 
+// a language switch redraws the instructions in place instead of leaving them in the old language
+document.addEventListener('DOMContentLoaded', function(){
+  var i = W.ShowcaseI18n; if (!i) return;
+  var prev = i.setLang; i.setLang = function(l){ prev(l); if (document.getElementById('pwa-sheet')) iosSheet(); var b = document.getElementById('pwa-bar'); if (b){ b.remove(); bar(); } };
+});
 W.PWA = {
   install: install,
   dismiss: function(){ set(KEY, '1'); remove(); },
@@ -10965,12 +11054,17 @@ function body(){
 }
 function draw(){
   var el = document.getElementById('qt'); if (!el) return;
+  if (W.armTap) W.armTap();
+  var had = el.contains(document.activeElement);
   el.querySelector('.qt-inner').innerHTML = head() + '<div class="qt-body">' + body() + '</div>';
+  var h = el.querySelector('.qt-step h2, .qt-res b');
+  if (h && (had || document.activeElement === document.body)){ h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll:true, focusVisible:false }); } catch (e) { h.focus(); } }
 }
 function finish(color, reason){ if (color === 'gray') color = 'black'; S.result = { color:color, reason:reason }; draw(); if (navigator.vibrate) navigator.vibrate(30); }
 
 var Quick = {
   open: function(){
+    if (W.Demo && W.Demo.closeOverlays) W.Demo.closeOverlays();
     Quick.close(); S = { step:'bleed', history:[], result:null, flags:{}, tq:null, desc:{} };
     var el = document.createElement('div'); el.id = 'qt'; el.className = 'qt no-polish'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', L('Quick triage','מיון מהיר'));
     el.innerHTML = '<div class="qt-inner"></div>'; app().appendChild(el); draw();
@@ -11001,7 +11095,10 @@ var Quick = {
     var el = document.getElementById('qt'); var old = el.querySelector('.qt-pick'); if (old) { old.remove(); return; }
     var d = document.createElement('div'); d.className = 'qt-pick';
     d.innerHTML = ['red','yellow','green','black'].map(function(k){ var t = W.TriageUI.tg(k); return '<button class="t-' + k + '" onclick="Quick.set(\'' + k + '\')">' + W.TriageUI.shapeSvg(t.shape, 26) + '<b>' + W.TriageUI.word(k) + '</b></button>'; }).join('');
-    el.querySelector('.qt-body').appendChild(d); d.scrollIntoView({ block:'center' });
+    el.querySelector('.qt-body').appendChild(d);
+    if (W.armTap) W.armTap();
+    var k = el.offsetHeight ? el.getBoundingClientRect().height / el.offsetHeight || 1 : 1;
+    el.scrollTo({ top: el.scrollTop + (d.getBoundingClientRect().top - el.getBoundingClientRect().top) / k - 80 });
   },
   set: function(k){ S.result = { color:k, reason:['Set by the medic','נקבע על ידי המטפל'] }; draw(); },
   save: function(openFull){
@@ -11062,9 +11159,9 @@ function hhmm(ms){ var d = new Date(ms); return String(d.getHours()).padStart(2,
 function mmss(sec){ sec = Math.max(0, Math.round(sec)); return String(Math.floor(sec / 60)).padStart(2,'0') + ':' + String(sec % 60).padStart(2,'0'); }
 
 var HOSPITALS = [
-  { id:'h1', en:'City Trauma Center',      he:'מרכז טראומה עירוני',   eta:12, ready:true,  trauma:true },
-  { id:'h2', en:'North General Hospital',  he:'בית חולים כללי צפון',  eta:18, ready:true,  trauma:false },
-  { id:'h3', en:'Burns & Children Center', he:'מרכז כוויות וילדים',   eta:25, ready:false, trauma:true }
+  { id:'h1', en:'City Trauma Center',      he:'מרכז טראומה עירוני',   eta:12, ready:true,  trauma:true,  level:'A' },
+  { id:'h2', en:'North General Hospital',  he:'בית חולים כללי צפון',  eta:18, ready:true,  trauma:false, level:'B' },
+  { id:'h3', en:'Burns & Children Center', he:'מרכז כוויות וילדים',   eta:25, ready:false, trauma:true,  level:'A' }
 ];
 var STATUS = [
   { v:'enroute',    icon:'navigation', en:'Coming to scene',  he:'בדרך לזירה', chip:'Coming', chipHe:'בדרך' },
@@ -11084,7 +11181,11 @@ function rushPlan(){
     .sort(function(a, b){ return (rank[a.status] || 9) - (rank[b.status] || 9); })[0];
   return v ? { c:c, v:v } : null;
 }
+// an ambulance still driving to the scene: say when it gets there, so nobody thinks it leaves now
+function sceneLeg(v){ var r = v.status === 'enroute' ? remaining(v) : null; if (r == null || r <= 0) return ''; return '<i dir="auto">' + L('at scene in ' + Math.max(1, Math.ceil(r / 60)) + ' min','בזירה בעוד ' + Math.max(1, Math.ceil(r / 60)) + ' דק׳') + '</i>'; }
 function used(v){ var s = 0, l = 0; (v.casualties || []).forEach(function(i){ if (i && i.pos === 'litter') l++; else s++; }); return { seats:s, litters:l }; }
+// trauma level of a hospital as a chip: shield icon + "Level A" (word and icon, never colour alone)
+function lvlChip(x){ return x && x.level ? '<em class="hlv hlv-' + x.level.toLowerCase() + '">' + ico(x.level === 'A' ? 'shield' : 'hospital', 22) + L('Level ','רמה ') + x.level + '</em>' : ''; }
 function hospital(v){ return HOSPITALS.filter(function(h){ return h.id === v.hospitalId; })[0]; }
 function remaining(v){ return v.etaMinutes != null && v.etaStartAt ? v.etaMinutes * 60 - (Date.now() - v.etaStartAt) / 1000 : null; }
 function etaMin(r){ if (r == null) return '—'; if (r <= 0) return L('Arriving now','מגיע עכשיו'); var m = Math.max(1, Math.ceil(r / 60)); return m + '<small>' + L(' min',' דק׳') + '</small>'; }
@@ -11145,7 +11246,7 @@ function statusChip(v){ var s = statusOf(v); return '<span class="amb-chip st-' 
 function capLine(v){ var u = used(v); return '<p class="amb-cap">' + ico('users', 22) + '<span>' + L('Litters ' + u.litters + ' of ' + v.litter + ' · Seats ' + u.seats + ' of ' + v.seats, 'אלונקות ' + u.litters + ' מתוך ' + v.litter + ' · מושבים ' + u.seats + ' מתוך ' + v.seats) + '</span></p>'; }
 function etaBlock(v){
   var h = hospital(v), r = remaining(v), cls = r != null && r <= 60 ? 'now' : r != null && r <= 180 ? 'soon' : '';
-  if (v.status === 'evacuating' || r != null) return '<div class="ev-eta amb-eta ' + cls + '"><small>' + (v.status === 'evacuating' ? L('Arrives at hospital in','מגיע לבית החולים בעוד') : L('Arrives at scene in','מגיע לזירה בעוד')) + '</small><b dir="ltr">' + etaText(v) + '</b><span>' + (h ? ico('hospital', 22) + esc(L(h.en, h.he)) : L('Hospital not chosen yet','עדיין לא נבחר בית חולים')) + '</span></div>';
+  if (v.status === 'evacuating' || r != null) return '<div class="ev-eta amb-eta ' + cls + '"><small>' + (v.status === 'evacuating' ? L('Arrives at hospital in','מגיע לבית החולים בעוד') : L('Arrives at scene in','מגיע לזירה בעוד')) + '</small>' + (r != null && r <= 0 ? '<b class="w">' + L('Arriving now','מגיע עכשיו') + '</b>' : '<b dir="ltr">' + etaText(v) + '</b>') + '<span>' + (h ? ico('hospital', 22) + esc(L(h.en, h.he)) : L('Hospital not chosen yet','עדיין לא נבחר בית חולים')) + '</span></div>';
   return '<div class="amb-eta amb-eta-none">' + ico('clock', 24) + '<span>' + (v.status === 'arrived' ? L('At the scene now. Load, then choose a hospital.','בזירה עכשיו. העמיסו ובחרו בית חולים.') : L('No arrival time set','לא נקבע זמן הגעה')) + (h ? ' · ' + esc(L(h.en, h.he)) : '') + '</span></div>';
 }
 function manageBody(v){
@@ -11157,7 +11258,7 @@ function manageBody(v){
   h += '<div class="ev-caps">' + seatCounter(v, 'litter') + seatCounter(v, 'seat') + '</div>';
   h += '<div class="ev-h">' + L('Hospital','בית חולים') + '</div><div class="ev-hosp">' + HOSPITALS.map(function(x){
     var on = v.hospitalId === x.id;
-    return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + ico(on ? 'check' : 'hospital', 22) + esc(L(x.en, x.he)) + '</b><span>' + x.eta + L(' min',' ד׳') + (x.trauma ? ' · ' + L('Trauma','טראומה') : '') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
+    return '<button class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + ico(on ? 'check' : 'hospital', 22) + esc(L(x.en, x.he)) + '</b><span>' + lvlChip(x) + x.eta + L(' min',' ד׳') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
   }).join('') + '</div>';
   h += '<div class="ev-h">' + L('Time to arrive (min)','זמן הגעה (דק׳)') + '</div><div class="ev-eta-set"><button aria-label="' + L('One minute less','דקה פחות') + '" onclick="Evac.eta(\'' + v.id + '\',-1)">' + ico('minus', 22) + '1</button><b dir="ltr">' + (v.etaMinutes != null ? etaText(v) : '—') + '</b><button aria-label="' + L('One minute more','דקה יותר') + '" onclick="Evac.eta(\'' + v.id + '\',1)">' + ico('plus', 22) + '1</button></div>'
     + '<div class="ev-presets">' + [5, 10, 15, 20, 30].map(function(n){ return '<button aria-label="' + n + L(' minutes',' דקות') + '" onclick="Evac.etaSet(\'' + v.id + '\',' + n + ')">' + n + '</button>'; }).join('') + '</div>';
@@ -11199,14 +11300,14 @@ function render(){
   var waiting = all.filter(function(c){ return c.triageColor === 'red' && !W.isCasualtyAssignedToVehicle(c); });
   var rp = rushPlan();
   if (waiting.length){
-    var hq = HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0];
+    var hq = (HOSPITALS.filter(function(x){ return x.ready && x.level === 'A'; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0]);
     var who = rp ? rp.c : waiting[0];
     h += '<div class="amb-banner next-out" role="status">'
       + '<div class="no-head"><span class="no-tag">' + W.TriageUI.shapeSvg('oct', 22) + W.TriageUI.word('red') + '</span><span>' + L('Next out','הבא לפינוי') + '</span>' + (waiting.length > 1 ? '<em>' + L('+' + (waiting.length - 1) + ' more urgent','+' + (waiting.length - 1) + ' דחופים נוספים') + '</em>' : '') + '</div>'
       + '<div class="no-route">'
       +   '<div>' + ico('users', 30) + '<b>' + (W.casBadge ? W.casBadge(who) + ' ' : '') + esc(String(T(who.name)).split(' — ')[0]) + (W.casTag ? W.casTag(who) : '') + '</b></div>'
-      +   (rp ? '<div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b></div>'
-              + '<div>' + ico('hospital', 30) + '<b>' + esc(L(hq.en, hq.he)) + '</b><i dir="ltr">' + hq.eta + L(' min',' ד׳') + '</i></div>'
+      +   (rp ? '<div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b>' + sceneLeg(rp.v) + '</div>'
+              + '<div>' + ico('hospital', 30) + '<b>' + esc(L(hq.en, hq.he)) + lvlChip(hq) + '</b><i dir="ltr">' + hq.eta + L(' min',' ד׳') + '</i></div>'
             : '<div class="no-none">' + ico('triangle-alert', 30) + '<b>' + L('No free litter','אין אלונקה פנויה') + '</b></div>')
       + '</div>'
       + (rp ? '<button class="xbtn xbtn-primary ev-rush" onclick="Evac.rushAsk()">' + ico('ambulance', 30) + '<span><b>' + L('Load and go','העמסה ויציאה') + '</b></span></button>'
@@ -11226,11 +11327,11 @@ function renderTransport(v){
   var h = '', r = remaining(v), cls = r != null && r <= 60 ? 'now' : r != null && r <= 180 ? 'soon' : '', m = sorted(members(v)), hosp = hospital(v);
   var counts = {}; m.forEach(function(c){ counts[c.triageColor] = (counts[c.triageColor] || 0) + 1; });
   h += '<div class="tp-top"><button class="xbtn" onclick="Evac.close()">' + ico(lang() === 'he' ? 'arrow-right' : 'arrow-left', 28) + L('Back','חזרה') + '</button><b>' + name(v) + '</b><button class="xbtn' + (state.driver ? ' on' : '') + '" aria-pressed="' + state.driver + '" onclick="Evac.driver()">' + ico('navigation', 26) + L('Driver view','תצוגת נהג') + '</button></div>';
-  h += '<div class="tp-eta ' + cls + '"><small>' + L('Arrives in','מגיע בעוד') + '</small><b dir="ltr">' + etaText(v) + '</b><span>' + (hosp ? esc(L(hosp.en, hosp.he)) : L('Choose a hospital','בחרו בית חולים')) + '</span>'
+  h += '<div class="tp-eta ' + cls + '">' + (remaining(v) != null && remaining(v) <= 0 ? '<small>' + L('Time is up','הזמן עבר') + '</small><b class="w">' + L('Arriving now','מגיע עכשיו') + '</b>' : '<small>' + L('Arrives in','מגיע בעוד') + '</small><b dir="ltr">' + etaText(v) + '</b>') + '<span>' + (hosp ? esc(L(hosp.en, hosp.he)) : L('Choose a hospital','בחרו בית חולים')) + '</span>'
     + '<div class="tp-step"><button onclick="Evac.eta(\'' + v.id + '\',-1)">' + ico('minus', 22) + '1</button><button onclick="Evac.eta(\'' + v.id + '\',1)">' + ico('plus', 22) + '1</button><button onclick="Evac.eta(\'' + v.id + '\',5)">' + ico('plus', 22) + '5</button></div></div>';
   if (state.driver){
     var sirens = counts.red ? L('Yes: urgent on board','כן: דחוף על הסיפון') : L('No','לא');
-    h += '<div class="tp-driver"><div><small>' + L('On board','על הסיפון') + '</small><b>' + m.length + '</b></div><div><small>' + L('URGENT','דחוף') + '</small><b>' + (counts.red || 0) + '</b></div><div><small>' + L('DELAYED','דחוי') + '</small><b>' + (counts.yellow || 0) + '</b></div></div>'
+    h += '<div class="tp-driver"><div><small>' + L('On board','על הסיפון') + '</small><b>' + m.length + '</b></div><div><small>' + L('URGENT','דחוף') + '</small><b>' + (counts.red || 0) + '</b></div><div><small>' + L('DELAYED','עדיפות שנייה') + '</small><b>' + (counts.yellow || 0) + '</b></div></div>'
       + '<div class="tp-siren ' + (counts.red ? 'yes' : '') + '"><small>' + L('Fast transport','הובלה מהירה') + '</small><b>' + sirens + '</b></div>';
   } else {
     h += '<div class="ev-h">' + L('On board','על הסיפון') + ' (' + m.length + ')</div><div class="tp-pts">' + m.map(function(c){
@@ -11241,7 +11342,7 @@ function renderTransport(v){
     }).join('') + '</div>';
     h += '<div class="ev-h">' + L('Hospital','בית חולים') + '</div><div class="ev-hosp">' + HOSPITALS.map(function(x){
       var on = v.hospitalId === x.id;
-      return '<button class="' + (on ? 'on' : '') + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + ico(on ? 'check' : 'hospital', 22) + esc(L(x.en, x.he)) + '</b><span>' + x.eta + L(' min',' ד׳') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
+      return '<button class="' + (on ? 'on' : '') + '" onclick="Evac.hospital(\'' + v.id + '\',\'' + x.id + '\')"><b>' + ico(on ? 'check' : 'hospital', 22) + esc(L(x.en, x.he)) + '</b><span>' + lvlChip(x) + x.eta + L(' min',' ד׳') + ' · <strong class="' + (x.ready ? 'rdy' : 'busy') + '">' + (x.ready ? L('Ready','מוכן') : L('Busy','עמוס')) + '</strong></span></button>';
     }).join('') + '</div>';
   }
   h += '<div class="tp-actions"><button class="xbtn" onclick="Evac.prealert(\'' + v.id + '\')">' + ico('radio', 28) + L('Pre-alert','התראה מקדימה') + '</button>'
@@ -11289,9 +11390,12 @@ var Evac = {
     var prev = v.status, prevEta = [v.etaMinutes, v.etaStartAt], prevEv = (s === 'athospital' || prev === 'athospital') ? markEvacuated(v, s === 'athospital') : null; v.status = s; if (s === 'enroute') v._alertedOneMin = false;
     rerender();
     undoToast(L('Status: ', 'סטטוס: ') + L(STATUS.filter(function(x){ return x.v === s; })[0].en, STATUS.filter(function(x){ return x.v === s; })[0].he), function(){ v.status = prev; v.etaMinutes = prevEta[0]; v.etaStartAt = prevEta[1]; if (prevEv) restoreEvac(prevEv); rerender(); });
-    if (s === 'evacuating') setTimeout(function(){ Evac.open(id); }, 250);
+    if (s === 'evacuating') setTimeout(function(){ state.view = id; rerender(); var c = document.getElementById('incident-content'); if (c) c.scrollTop = 0; }, 250);   // not Evac.open: that would remove the undo toast
   },
-  hospital: function(id, hid){ var v = veh(id); if (!v) return; var ot = document.getElementById('undo-toast'); if (ot) ot.remove(); var hh = HOSPITALS.filter(function(x){ return x.id === hid; })[0]; if (hh && !hh.ready && !window.confirm(L(hh.en + ' is BUSY. Send casualties there anyway?', hh.he + ' עמוס. לשלוח לשם בכל זאת?'))) return; v.hospitalId = hid; var h = hospital(v); v.destination = h ? h.he : ''; if (v.status !== 'evacuating' && h) { v.etaMinutes = h.eta; v.etaStartAt = null; } rerender(); },
+  hospital: function(id, hid){ var v = veh(id); if (!v) return; var ot = document.getElementById('undo-toast'); if (ot) ot.remove(); var hh = HOSPITALS.filter(function(x){ return x.id === hid; })[0]; if (hh && !hh.ready && arguments[2] !== true){ sheet('ev-busy-sheet', '<h3>' + ico('triangle-alert', 28) + L(hh.en + ' is busy','' + hh.he + ' עמוס') + '</h3><p class="ev-busy-p">' + L('Send casualties there anyway?','לשלוח לשם נפגעים בכל זאת?') + '</p>'
+      + '<button class="xbtn xbtn-primary" onclick="Evac.closeSheet(\'ev-busy-sheet\');Evac.hospital(\'' + id + '\',\'' + hid + '\',true)">' + ico('check', 26) + L('Send anyway','לשלוח בכל זאת') + '</button>'
+      + '<button class="xbtn" onclick="Evac.closeSheet(\'ev-busy-sheet\')">' + ico('x', 26) + L('Choose another','לבחור אחר') + '</button>'); return; }
+    v.hospitalId = hid; var h = hospital(v); v.destination = h ? h.he : ''; if (v.status !== 'evacuating' && h) { v.etaMinutes = h.eta; v.etaStartAt = null; } rerender(); },
   eta: function(id, d){
     var v = veh(id); if (!v) return;
     var r = remaining(v); var newMin = Math.max(1, Math.round(((r != null ? r : (v.etaMinutes || 10) * 60) / 60) + d));
@@ -11303,18 +11407,26 @@ var Evac = {
   // One tap: put the most urgent casualty still on scene on the best ambulance, pick the nearest ready trauma centre, depart.
   rushAsk: function(){
     var rp = rushPlan(); if (!rp) return;
-    var h = HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0];
+    var h = (HOSPITALS.filter(function(x){ return x.ready && x.level === 'A'; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0]);
     sheet('ev-rush-sheet', '<h3>' + L('Load and go?','העמסה ויציאה?') + '</h3>'
       + '<div class="rs-who">' + W.TriageUI.chip(rp.c.triageColor) + '<b>' + (W.casBadge ? W.casBadge(rp.c) + ' ' : '') + esc(String(T(rp.c.name)).split(' — ')[0]) + (W.casTag ? W.casTag(rp.c) : '') + '</b></div>'
-      + '<div class="no-route rs-route"><div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b></div><div>' + ico('hospital', 30) + '<b>' + esc(L(h.en, h.he)) + '</b><i dir="ltr">' + h.eta + L(' min',' ד׳') + '</i></div></div>'
+      + '<div class="no-route rs-route"><div>' + ico('ambulance', 30) + '<b>' + name(rp.v) + '</b>' + sceneLeg(rp.v) + '</div><div>' + ico('hospital', 30) + '<b>' + esc(L(h.en, h.he)) + lvlChip(h) + '</b><i dir="ltr">' + h.eta + L(' min',' ד׳') + '</i></div></div>'
       + '<button class="xbtn xbtn-primary rs-go" onclick="Evac.closeSheet(\'ev-rush-sheet\');Evac.rush()">' + ico('check', 30) + L('Confirm · load and go','אישור · העמסה ויציאה') + '</button>'
       + '<button class="xbtn rs-other" onclick="Evac.closeSheet(\'ev-rush-sheet\');Evac.assign(\'' + rp.v.id + '\')">' + ico('users', 26) + L('Choose another casualty','בחירת נפגע אחר') + '</button>');
   },
   rush: function(){
     var rp = rushPlan(); if (!rp) return;
     var v = rp.v, c = rp.c, before = { cas:v.casualties.slice(), status:v.status, hid:v.hospitalId, dest:v.destination, eta:v.etaMinutes, at:v.etaStartAt };
-    var h = HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0];
+    var h = (HOSPITALS.filter(function(x){ return x.ready && x.level === 'A'; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS.filter(function(x){ return x.ready && x.trauma; }).sort(function(a, b){ return a.eta - b.eta; })[0] || HOSPITALS[0]);
     v.casualties.push({ docId:c._docId, name:c.name, pos:'litter' });
+    var toScene = v.status === 'enroute' ? remaining(v) : null;
+    if (toScene != null && toScene > 0){
+      // the ambulance is still driving to the scene: the casualty is booked on it, it departs only after it arrives
+      v.hospitalId = h.id; v.destination = h.he; rerender();
+      var mn = Math.max(1, Math.ceil(toScene / 60));
+      undoToast(esc(T(c.name)) + L(' booked on ' + name(v) + ': at the scene in ' + mn + ' min, then ' + h.eta + ' min to ',' שובץ ב' + name(v) + ': בזירה בעוד ' + mn + ' דק׳, ואז ' + h.eta + ' דק׳ ל-') + L(h.en, h.he), function(){ v.casualties = before.cas; v.hospitalId = before.hid; v.destination = before.dest; rerender(); });
+      return;
+    }
     v.hospitalId = h.id; v.destination = h.he; v.etaMinutes = h.eta; v.etaStartAt = Date.now(); v._a2 = v._a1 = false; v.status = 'evacuating';
     state.view = v.id; rerender();
     var cc = document.getElementById('incident-content'); if (cc) cc.scrollTop = 0;
@@ -11342,9 +11454,9 @@ var Evac = {
     var v = veh(id); if (!v) return; var h = hospital(v), m = sorted(members(v));
     var lines = m.map(function(c, i){
       var S = W.Bracelet ? W.Bracelet.snapshot(c) : {}, t = (S.tq && S.tq[0]) ? ' · TQ ' + hhmm(S.tq[0][1] * 1000) : '', lv = S.v || [];
-      return (i + 1) + '. ' + W.TriageUI.word(c.triageColor) + ' — ' + T(c.name) + t + (lv[0] != null ? ' · HR ' + lv[0] : '') + (lv[1] ? ' · BP ' + lv[1] + '/' + (lv[2] || '–') : '') + (lv[3] != null ? ' · SpO₂ ' + lv[3] : '');
+      return '• ' + W.TriageUI.word(c.triageColor) + ' — ' + T(c.name) + t + (lv[0] != null ? ' · HR ' + lv[0] : '') + (lv[1] ? ' · BP ' + lv[1] + '/' + (lv[2] || '–') : '') + (lv[3] != null ? ' · SpO₂ ' + lv[3] : '');
     });
-    var text = L('PRE-ALERT — ' + name(v) + ' → ' + (h ? h.en : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + (m.length === 1 ? ' casualty' : ' casualties'), 'התראה מקדימה — ' + name(v) + ' ← ' + (h ? h.he : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + ' נפגעים') + '\n' + lines.join('\n');
+    var text = L('PRE-ALERT — ' + name(v) + ' → ' + (h ? h.en + (h.level ? ' (Level ' + h.level + ')' : '') : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + (m.length === 1 ? ' casualty' : ' casualties'), 'התראה מקדימה — ' + name(v) + ' ← ' + (h ? h.he + (h.level ? ' (רמה ' + h.level + ')' : '') : '?') + ' — ETA ' + etaWords(v) + ' — ' + m.length + ' נפגעים') + '\n' + lines.join('\n');
     Evac._pre = text;
     sheet('ev-pre-sheet', '<h3>' + L('Pre-alert to hospital','התראה מקדימה לבית החולים') + '</h3><pre class="mist" dir="auto">' + esc(text) + '</pre><p class="mist-warn">' + esc(W.Disclaimer ? W.Disclaimer.short() : '') + '</p>'
       + '<div class="btn-row"><button class="xbtn" onclick="Evac.closeSheet(\'ev-pre-sheet\')">' + ico('x', 26) + L('Close','סגור') + '</button><button class="xbtn xbtn-primary" onclick="Evac.copyPre();Evac.closeSheet(\'ev-pre-sheet\')">' + ico('copy', 26) + L('Copy','העתק') + '</button></div>');
@@ -11505,20 +11617,30 @@ function dueItems(){
   var out = [];
   (w._incidentCasualties || []).forEach(function(c){
     if (c.triageColor === 'black' || (w.findVehicleForCasualty && (w.findVehicleForCasualty(c) || {}).status === 'athospital')) return;
-    var x = (c.xabcde || {}).x || {}, e = (c.xabcde || {}).e || {}, nm = String(T(c.name)).split(' — ')[0];
-    (x.tourniquets || []).forEach(function(t){ var m = minsSince(t.time); if (m != null && m >= 120) out.push({ c:c, nm:nm, icon:'timer', w:L('Tourniquet ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min','חוסם עורקים ' + Math.floor(m / 60) + ' ש׳ ' + (m % 60) + ' ד׳'), lvl:2 }); });
-    var k = (e.medications || []).filter(function(d){ return /קטמין|ketamine/i.test(d.drug || d.name || ''); }).pop();
-    if (k){ var km = minsSince(k.time); if (km != null && km >= 45) out.push({ c:c, nm:nm, icon:'syringe', w:L('Ketamine ' + km + ' min ago · reassess pain','קטמין לפני ' + km + ' ד׳ · הערכת כאב'), lvl:1 }); }
-    if (c.triageColor === 'red' && !(c.vitalsHistory || []).length) out.push({ c:c, nm:nm, icon:'activity', w:L('No vitals recorded','לא נמדדו מדדים'), lvl:1 });
+    var x = (c.xabcde || {}).x || {}, e = (c.xabcde || {}).e || {};
+    (x.tourniquets || []).forEach(function(t){ var m = minsSince(t.time); if (m != null && m >= 120) out.push({ c:c, icon:'timer', task:L('Check tourniquet','בדיקת חוסם עורקים'), det:L('On for ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min','מונח ' + Math.floor(m / 60) + ' ש׳ ' + (m % 60) + ' ד׳'), m:m, lvl:2 }); });
+    var k = (e.medications || []).filter(function(d){ return /קטמין|ketamine/i.test(d.drug || d.name || ''); }).sort(function(a, b){ return Date.parse(a.time) - Date.parse(b.time); }).pop();
+    if (k){ var km = minsSince(k.time); if (km != null && km >= 45) out.push({ c:c, icon:'syringe', task:L('Reassess pain','הערכת כאב חוזרת'), det:L('Ketamine given','ניתן קטמין'), m:km, lvl:1 }); }
+    if (c.triageColor === 'red' && !(c.vitalsHistory || []).length) out.push({ c:c, icon:'activity', task:L('Take vitals','מדידת מדדים'), det:L('Urgent · none recorded','דחוף · לא נמדדו'), m:null, lvl:1 });
   });
-  return out.sort(function(a, b){ return b.lvl - a.lvl; });
+  var rank = { red:0, yellow:1, green:2 };
+  function R(i){ var k = i.c.triageColor; return k in rank ? rank[k] : 3; }
+  return out.sort(function(a, b){ return (b.lvl - a.lvl) || (R(a) - R(b)) || ((b.m || 0) - (a.m || 0)); });
 }
 function dueStrip(){
   var d = dueItems(); if (!d.length) return '';
-  return '<div class="sec-label">' + L('Due now','לטיפול עכשיו') + '</div><div class="due">' + d.slice(0, 4).map(function(i){
-    return '<button class="due-i' + (i.lvl > 1 ? ' hi' : '') + '" onclick="Demo.openCasualty(\'' + esc(i.c._docId) + '\')">' + ico(i.icon, 26) + '<span><b>' + (w.casBadge ? w.casBadge(i.c) + ' ' : '') + esc(i.nm) + '</b><small>' + i.w + '</small></span>' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 24) + '</button>';
+  var fwd = lang() === 'he' ? 'chevron-left' : 'chevron-right';
+  return '<div class="due-h"><span class="sec-label">' + L('Due now','לטיפול עכשיו') + '</span><span class="due-n">' + d.length + '</span></div><div class="due">' + d.slice(0, 4).map(function(i){
+    var col = i.c.triageColor || 'none', t = tg(col) || {}, num = w.casNum ? w.casNum(i.c) : '';
+    var lab = (w.casLabel ? w.casLabel(i.c) : '') + ' · ' + tgWord(col) + ' · ' + i.task + ' · ' + i.det + (i.m != null ? ' · ' + i.m + ' ' + L('min','דק׳') : '');
+    return '<button class="due-r' + (i.lvl > 1 ? ' hi' : '') + '" onclick="Demo.openCasualty(\'' + esc(i.c._docId) + '\')" aria-label="' + esc(lab) + '">'
+      + '<span class="due-id t-' + col + '">' + (t.shape ? shapeSvg(t.shape, 16) : '') + '<b>' + num + '</b></span>'
+      + '<span class="due-t"><b>' + ico(i.icon, 22) + i.task + '</b><small>' + i.det + '</small></span>'
+      + (i.m != null ? '<span class="due-m"><b>' + i.m + '</b><small>' + L('min','דק׳') + '</small></span>' : '')
+      + ico(fwd, 22) + '</button>';
   }).join('') + (d.length > 4 ? '<p class="due-more">' + L('+' + (d.length - 4) + ' more','+' + (d.length - 4) + ' נוספים') + '</p>' : '') + '</div>';
 }
+
 w.dueItems = dueItems;
 
 // ── Home ───────────────────────────────────────────────────────
@@ -11563,7 +11685,7 @@ function renderOverview(){
     + '</dl>';
 }
 
-function lvl(c){ return c.formLevel === 'quick' ? '<span class="lvl quick">' + ico('zap', 20) + L('QUICK TRIAGE — tap to complete the full form','מיון מהיר — לחצו להשלמת הטופס המלא') + '</span>' : '<span class="lvl full">' + ico('file-text', 20) + L('Full Form 101','טופס 101 מלא') + '</span>'; }
+function lvl(c){ return c.formLevel === 'quick' ? '<span class="lvl quick">' + ico('zap', 20) + L('Quick triage — tap to complete the full form','מיון מהיר — לחצו להשלמת הטופס המלא') + '</span>' : '<span class="lvl full">' + ico('file-text', 20) + L('Full Form 101','טופס 101 מלא') + '</span>'; }
 w.levelOf = function(c){ return c && c.formLevel === 'quick' ? 'quick' : 'full'; };
 // ── Casualty list (+ command board) ────────────────────────────
 function flag(label, bad){ return bad ? ' <u class="flag">' + label + '</u>' : ''; }
@@ -11589,8 +11711,8 @@ function renderPatients(){
       + '<span class="pl-sub">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="pl-vit">'
       + (v.pulse === 0 ? '<em><i>' + L('No pulse','אין דופק') + '</i></em>' : v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('High','גבוה'), v.pulse > 120) + '</em>' : '')
-      + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('LOW','נמוך'), v.bpSys < 90) + flag(L('HIGH','גבוה'), v.bpSys >= 180) + staleAt(v, 'bp') + '</em>' : '')
-      + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('LOW','נמוך'), v.spo2 < 92) + '</em>' : '')
+      + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('Low','נמוך'), v.bpSys < 90) + flag(L('High','גבוה'), v.bpSys >= 180) + staleAt(v, 'bp') + '</em>' : '')
+      + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('Low','נמוך'), v.spo2 < 92) + '</em>' : '')
       + (tqMin != null ? '<em class="warn">' + ico('timer', 22) + L('Tourniquet ','חוסם עורקים ') + '<i>' + tqMin + L(' min',' ד׳') + '</i></em>' : '')
       + (onVeh ? '<em class="ok">' + ico('ambulance', 22) + ((w.findVehicleForCasualty(c) || {}).status === 'athospital' ? L('At hospital','בבית חולים') : L('On ambulance','באמבולנס')) + '</em>' : '')
       + '</span></span><span class="chev">' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</span></button>';
@@ -11611,10 +11733,10 @@ function openTq(c){ var t = (((c.xabcde || {}).x || {}).tourniquets || []).filte
 function renderBoard(){
   var order = { red:0, yellow:1, green:2, gray:3, black:4 };
   var all = (w._incidentCasualties || []).slice().sort(function(a, b){ return (order[a.triageColor] != null ? order[a.triageColor] : 9) - (order[b.triageColor] != null ? order[b.triageColor] : 9) || ((w.casNum && w.casNum(a)) || 0) - ((w.casNum && w.casNum(b)) || 0); });
-  var f = w._bdFilter, q = String(w._bdQuery || '').trim().toLowerCase();
+  var f = w._bdFilter, q = String(w._bdQuery || '').trim().toLowerCase().replace(/^#\s*$/, '');   // a lone # shows everyone
   var serial = function(c){ return w.Bracelet && w.Bracelet.serialFor ? w.Bracelet.serialFor(c) : ''; };
   var qn = /^#?\s*(\d+)$/.exec(q);
-  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (qn ? (w.casNum && w.casNum(c) === +qn[1]) : (String(T(c.name)) + ' ' + c.name + ' ' + serial(c) + ' ' + (c.tagId || '')).toLowerCase().indexOf(q) >= 0)); });
+  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (qn ? ((w.casNum && w.casNum(c) === +qn[1]) || (qn[1].length >= 3 && c.tagId && c.tagId.slice(3) === ('000' + qn[1]).slice(-4))) : (String(T(c.name)) + ' ' + c.name + ' ' + serial(c) + ' ' + (c.tagId || '')).toLowerCase().indexOf(q) >= 0)); });
   var h = '<div class="seg-tabs" role="tablist"><button role="tab" aria-selected="false" onclick="Demo.casView(\'list\')">' + ico('list-checks', 22) + L('List','רשימה') + '</button><button class="on" role="tab" aria-selected="true" onclick="Demo.casView(\'board\')">' + ico('layout-dashboard', 22) + L('Board','לוח פיקוד') + '</button></div>';
   // next action
   var next = all.filter(function(c){ return (c.triageColor === 'red' || c.triageColor === 'yellow') && unassigned(c); })[0];
@@ -11634,7 +11756,7 @@ function renderBoard(){
   var count = function(c){ return all.filter(function(x){ return x.triageColor === c; }).length; };
   h += '<div class="ov-tiles bd-tiles">' + ['red','yellow','green','black'].map(function(c){ var t = tg(c); return '<button class="ov-tile t-' + c + (f === c ? ' on' : '') + '" aria-pressed="' + (f === c) + '" onclick="Demo.bdFilter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>'; }).join('') + '</div>';
   // search row (sticky)
-  h += '<div class="bd-search"><label>' + ico('search', 24) + '<input type="search" enterkeyhint="search" autocomplete="off" placeholder="' + esc(L('Number (#4) or code','מספר (#4) או קוד')) + '" aria-label="' + esc(L('Find a casualty by number or wristband code','חיפוש נפגע לפי מספר או קוד צמיד')) + '" oninput="Demo.bdSearch(this.value)"></label>'
+  h += '<div class="bd-search"><label>' + ico('search', 24) + '<input type="search" enterkeyhint="search" autocomplete="off" placeholder="' + esc(L('Number or tag','מספר או תג')) + '" aria-label="' + esc(L('Find a casualty by number or wristband code','חיפוש נפגע לפי מספר או קוד צמיד')) + '" oninput="Demo.bdSearch(this.value)"></label>'
     + '<button onclick="Demo.go(\'scan\')">' + ico('scan-line', 24) + '<span>' + L('Scan','סריקה') + '</span></button></div>';
   if (f || q) h += '<button class="filter-bar" onclick="Demo.bdFilter(null);Demo.bdSearch(\'\', true)">' + (f ? chip(f) : ico('search', 22)) + '<span>' + L(list.length + ' of ' + all.length + ' shown', 'מוצגים ' + list.length + ' מתוך ' + all.length) + '</span><b>' + L('Show all','הצג הכל') + '</b></button>';
   // rows: one line per casualty (default from 6 casualties up) · cards: the full card
@@ -11781,6 +11903,10 @@ function closeOverlays(keepQuick){
   var note = document.getElementById('tl-note'), draft = (keepQuick === true && note) ? { t: note.value, i: w.Field ? w.Field._tlEditIdx : null } : null;
   ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-rush-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet','tl-row-sheet','tl-time','bz-sheet','dose-sheet','rec-alert'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
   var bm = document.querySelector('#app > #body-tap-overlay'); if (bm) bm.remove();
+  if (keepQuick !== true){
+    ['help-sheet','pwa-sheet','ev-busy-sheet','tour-rec'].forEach(function(id){ var e = document.getElementById(id); if (e) e.remove(); });
+    if (w.Bracelet && document.querySelector('.bo')) w.Bracelet.close(true);   // wristband view, card and scanner (stops the camera)
+  }
   if (keepQuick !== true) w._selectedRegion = null;
   if (w.Field){ w.Field._k = null; w.Field._tt = null; }
   if (draft && w.Field && w.Field.tlNote) setTimeout(function(){ w.Field.tlNote(draft.i); var ta = document.getElementById('tl-note'); if (ta) ta.value = draft.t; }, 0);
@@ -11802,8 +11928,8 @@ var Demo = w.Demo = {
     w._bdQuery = v || ''; if (clear){ var i = document.querySelector('.bd-search input'); if (i) i.value = ''; } w.renderIncidentPage(); },
   casView: function(v){ w._casView = v; if (v === 'board') w._mciMode = 'manage'; w.renderIncidentPage(); var c = document.getElementById('incident-content'); c.scrollTop = 0; },
   filter: function(color){ w._plFilter = color; w._casView = 'list'; w._incidentTab = 'casualties'; w.renderIncidentPage(); document.getElementById('incident-content').scrollTop = 0; },
-  newFull: function(){ closeOverlays(); w._incidentTab = 'casualties'; w.newCasualty(); },
-  openCasualty: function(id){ w._incidentTab = 'casualties'; w.editCasualtyById(id); },
+  newFull: function(){ closeOverlays(); w._incidentTabBeforeEdit = w._incidentTab; w.newCasualty(); },
+  openCasualty: function(id){ closeOverlays(); if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop(true); w._incidentTab = 'casualties'; w.editCasualtyById(id); },
   back: function(){ closeOverlays(); if (w._casualtyEditMode) w.closeCasualtyForm(); },
   go: function(where){
     closeOverlays();
@@ -11817,13 +11943,101 @@ var Demo = w.Demo = {
     if (w._casualtyEditMode && where === 'casualty'){ var c0 = document.getElementById('incident-content'); if (c0) c0.scrollTop = 0; return Promise.resolve(); }
     run(); return Promise.resolve();
   },
+  // ── Delete a casualty: confirm first ("Keep" is the big default), then Undo restores it everywhere. Numbers are never reused. ──
+  deleteAsk: function(id){
+    var c = (w._incidentCasualties || []).filter(function(x){ return x._docId === id; })[0]; if (!c) return;
+    var app = document.getElementById('app'); var old = document.getElementById('del-sheet'); if (old) old.remove();
+    var lab = w.casLabel ? w.casLabel(c) : esc(T(c.name)), veh = (w._mciVehicles || []).filter(function(v){ return (v.casualties || []).indexOf(id) >= 0; })[0];
+    var s = document.createElement('div'); s.id = 'del-sheet'; s.className = 'sheet-wrap no-polish';
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.deleteClose()"></div><div class="sheet del-sheet" role="alertdialog" aria-modal="true" aria-labelledby="del-t"><div class="sheet-grab"></div>'
+      + '<h3 id="del-t">' + ico('trash-2', 28) + L('Delete this casualty?','למחוק את הנפגע?') + '</h3>'
+      + '<div class="del-who">' + (w.casBadge ? w.casBadge(c, true) : '') + '<b>' + esc(lab) + '</b>' + chip(c.triageColor) + (c.tagId ? '<span class="del-tag">' + ico('tag', 22) + '<bdi dir="ltr">' + esc(c.tagId) + '</bdi></span>' : '') + '</div>'
+      + '<p class="sheet-p">' + L('The whole record is removed: treatments, timeline and tag link.','כל התיק יימחק: טיפולים, ציר זמן וקישור לתג.') + (veh ? ' ' + L('It also comes off ','הוא גם יורד מ') + esc(T(veh.name || veh.type || '')) + '.' : '') + ' ' + L('You can undo right after.','אפשר לבטל מיד אחרי.') + '</p>'
+      + '<div class="del-b"><button class="xbtn xbtn-primary" data-autofocus onclick="Demo.deleteClose()">' + ico('x', 24) + L('Keep','להשאיר') + '</button>'
+      + '<button class="xbtn del-go" onclick="Demo.deleteDo(\'' + esc(id) + '\')">' + ico('trash-2', 24) + L('Delete','מחיקה') + '</button></div></div>';
+    app.appendChild(s);
+    var k = s.querySelector('[data-autofocus]'); if (k) setTimeout(function(){ k.focus({ preventScroll:true }); }, 30);
+  },
+  // ── Casualty history: every casualty on this scene, including deleted ones (they can be restored) ──
+  history: function(){
+    var old = document.getElementById('hist-sheet'); if (old) old.remove();
+    var live = (w._incidentCasualties || []).map(function(c){ return { c:c, n:w.casNum ? w.casNum(c) : 0, del:null }; });
+    var gone = (w._casArchive || []).map(function(a){ return { c:a.rec, n:a.num, del:a }; });
+    var all = live.concat(gone).sort(function(a, b){ return (a.n || 0) - (b.n || 0); });
+    var hhmm = function(t){ var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); };
+    var s = document.createElement('div'); s.id = 'hist-sheet'; s.className = 'sheet-wrap no-polish';
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.historyClose()"></div><div class="sheet hist" role="dialog" aria-modal="true" aria-labelledby="hist-t"><div class="sheet-grab"></div>'
+      + '<div class="hist-top"><h3 id="hist-t">' + ico('layers', 26) + L('Casualty history','היסטוריית נפגעים') + '</h3><button class="xbtn" onclick="Demo.historyClose()">' + ico('x', 22) + L('Close','סגירה') + '</button></div>'
+      + '<p class="sheet-p">' + L(live.length + ' on scene · ' + gone.length + ' deleted', live.length + ' באירוע · ' + gone.length + ' נמחקו') + '</p><div class="hist-l">'
+      + all.map(function(r){
+          var lab = L('Casualty ','נפגע ') + (r.n || '?');
+          var st = r.del ? '<span class="hist-st del">' + ico('trash-2', 22) + L('Deleted ','נמחק ') + hhmm(r.del.at) + '</span>'
+                         : (r.c.evacStatus === 'evacuated' ? '<span class="hist-st">' + ico('hospital', 22) + L('Evacuated','פונה') + '</span>' : '<span class="hist-st">' + ico('map-pin', 22) + L('On scene','בזירה') + '</span>');
+          var act = r.del ? '<button class="xbtn" onclick="Demo.restore(' + (w._casArchive || []).indexOf(r.del) + ')">' + ico('undo-2', 22) + L('Restore','שחזור') + '</button>'
+                          : '<button class="xbtn" onclick="Demo.historyClose();Demo.openCasualty(\'' + esc(r.c._docId) + '\')">' + ico('file-text', 22) + L('Open','פתיחה') + '</button>';
+          return '<div class="hist-r' + (r.del ? ' is-del' : '') + '">' + (w.casBadge ? w.casBadge(r.n) : '') + '<span class="hist-m"><b>' + lab + '</b>' + chip(r.c.triageColor) + st + '</span>' + act + '</div>';
+        }).join('')
+      + '</div></div>';
+    document.getElementById('app').appendChild(s);
+  },
+  historyClose: function(){ var s = document.getElementById('hist-sheet'); if (s) s.remove(); },
+  restore: function(i){
+    var a = (w._casArchive || [])[i]; if (!a) return;
+    var now = w._readOfflineCasualties(); now.push(a.rec); w._writeOfflineCasualties(now);
+    w._casArchive.splice(i, 1); w._refreshMergedCasualties(); w.renderIncidentPage();
+    toast(L('Restored: Casualty ','שוחזר: נפגע ') + (a.num || '')); Demo.history();
+  },
+  // long press on a casualty row in the Patients list / board: Open or Delete
+  casActions: function(id){
+    var c = (w._incidentCasualties || []).filter(function(x){ return x._docId === id; })[0]; if (!c) return;
+    var old = document.getElementById('cas-act'); if (old) old.remove();
+    var s = document.createElement('div'); s.id = 'cas-act'; s.className = 'sheet-wrap no-polish';
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.casActClose()"></div><div class="sheet cas-act" role="dialog" aria-modal="true" aria-labelledby="ca-t"><div class="sheet-grab"></div>'
+      + '<div class="del-who" id="ca-t">' + (w.casBadge ? w.casBadge(c, true) : '') + '<b>' + esc(w.casLabel ? w.casLabel(c) : '') + '</b>' + chip(c.triageColor) + '</div>'
+      + '<div class="ca-b"><button class="xbtn xbtn-primary" onclick="Demo.casActClose();Demo.openCasualty(\'' + esc(id) + '\')">' + ico('file-text', 24) + L('Open Form 101','פתיחת טופס 101') + '</button>'
+      + '<button class="xbtn del-go" onclick="Demo.casActClose();Demo.deleteAsk(\'' + esc(id) + '\')">' + ico('trash-2', 24) + L('Delete…','מחיקה…') + '</button>'
+      + '<button class="xbtn" onclick="Demo.casActClose()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div></div>';
+    document.getElementById('app').appendChild(s);
+  },
+  casActClose: function(){ var s = document.getElementById('cas-act'); if (s) s.remove(); },
+  deleteClose: function(){ var s = document.getElementById('del-sheet'); if (s) s.remove(); },
+  deleteDo: function(id){
+    Demo.deleteClose();
+    var list = w._readOfflineCasualties(), idx = -1, rec = null;
+    list.forEach(function(x, i){ if (x._docId === id){ idx = i; rec = x; } });
+    if (!rec) return;
+    var cas = (w._incidentCasualties || []).filter(function(x){ return x._docId === id; })[0], lab = w.casLabel ? w.casLabel(cas || rec) : '';
+    var seats = (w._mciVehicles || []).map(function(v){ var p = (v.casualties || []).indexOf(id); return p >= 0 ? [v, p] : null; }).filter(Boolean);
+    var arch = { rec:JSON.parse(JSON.stringify(rec)), at:Date.now(), num:w.casNum ? w.casNum(cas || rec) : null };
+    var finish = function(){
+      w._casArchive = w._casArchive || []; w._casArchive.push(arch);
+      w._writeOfflineCasualties(list.filter(function(x){ return x._docId !== id; }));
+      seats.forEach(function(sp){ sp[0].casualties.splice(sp[0].casualties.indexOf(id), 1); });
+      if (w._mciExpandedCard === id) w._mciExpandedCard = null;
+      w._refreshMergedCasualties(); w.renderIncidentPage();
+      var old = document.getElementById('undo-toast'); if (old) old.remove();
+      var el = document.createElement('div'); el.id = 'undo-toast'; el.className = 'undo-toast no-polish'; el.setAttribute('role', 'status');
+      el.innerHTML = '<span>' + esc(L('Deleted: ','נמחק: ') + lab) + '</span><button>' + ico('undo-2', 24) + L('Undo','בטל') + '</button>';
+      el.querySelector('button').onclick = function(){
+        var now = w._readOfflineCasualties(); now.splice(Math.min(idx, now.length), 0, rec); w._writeOfflineCasualties(now);
+        w._casArchive = (w._casArchive || []).filter(function(a){ return a !== arch; });
+        seats.forEach(function(sp){ if (sp[0].casualties.indexOf(id) < 0) sp[0].casualties.splice(Math.min(sp[1], sp[0].casualties.length), 0, id); });
+        w._refreshMergedCasualties(); w.renderIncidentPage(); el.remove(); toast(L('Restored: ','שוחזר: ') + lab);
+      };
+      document.getElementById('app').appendChild(el); setTimeout(function(){ el.remove(); }, 8000);
+    };
+    // if this casualty's form is open, close it first, then delete
+    if (w._casualtyEditMode && w._casualtyEditId === id){ w._incidentTab = 'casualties'; return Promise.resolve(w.closeCasualtyForm()).then(finish); }
+    finish();
+  },
   menu: function(){
     var app = document.getElementById('app'); if (document.getElementById('menu-sheet')) return;
     var s = document.createElement('div'); s.id = 'menu-sheet'; s.className = 'sheet-wrap no-polish';
     var row = function(icon, title, sub, fn){ return '<button class="sheet-row" onclick="' + fn + '"><span class="gi">' + ico(icon, 28) + '</span><span><b>' + title + '</b><small>' + sub + '</small></span></button>'; };
-    s.innerHTML = '<div class="sheet-dim" onclick="Demo.closeMenu()"></div><div class="sheet" role="dialog" aria-label="' + L('Menu','תפריט') + '"><div class="sheet-grab"></div><h3>' + L('Menu','תפריט') + '</h3>'
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.closeMenu()"></div><div class="sheet" role="dialog" aria-label="' + L('Menu','תפריט') + '"><div class="sheet-grab"></div><div class="menu-head"><h3>' + L('Menu','תפריט') + '</h3><button class="xbtn menu-x" onclick="Demo.closeMenu()">' + ico('x', 24) + L('Close','סגירה') + '</button></div>'
       + '<div class="lang-pick"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\');Demo.closeMenu()">' + ico('languages', 22) + 'English</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\');Demo.closeMenu()">' + ico('languages', 22) + 'עברית</button></div>'
       + row('circle-help', L('How to use','איך משתמשים'), L('Every screen explained, step by step','כל מסך מוסבר, שלב אחר שלב'), 'Demo.closeMenu();Help.open()')
+      + row('layers', L('Casualty history','היסטוריית נפגעים'), L('Everyone on this scene, deleted ones too','כל הנפגעים באירוע, גם שנמחקו'), 'Demo.closeMenu();Demo.history()')
       + row('play', L('Guided tour','סיור מודרך'), L('About 60 seconds, 11 steps','כ-60 שניות, 11 שלבים'), 'Demo.closeMenu();Tour.start()')
       + row('triangle-alert', L('Important notice','הודעה חשובה'), L('Early beta. Do not use on real patients.','בטא מוקדמת. אין להשתמש בנפגעים אמיתיים.'), 'Demo.closeMenu();Disclaimer.open()')
       + row('rotate-ccw', L('Reset demo','איפוס הדמו'), L('Restore the original six casualties','החזרת ששת הנפגעים המקוריים'), 'Demo.closeMenu();Demo.reset()')
@@ -11831,7 +12045,13 @@ var Demo = w.Demo = {
     app.appendChild(s);
   },
   closeMenu: function(){ var s = document.getElementById('menu-sheet'); if (s) s.remove(); },
-  reset: function(){ closeOverlays(); resetUndo(); seed(); if (w.Evac) w.Evac.reset(); w._incidentTab = 'status'; w._casView = 'list'; w._plFilter = null; w.renderIncidentPage(); toast(L('Demo reset','הדמו אופס')); },
+  reset: function(){
+    if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop(true);
+    closeOverlays(); resetUndo(); seed(); if (w.Evac) w.Evac.reset();
+    if (w.resetCasNum) w.resetCasNum();                                     // numbering starts again after the six demo casualties
+    if (w._clearRedoseTimers) try { w._clearRedoseTimers(); } catch (e) {}   // no repeat-dose alert for a drug that is gone
+    w._bdFilter = null; w._bdRows = undefined; w._bdQuery = '';
+    w._incidentTab = 'status'; w._casView = 'list'; w._plFilter = null; w.renderIncidentPage(); toast(L('Demo reset','הדמו אופס')); },
   boot: function(){
     seed(); w._incidentTab = 'status';
     renderSide(); w.ShowcaseI18n.setLang(w.ShowcaseI18n.lang);
@@ -11903,18 +12123,47 @@ document.addEventListener('input', function(e){
 });
 
 // ── Modal behaviour for every overlay/sheet: focus moves in, Tab stays inside (background is inert), Esc closes, focus returns ──
-var OVERLAY = '#help-sheet,#f-kp,#f-sheet,#fs-sheet,#tl-sheet,#tl-row-sheet,#tl-time,#dose-sheet,#bz-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
+var OVERLAY = '#help-sheet,#f-kp,#f-sheet,#fs-sheet,#tl-sheet,#tl-row-sheet,#tl-time,#dose-sheet,#bz-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#ev-busy-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn,#dz-sf,#dz-rb,#del-sheet,#cas-act,#hist-sheet';
 var _ret = null;
 function topOverlay(){ var l = document.querySelectorAll(OVERLAY); return l.length ? l[l.length - 1] : null; }
-function syncModal(){
+// a sheet removed and re-added in the same moment (re-rendered after a tap) is the same sheet: remember its identity and scroll
+function sheetKey(n){ return n && n.nodeType === 1 ? (n.id || '') + '|' + (n.className || '') : ''; }
+function scrollerOf(n){ var c = n.querySelector('.sheet,.f-proc,.f-gcs,[class*="-body"],.bo-body') || n; return c; }
+function syncModal(list){
   var top = topOverlay(), app = document.getElementById('app'); if (!app) return;
-  var bg = [].slice.call(app.children).filter(function(c){ return !c.matches(OVERLAY + ',.tr-dim,.tr-card,#tour-rec,.undo-toast,.tst,.skip-link'); });
+  var gone = {};
+  (list || []).forEach(function(m){ [].forEach.call(m.removedNodes || [], function(n){ if (n.nodeType === 1){ var sc = scrollerOf(n); gone[sheetKey(n)] = { y:sc.scrollTop || 0, cls:sc.className }; if (n.id) gone['#' + n.id] = gone[sheetKey(n)]; } }); });
+  if (top && !top.__fx){ var was = gone[sheetKey(top)] || (top.id && gone['#' + top.id]);
+    if (was){ top.classList.add('instant'); top.__swap = true; var sc2 = scrollerOf(top); if (sc2 && sc2.className === was.cls) sc2.scrollTop = was.y; } }
+  var bg = [].slice.call(app.children).filter(function(c){ return !c.matches(OVERLAY + ',.tr-dim,.tr-card,#tour-rec,#rec-alert,.undo-toast,.tst,.skip-link'); });   // an alert can always be tapped or closed
   bg.forEach(function(c){ if (top) c.setAttribute('inert', ''); else c.removeAttribute('inert'); });
   if (top){
     if (!_ret) _ret = document.activeElement;
-    if (!top.__fx){ top.__fx = true; top.setAttribute('role', top.getAttribute('role') || 'dialog'); top.setAttribute('aria-modal', 'true'); if (!top.getAttribute('aria-label')) top.setAttribute('aria-label', (top.querySelector('h3,.bo-title,h2') || {}).textContent || 'Dialog'); var f = top.querySelector('[data-autofocus]'); if (!f){ f = top.querySelector('[role=dialog]') || top; if (!f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1'); } setTimeout(function(){ try { f.focus({ preventScroll:true, focusVisible:false }); } catch(e){ f.focus(); } }, 20); }
-  } else if (_ret){ try { _ret.focus({ preventScroll:true }); } catch(e){} _ret = null; }
+    var sw = top.id === 'f-sheet' && w._fsSwap && Date.now() - w._fsSwap.t < 60 ? w._fsSwap : null;
+    if (sw && !top.__fx){   // the same form sheet rebuilt after a tap: no open animation, no tap guard, same scroll position
+      top.classList.add('instant'); var si = top.querySelector('.sheet'); if (si && si.className === sw.cls) si.scrollTop = sw.y; w._fsSwap = null;
+    }
+    if (!top.__fx){ if (!sw && !top.__swap) armTap(); top.__fx = true; top.setAttribute('role', top.getAttribute('role') || 'dialog'); top.setAttribute('aria-modal', 'true'); if (!top.getAttribute('aria-label')) top.setAttribute('aria-label', (top.querySelector('h3,.bo-title,h2') || {}).textContent || 'Dialog'); var f = top.querySelector('[data-autofocus]'); if (!f){ f = top.querySelector('[role=dialog]') || top; if (!f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1'); } setTimeout(function(){ try { f.focus({ preventScroll:true, focusVisible:false }); } catch(e){ f.focus(); } }, 20); }
+  } else {
+    // return focus only if it was lost with the overlay (not if the user already moved on, e.g. to a row on the desktop page)
+    var act = document.activeElement, lost = !act || act === document.body || (app.contains(act) && act.offsetParent === null);
+    if (_ret && lost && _ret.isConnected && _ret.offsetParent !== null && app.contains(_ret)){ try { _ret.focus({ preventScroll:true }); } catch(e){} }
+    else if (lost && _ret && !document.querySelector('.tr-card')){ var c = document.getElementById('incident-content'); if (c){ if (!c.hasAttribute('tabindex')) c.setAttribute('tabindex', '-1'); try { c.focus({ preventScroll:true, focusVisible:false }); } catch(e){ c.focus(); } } }
+    _ret = null;
+  }
 }
+// ── Double-tap guard: when a tap opens a sheet or a new step, a second tap at the same spot within 450 ms is ignored,
+// so a confirm button or the next question that appears under the finger is never pressed by accident. Keyboard clicks are not affected.
+var _tap = { x:-1e4, y:-1e4, t:0, armed:0 };
+function armTap(){ _tap.armed = Date.now(); }
+w.armTap = armTap;
+document.addEventListener('click', function(e){
+  if (!e.isTrusted || e.detail === 0) return;
+  var app = document.getElementById('app'); if (!app || !app.contains(e.target)) return;
+  var now = Date.now();
+  if (_tap.armed >= _tap.t && now - _tap.armed < 450 && Math.abs(e.clientX - _tap.x) < 72 && Math.abs(e.clientY - _tap.y) < 72){ e.stopPropagation(); e.preventDefault(); return; }
+  _tap.x = e.clientX; _tap.y = e.clientY; _tap.t = now;
+}, true);
 new MutationObserver(syncModal).observe(document.getElementById('app'), { childList:true });
 document.addEventListener('keydown', function(e){
   if (e.key !== 'Escape') return;
@@ -11927,6 +12176,8 @@ document.addEventListener('keydown', function(e){
   if (t.id === 'f-tap' && w.Field){ w.Field.tapClose(); return; }
   if (t.id === 'radio-overlay' && w.closeRadioReadout){ w.closeRadioReadout(); return; }
   if (t.id === 'bz-sheet' && w.BodyZoom){ w.BodyZoom.close(); return; }        // body zoom first, then (next Esc) its menu
+  if (t.id === 'dz-sf' && w.Field && w.Field.doseSafetyClose){ w.Field.doseSafetyClose(); return; }
+  if (t.id === 'dz-rb' && w.Field && w.Field.doseRbClose){ w.Field.doseRbClose(); return; }
   if (t.id === 'dose-sheet' && w.Field && w.Field.doseClose){ if (document.getElementById('dz-rb') && w.Field.doseRbClose) w.Field.doseRbClose(); else w.Field.doseClose(); return; }
   if (t.classList.contains('bo') && w.Bracelet){ w.Bracelet.close(); return; }
   var d = t.querySelector('.sheet-dim'), x = t.querySelector('.bo-x');
@@ -11955,7 +12206,7 @@ document.addEventListener('keydown', function(e){
 // to close something puts it back. On Home with nothing open the guard is left spent, so the next BACK leaves the page as usual.
 var _guard = false;
 function backStep(){
-  if (document.querySelector('.tour-card')){ w.Tour.stop(); return true; }
+  if (document.querySelector('.tr-card')){ w.Tour.stop(); return true; }
   if (document.querySelector('.dn[role=alertdialog]')) return true;               // the first-visit notice can only be acknowledged
   if (document.getElementById('body-tap-overlay') || topOverlay()){ document.dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true })); return true; }
   if (w._casualtyEditMode){ Demo.back(); return true; }
@@ -11971,6 +12222,23 @@ w.addEventListener('popstate', function(){
   if (!_guard) return;
   if (backStep()){ try { history.pushState({ sc:1 }, ''); } catch(e){} } else _guard = false;
 });
+})();
+
+// ── Long press (about 0.55 s) on a casualty row in the Patients list or board opens Open / Delete. Moving the finger cancels it, so scrolling still works. ──
+(function(){
+  var t = null, sx = 0, sy = 0, el = null, fired = false, SEL = '#incident-content .pl-card, #incident-content .bd-row, #incident-content .bd-card';
+  function idOf(n){ var m = /editCasualtyById\('([^']+)'\)/.exec(n.getAttribute('onclick') || ''); return m ? m[1] : null; }
+  function stop(){ clearTimeout(t); t = null; if (el) el.classList.remove('lp-hold'); el = null; }
+  document.addEventListener('pointerdown', function(e){
+    var b = e.target.closest && e.target.closest(SEL); if (!b || !idOf(b)) return;
+    fired = false; el = b; sx = e.clientX; sy = e.clientY; b.classList.add('lp-hold');
+    t = setTimeout(function(){ var id = idOf(b); fired = true; stop(); if (navigator.vibrate) navigator.vibrate(30); window.Demo.casActions(id); }, 550);
+  }, true);
+  document.addEventListener('pointermove', function(e){ if (t && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) stop(); }, true);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(n){ document.addEventListener(n, function(){ if (t) stop(); }, true); });
+  // the click that ends a long press must not also open the form
+  document.addEventListener('click', function(e){ if (fired){ fired = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  document.addEventListener('contextmenu', function(e){ if (e.target.closest && e.target.closest(SEL)) e.preventDefault(); }, true);
 })();
 
 ;
@@ -12134,7 +12402,7 @@ var STEPS = [
   { icon:'syringe', pre: function(){ return form().then(function(){ W.Field.doseOpen('now'); }); }, target:'.dz-dec', off:96,
     en:['Dose calculator','Reads the findings, then: give now, changed dose, do not give. Every syringe is drawn.'],
     he:['מחשבון מינונים','קורא את הממצאים, ואז: לתת עכשיו, מינון משתנה, לא לתת. כל מזרק מצויר.'] },
-  { icon:'triangle-alert', pre: function(){ return form().then(function(){ return later(demoAlert, 60); }); }, target:'#tour-rec', leave: dropDemo,
+  { icon:'triangle-alert', pre: function(my){ return form().then(function(){ return later(function(){ if (my === tok && root) demoAlert(); }, 60); }); }, target:'#tour-rec', leave: dropDemo,
     en:['Alerts after each action','New findings pop up as “Suspected…”, never a diagnosis. Tap for the full advice.'],
     he:['התראה אחרי כל פעולה','ממצא חדש קופץ כ״חשד ל…״, אף פעם לא אבחנה. לחיצה להמלצה המלאה.'] },
   { icon:'ambulance', pre: function(){ if (W.Evac) W.Evac.close(); return W.Demo.tab('evac'); }, target:'.next-out, .ev-road',
@@ -12207,7 +12475,7 @@ function show(n){
   var s = STEPS[i], my = ++tok;
   card.classList.add('busy');
   clean();
-  Promise.resolve(s.pre ? s.pre() : null).then(function(){
+  Promise.resolve(s.pre ? s.pre(my) : null).then(function(){
     var tries = 0;
     return (function look(){
       if (my !== tok) return null;
@@ -12270,8 +12538,17 @@ function draw(t, s){
   try { nx.focus({ preventScroll:true, focusVisible:false }); } catch (e) { nx.focus({ preventScroll:true }); }
 }
 
+var waitGate = null;
 function start(at){
+  var gate = document.querySelector('#app .dn[role=alertdialog]');
+  if (gate){
+    if (waitGate) waitGate.disconnect();
+    waitGate = new MutationObserver(function(){ if (!document.querySelector('#app .dn[role=alertdialog]')){ waitGate.disconnect(); waitGate = null; setTimeout(function(){ start(at); }, 120); } });
+    waitGate.observe(app(), { childList:true });
+    return;
+  }
   stop(true);
+  if (W.Demo && W.Demo.closeOverlays) W.Demo.closeOverlays();   // Install sheet, menu, help: nothing stays under the tour
   if (W.Help && W.Help.close) W.Help.close();
   root = document.createElement('div'); root.className = 'tr-dim no-polish no-tr'; root.setAttribute('aria-hidden', 'true');
   spot = document.createElement('div'); spot.className = 'tr-spot'; root.appendChild(spot);
@@ -12284,9 +12561,15 @@ function start(at){
 function stop(silent){
   document.removeEventListener('keydown', onKey, true);
   tok++;
+  var was = !!root;
+  dropDemo();
   if (root){ root.remove(); root = null; }
   if (card){ card.remove(); card = null; }
   if (!silent) clean();
+  if (was && !silent){
+    var f = document.getElementById('menu-btn'); if (!f || f.hidden || f.offsetParent === null) f = document.getElementById('incident-content');
+    if (f){ if (f.id === 'incident-content' && !f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1'); setTimeout(function(){ try { f.focus({ preventScroll:true }); } catch (e) {} }, 30); }
+  }
 }
 function finish(){ stop(); home(); }
 function onKey(e){
@@ -12420,7 +12703,7 @@ var T = [
     steps:[['zap',['Count and triage everyone first','קודם סופרים וממיינים את כולם']],['file-text',['Open Form 101 for each casualty','פותחים טופס 101 לכל נפגע']],['ambulance',['Send the most urgent first','שולחים קודם את הדחוף ביותר']],['qr-code',['Hand off with the wristband','מעבירים עם הצמיד']]] },
   { k:'home', icon:'layout-dashboard', v:'tiles', tour:0, show: function(){ W.Demo.tab('status'); },
     t:['Home and the scene','בית והזירה'], s:['Every casualty, counted by triage','כל הנפגעים, לפי מיון'],
-    steps:[['users',['Each tile is a triage group with its count','כל אריח הוא קבוצת מיון עם המספר שלה']],['hand-helping',['Tap a tile to see those casualties','לחיצה על אריח מציגה את הנפגעים שלו']],['clock',['“Due now” lists what is late across everyone','״מגיע עכשיו״ מציג מה מאחר אצל כולם']],['plus',['Start a new casualty from here','מכאן פותחים נפגע חדש']]] },
+    steps:[['users',['Each tile is a triage group with its count','כל אריח הוא קבוצת מיון עם המספר שלה']],['hand-helping',['Tap a tile to see those casualties','לחיצה על אריח מציגה את הנפגעים שלו']],['clock',['“Due now” lists what is late across everyone','״לטיפול עכשיו״ מציג מה מאחר אצל כולם']],['plus',['Start a new casualty from here','מכאן פותחים נפגע חדש']]] },
   { k:'quick', icon:'zap', v:'yesno', tour:1, show: function(){ W.Demo.tab('status').then(function(){ W.Quick.open(); }); },
     t:['Quick triage','מיון מהיר'], s:['A colour per casualty in seconds','צבע לכל נפגע תוך שניות'],
     steps:[['circle-help',['Answer one question at a time','עונים על שאלה אחת בכל פעם']],['check',['YES is always blue, always in the same place','כן תמיד כחול, תמיד באותו מקום']],['x',['NO is grey, always in the same place','לא אפור, תמיד באותו מקום']],['tag',['The casualty gets a number and a colour','הנפגע מקבל מספר וצבע']],['qr-code',['Save, then the next casualty or the wristband','שומרים, ואז הנפגע הבא או הצמיד']]] },
@@ -12825,19 +13108,37 @@ var STEPS = [
   { k:'hand',   t:['Hand off','העברה'],  d:['The full record on a QR wristband any phone can read.','התיק המלא על צמיד QR שכל טלפון קורא.'] }
 ];
 
-var active = null;
+var active = null, doseTimer = 0;
+// close anything layered over the phone (sheets, help, wristband, scanner) so the row's screen is what you see.
+// The first-visit medical notice is never dismissed this way: it must be acknowledged.
+function clearPhone(){
+  clearTimeout(doseTimer);
+  if (w.Help && w.Help.close) try { w.Help.close(); } catch (e) {}
+  if (w.Field && w.Field.doseClose) try { w.Field.doseClose(); } catch (e) {}
+  if (w.Demo && w.Demo.closeOverlays) w.Demo.closeOverlays(true);
+  ['#help-sheet', '.bo', '#dose-sheet', '#qt'].forEach(function(sel){ document.querySelectorAll('#app ' + sel).forEach(function(n){ n.remove(); }); });
+}
 function show(k){
+  var gate = document.querySelector('#app .dn[role=alertdialog]');
+  if (gate){ var b = gate.querySelector('.dn-ok'); if (b) b.focus(); return; }
   active = k;
+  if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop();
+  clearPhone();
   var run = {
     triage: function(){ return w.Quick && w.Quick.open(); },
     treat:  function(){ return w.Demo.go('casualty'); },
-    dose:   function(){ return Promise.resolve(w.Demo.go('casualty')).then(function(){ setTimeout(function(){ if (w.Field && w.Field.doseOpen) w.Field.doseOpen('now'); }, 350); }); },
+    dose:   function(){ return Promise.resolve(w.Demo.go('casualty')).then(function(){
+              doseTimer = setTimeout(function(){
+                // only if the Dose row is still the one chosen and the casualty card is really open
+                if (active === 'dose' && w._casualtyEditMode && w.Field && w.Field.doseOpen) w.Field.doseOpen('now');
+              }, 350); }); },
     evac:   function(){ return w.Demo.tab('evac'); },
     hand:   function(){ return w.Demo.tab('bracelets'); }
   }[k];
-  if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop();
   try { if (run) run(); } catch (e) { console.error(e); }
   mark();
+  // keep keyboard focus on the row that was used, after the app has re-rendered
+  setTimeout(function(){ var r = document.querySelector('.lp-row[data-k="' + k + '"]'); if (r && document.activeElement !== r && !document.querySelector('#app .dn')) r.focus({ preventScroll:true }); }, 60);
 }
 function mark(){
   document.querySelectorAll('.lp-row').forEach(function(el){
@@ -12951,10 +13252,12 @@ function render(){
 
   h += '<footer class="lp-foot"><span>' + L('Shomer Ahi — “my brother’s keeper”. By medics, for medics.','שומר אחי — ממטפלים, עבור מטפלים.') + '</span><span>' + L('Works offline · installs as an app','עובד בלי רשת · מותקן כאפליקציה') + '</span></footer>';
 
+  var fl = document.activeElement && document.activeElement.closest && document.activeElement.closest('.lp-lang') ? document.activeElement.getAttribute('data-lang') : null;
   root.innerHTML = h;
   if (w.Demo && w.Demo.renderSide) w.Demo.renderSide();
   appQr();
   mark();
+  if (fl){ var lb = root.querySelector('.lp-lang button[data-lang="' + fl + '"]'); if (lb) lb.focus(); }
 }
 
 // keep real phone proportions: the phone is laid out at 410×880 and scaled as one object to fit the window
@@ -12962,7 +13265,7 @@ function fit(){
   var r = document.documentElement.style;
   if (w.innerWidth < 901){ r.removeProperty('--ph-s'); return; }
   var s = Math.min(1, (w.innerHeight - 48) / 880, (w.innerWidth * 0.45) / 410);
-  r.setProperty('--ph-s', Math.max(0.55, s).toFixed(3));
+  r.setProperty('--ph-s', Math.max(0.4, s).toFixed(3));   // the whole phone always fits the window height
 }
 w.addEventListener('resize', fit);
 w.Landing = { render: render, show: show };
@@ -12970,6 +13273,9 @@ document.addEventListener('DOMContentLoaded', function(){
   var s = w.ShowcaseI18n;
   if (s){ var prev = s.setLang; s.setLang = function(l){ prev(l); render(); }; }
   fit(); render(); clock(); setInterval(clock, 15000);
+  // a tap inside the phone means the visitor has moved on: the row highlight is no longer true
+  var app = document.getElementById('app');
+  if (app) app.addEventListener('click', function(e){ if (e.isTrusted && active){ active = null; mark(); } }, true);
 });
 })(window);
 

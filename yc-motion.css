@@ -21,3 +21,6 @@
   /* toasts slide up from the bottom */
   .undo-toast{animation:ycRise 180ms ease both}
 }
+/* a sheet rebuilt in place after a tap shows instantly (no slide-up, no fade) */
+.sheet-wrap.instant .sheet,.sheet-wrap.instant .sheet-dim{animation:none!important;transition:none!important}
+.instant,.instant *{animation:none!important;transition:none!important}

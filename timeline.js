@@ -130,6 +130,7 @@ Field.tlTimeSave = function(){
     e.time = new Date(T0.t);
   } finally { Promise.resolve().then(function(){ W._medPushLock = false; }); }
   Field.tlTimeClose();
+  if (W._rehydrateRedoses) try { W._rehydrateRedoses(); } catch (x) {}   // repeat-dose reminder follows the new time
   if (W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave();
   W.MedHost.renderIncidentPage();
   if (Field.toast) Field.toast(L('Time changed ','השעה שונתה ') + '<bdi dir="ltr">' + hmT(T0.orig) + ' → ' + hmT(T0.t) + '</bdi>', function(){ W.medUndo(); W.MedHost.renderIncidentPage(); });
@@ -159,6 +160,7 @@ Field.tlDel = function(i){
     if (!linked && e.category === 'injury' && e.details){ var inj = W._casualtyInjuries || [], ii = inj.findIndex(function(j){ return j.type === e.details && act.indexOf(W.BODY_LABELS ? (W.BODY_LABELS[j.region] || '') : '') >= 0; }); if (ii >= 0){ inj.splice(ii, 1); linked = 'injury'; } }
     if (!linked && e.details && /^טיפול /.test(act)){ var bt2 = W._casualtyTreatments || [], b2 = bt2.findIndex(function(b){ return b.type === e.details && act.indexOf(W.BODY_LABELS ? (W.BODY_LABELS[b.region] || '') : '') >= 0; }); if (b2 >= 0){ bt2.splice(b2, 1); linked = 'treatment'; } }
   } finally { Promise.resolve().then(function(){ W._medPushLock = false; }); }
+  if (W._rehydrateRedoses) try { W._rehydrateRedoses(); } catch (x) {}
   if (W.deleteTimelineEntry) W.deleteTimelineEntry(i); else { if (W.pushMedHistory) W.pushMedHistory(); tl.splice(i, 1); W.MedHost.triggerAutoSave(); W.MedHost.renderIncidentPage(); }
   if (Field.toast) Field.toast(L('Deleted: ','נמחק: ') + esc(T(String(e.action || '')).slice(0, 40)) + (linked ? L(' (and its record)',' (וגם הרשומה)') : ''), function(){ W.medUndo(); });
 };

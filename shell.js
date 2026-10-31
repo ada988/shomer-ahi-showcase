@@ -128,20 +128,30 @@ function dueItems(){
   var out = [];
   (w._incidentCasualties || []).forEach(function(c){
     if (c.triageColor === 'black' || (w.findVehicleForCasualty && (w.findVehicleForCasualty(c) || {}).status === 'athospital')) return;
-    var x = (c.xabcde || {}).x || {}, e = (c.xabcde || {}).e || {}, nm = String(T(c.name)).split(' — ')[0];
-    (x.tourniquets || []).forEach(function(t){ var m = minsSince(t.time); if (m != null && m >= 120) out.push({ c:c, nm:nm, icon:'timer', w:L('Tourniquet ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min','חוסם עורקים ' + Math.floor(m / 60) + ' ש׳ ' + (m % 60) + ' ד׳'), lvl:2 }); });
-    var k = (e.medications || []).filter(function(d){ return /קטמין|ketamine/i.test(d.drug || d.name || ''); }).pop();
-    if (k){ var km = minsSince(k.time); if (km != null && km >= 45) out.push({ c:c, nm:nm, icon:'syringe', w:L('Ketamine ' + km + ' min ago · reassess pain','קטמין לפני ' + km + ' ד׳ · הערכת כאב'), lvl:1 }); }
-    if (c.triageColor === 'red' && !(c.vitalsHistory || []).length) out.push({ c:c, nm:nm, icon:'activity', w:L('No vitals recorded','לא נמדדו מדדים'), lvl:1 });
+    var x = (c.xabcde || {}).x || {}, e = (c.xabcde || {}).e || {};
+    (x.tourniquets || []).forEach(function(t){ var m = minsSince(t.time); if (m != null && m >= 120) out.push({ c:c, icon:'timer', task:L('Check tourniquet','בדיקת חוסם עורקים'), det:L('On for ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min','מונח ' + Math.floor(m / 60) + ' ש׳ ' + (m % 60) + ' ד׳'), m:m, lvl:2 }); });
+    var k = (e.medications || []).filter(function(d){ return /קטמין|ketamine/i.test(d.drug || d.name || ''); }).sort(function(a, b){ return Date.parse(a.time) - Date.parse(b.time); }).pop();
+    if (k){ var km = minsSince(k.time); if (km != null && km >= 45) out.push({ c:c, icon:'syringe', task:L('Reassess pain','הערכת כאב חוזרת'), det:L('Ketamine given','ניתן קטמין'), m:km, lvl:1 }); }
+    if (c.triageColor === 'red' && !(c.vitalsHistory || []).length) out.push({ c:c, icon:'activity', task:L('Take vitals','מדידת מדדים'), det:L('Urgent · none recorded','דחוף · לא נמדדו'), m:null, lvl:1 });
   });
-  return out.sort(function(a, b){ return b.lvl - a.lvl; });
+  var rank = { red:0, yellow:1, green:2 };
+  function R(i){ var k = i.c.triageColor; return k in rank ? rank[k] : 3; }
+  return out.sort(function(a, b){ return (b.lvl - a.lvl) || (R(a) - R(b)) || ((b.m || 0) - (a.m || 0)); });
 }
 function dueStrip(){
   var d = dueItems(); if (!d.length) return '';
-  return '<div class="sec-label">' + L('Due now','לטיפול עכשיו') + '</div><div class="due">' + d.slice(0, 4).map(function(i){
-    return '<button class="due-i' + (i.lvl > 1 ? ' hi' : '') + '" onclick="Demo.openCasualty(\'' + esc(i.c._docId) + '\')">' + ico(i.icon, 26) + '<span><b>' + (w.casBadge ? w.casBadge(i.c) + ' ' : '') + esc(i.nm) + '</b><small>' + i.w + '</small></span>' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 24) + '</button>';
+  var fwd = lang() === 'he' ? 'chevron-left' : 'chevron-right';
+  return '<div class="due-h"><span class="sec-label">' + L('Due now','לטיפול עכשיו') + '</span><span class="due-n">' + d.length + '</span></div><div class="due">' + d.slice(0, 4).map(function(i){
+    var col = i.c.triageColor || 'none', t = tg(col) || {}, num = w.casNum ? w.casNum(i.c) : '';
+    var lab = (w.casLabel ? w.casLabel(i.c) : '') + ' · ' + tgWord(col) + ' · ' + i.task + ' · ' + i.det + (i.m != null ? ' · ' + i.m + ' ' + L('min','דק׳') : '');
+    return '<button class="due-r' + (i.lvl > 1 ? ' hi' : '') + '" onclick="Demo.openCasualty(\'' + esc(i.c._docId) + '\')" aria-label="' + esc(lab) + '">'
+      + '<span class="due-id t-' + col + '">' + (t.shape ? shapeSvg(t.shape, 16) : '') + '<b>' + num + '</b></span>'
+      + '<span class="due-t"><b>' + ico(i.icon, 22) + i.task + '</b><small>' + i.det + '</small></span>'
+      + (i.m != null ? '<span class="due-m"><b>' + i.m + '</b><small>' + L('min','דק׳') + '</small></span>' : '')
+      + ico(fwd, 22) + '</button>';
   }).join('') + (d.length > 4 ? '<p class="due-more">' + L('+' + (d.length - 4) + ' more','+' + (d.length - 4) + ' נוספים') + '</p>' : '') + '</div>';
 }
+
 w.dueItems = dueItems;
 
 // ── Home ───────────────────────────────────────────────────────
@@ -186,7 +196,7 @@ function renderOverview(){
     + '</dl>';
 }
 
-function lvl(c){ return c.formLevel === 'quick' ? '<span class="lvl quick">' + ico('zap', 20) + L('QUICK TRIAGE — tap to complete the full form','מיון מהיר — לחצו להשלמת הטופס המלא') + '</span>' : '<span class="lvl full">' + ico('file-text', 20) + L('Full Form 101','טופס 101 מלא') + '</span>'; }
+function lvl(c){ return c.formLevel === 'quick' ? '<span class="lvl quick">' + ico('zap', 20) + L('Quick triage — tap to complete the full form','מיון מהיר — לחצו להשלמת הטופס המלא') + '</span>' : '<span class="lvl full">' + ico('file-text', 20) + L('Full Form 101','טופס 101 מלא') + '</span>'; }
 w.levelOf = function(c){ return c && c.formLevel === 'quick' ? 'quick' : 'full'; };
 // ── Casualty list (+ command board) ────────────────────────────
 function flag(label, bad){ return bad ? ' <u class="flag">' + label + '</u>' : ''; }
@@ -212,8 +222,8 @@ function renderPatients(){
       + '<span class="pl-sub">' + (inj || L('No injuries marked','לא סומנו פציעות')) + '</span>'
       + '<span class="pl-vit">'
       + (v.pulse === 0 ? '<em><i>' + L('No pulse','אין דופק') + '</i></em>' : v.pulse != null ? '<em>HR <i>' + v.pulse + '</i>' + flag(L('High','גבוה'), v.pulse > 120) + '</em>' : '')
-      + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('LOW','נמוך'), v.bpSys < 90) + flag(L('HIGH','גבוה'), v.bpSys >= 180) + staleAt(v, 'bp') + '</em>' : '')
-      + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('LOW','נמוך'), v.spo2 < 92) + '</em>' : '')
+      + (v.bpSys ? '<em>BP <i>' + v.bpSys + '/' + (v.bpDia || '–') + '</i>' + flag(L('Low','נמוך'), v.bpSys < 90) + flag(L('High','גבוה'), v.bpSys >= 180) + staleAt(v, 'bp') + '</em>' : '')
+      + (v.spo2 ? '<em>SpO₂ <i>' + v.spo2 + '</i>' + flag(L('Low','נמוך'), v.spo2 < 92) + '</em>' : '')
       + (tqMin != null ? '<em class="warn">' + ico('timer', 22) + L('Tourniquet ','חוסם עורקים ') + '<i>' + tqMin + L(' min',' ד׳') + '</i></em>' : '')
       + (onVeh ? '<em class="ok">' + ico('ambulance', 22) + ((w.findVehicleForCasualty(c) || {}).status === 'athospital' ? L('At hospital','בבית חולים') : L('On ambulance','באמבולנס')) + '</em>' : '')
       + '</span></span><span class="chev">' + ico(lang()==='he' ? 'chevron-left' : 'chevron-right', 28) + '</span></button>';
@@ -234,10 +244,10 @@ function openTq(c){ var t = (((c.xabcde || {}).x || {}).tourniquets || []).filte
 function renderBoard(){
   var order = { red:0, yellow:1, green:2, gray:3, black:4 };
   var all = (w._incidentCasualties || []).slice().sort(function(a, b){ return (order[a.triageColor] != null ? order[a.triageColor] : 9) - (order[b.triageColor] != null ? order[b.triageColor] : 9) || ((w.casNum && w.casNum(a)) || 0) - ((w.casNum && w.casNum(b)) || 0); });
-  var f = w._bdFilter, q = String(w._bdQuery || '').trim().toLowerCase();
+  var f = w._bdFilter, q = String(w._bdQuery || '').trim().toLowerCase().replace(/^#\s*$/, '');   // a lone # shows everyone
   var serial = function(c){ return w.Bracelet && w.Bracelet.serialFor ? w.Bracelet.serialFor(c) : ''; };
   var qn = /^#?\s*(\d+)$/.exec(q);
-  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (qn ? (w.casNum && w.casNum(c) === +qn[1]) : (String(T(c.name)) + ' ' + c.name + ' ' + serial(c) + ' ' + (c.tagId || '')).toLowerCase().indexOf(q) >= 0)); });
+  var list = all.filter(function(c){ return (!f || c.triageColor === f) && (!q || (qn ? ((w.casNum && w.casNum(c) === +qn[1]) || (qn[1].length >= 3 && c.tagId && c.tagId.slice(3) === ('000' + qn[1]).slice(-4))) : (String(T(c.name)) + ' ' + c.name + ' ' + serial(c) + ' ' + (c.tagId || '')).toLowerCase().indexOf(q) >= 0)); });
   var h = '<div class="seg-tabs" role="tablist"><button role="tab" aria-selected="false" onclick="Demo.casView(\'list\')">' + ico('list-checks', 22) + L('List','רשימה') + '</button><button class="on" role="tab" aria-selected="true" onclick="Demo.casView(\'board\')">' + ico('layout-dashboard', 22) + L('Board','לוח פיקוד') + '</button></div>';
   // next action
   var next = all.filter(function(c){ return (c.triageColor === 'red' || c.triageColor === 'yellow') && unassigned(c); })[0];
@@ -257,7 +267,7 @@ function renderBoard(){
   var count = function(c){ return all.filter(function(x){ return x.triageColor === c; }).length; };
   h += '<div class="ov-tiles bd-tiles">' + ['red','yellow','green','black'].map(function(c){ var t = tg(c); return '<button class="ov-tile t-' + c + (f === c ? ' on' : '') + '" aria-pressed="' + (f === c) + '" onclick="Demo.bdFilter(\'' + c + '\')">' + shapeSvg(t.shape, 30) + '<b>' + count(c) + '</b><span>' + tgWord(c) + '</span></button>'; }).join('') + '</div>';
   // search row (sticky)
-  h += '<div class="bd-search"><label>' + ico('search', 24) + '<input type="search" enterkeyhint="search" autocomplete="off" placeholder="' + esc(L('Number (#4) or code','מספר (#4) או קוד')) + '" aria-label="' + esc(L('Find a casualty by number or wristband code','חיפוש נפגע לפי מספר או קוד צמיד')) + '" oninput="Demo.bdSearch(this.value)"></label>'
+  h += '<div class="bd-search"><label>' + ico('search', 24) + '<input type="search" enterkeyhint="search" autocomplete="off" placeholder="' + esc(L('Number or tag','מספר או תג')) + '" aria-label="' + esc(L('Find a casualty by number or wristband code','חיפוש נפגע לפי מספר או קוד צמיד')) + '" oninput="Demo.bdSearch(this.value)"></label>'
     + '<button onclick="Demo.go(\'scan\')">' + ico('scan-line', 24) + '<span>' + L('Scan','סריקה') + '</span></button></div>';
   if (f || q) h += '<button class="filter-bar" onclick="Demo.bdFilter(null);Demo.bdSearch(\'\', true)">' + (f ? chip(f) : ico('search', 22)) + '<span>' + L(list.length + ' of ' + all.length + ' shown', 'מוצגים ' + list.length + ' מתוך ' + all.length) + '</span><b>' + L('Show all','הצג הכל') + '</b></button>';
   // rows: one line per casualty (default from 6 casualties up) · cards: the full card
@@ -404,6 +414,10 @@ function closeOverlays(keepQuick){
   var note = document.getElementById('tl-note'), draft = (keepQuick === true && note) ? { t: note.value, i: w.Field ? w.Field._tlEditIdx : null } : null;
   ['f-kp','f-sheet','fs-sheet','menu-sheet','undo-toast','ev-assign-sheet','ev-rush-sheet','ev-pre-sheet','ev-arrive-sheet','f-tap','qt','medevac-overlay','tl-sheet','tl-row-sheet','tl-time','bz-sheet','dose-sheet','rec-alert'].forEach(function(id){ if (id === 'qt' && keepQuick === true) return; var e = document.getElementById(id); if (e) e.remove(); });
   var bm = document.querySelector('#app > #body-tap-overlay'); if (bm) bm.remove();
+  if (keepQuick !== true){
+    ['help-sheet','pwa-sheet','ev-busy-sheet','tour-rec'].forEach(function(id){ var e = document.getElementById(id); if (e) e.remove(); });
+    if (w.Bracelet && document.querySelector('.bo')) w.Bracelet.close(true);   // wristband view, card and scanner (stops the camera)
+  }
   if (keepQuick !== true) w._selectedRegion = null;
   if (w.Field){ w.Field._k = null; w.Field._tt = null; }
   if (draft && w.Field && w.Field.tlNote) setTimeout(function(){ w.Field.tlNote(draft.i); var ta = document.getElementById('tl-note'); if (ta) ta.value = draft.t; }, 0);
@@ -425,8 +439,8 @@ var Demo = w.Demo = {
     w._bdQuery = v || ''; if (clear){ var i = document.querySelector('.bd-search input'); if (i) i.value = ''; } w.renderIncidentPage(); },
   casView: function(v){ w._casView = v; if (v === 'board') w._mciMode = 'manage'; w.renderIncidentPage(); var c = document.getElementById('incident-content'); c.scrollTop = 0; },
   filter: function(color){ w._plFilter = color; w._casView = 'list'; w._incidentTab = 'casualties'; w.renderIncidentPage(); document.getElementById('incident-content').scrollTop = 0; },
-  newFull: function(){ closeOverlays(); w._incidentTab = 'casualties'; w.newCasualty(); },
-  openCasualty: function(id){ w._incidentTab = 'casualties'; w.editCasualtyById(id); },
+  newFull: function(){ closeOverlays(); w._incidentTabBeforeEdit = w._incidentTab; w.newCasualty(); },
+  openCasualty: function(id){ closeOverlays(); if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop(true); w._incidentTab = 'casualties'; w.editCasualtyById(id); },
   back: function(){ closeOverlays(); if (w._casualtyEditMode) w.closeCasualtyForm(); },
   go: function(where){
     closeOverlays();
@@ -440,13 +454,101 @@ var Demo = w.Demo = {
     if (w._casualtyEditMode && where === 'casualty'){ var c0 = document.getElementById('incident-content'); if (c0) c0.scrollTop = 0; return Promise.resolve(); }
     run(); return Promise.resolve();
   },
+  // ── Delete a casualty: confirm first ("Keep" is the big default), then Undo restores it everywhere. Numbers are never reused. ──
+  deleteAsk: function(id){
+    var c = (w._incidentCasualties || []).filter(function(x){ return x._docId === id; })[0]; if (!c) return;
+    var app = document.getElementById('app'); var old = document.getElementById('del-sheet'); if (old) old.remove();
+    var lab = w.casLabel ? w.casLabel(c) : esc(T(c.name)), veh = (w._mciVehicles || []).filter(function(v){ return (v.casualties || []).indexOf(id) >= 0; })[0];
+    var s = document.createElement('div'); s.id = 'del-sheet'; s.className = 'sheet-wrap no-polish';
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.deleteClose()"></div><div class="sheet del-sheet" role="alertdialog" aria-modal="true" aria-labelledby="del-t"><div class="sheet-grab"></div>'
+      + '<h3 id="del-t">' + ico('trash-2', 28) + L('Delete this casualty?','למחוק את הנפגע?') + '</h3>'
+      + '<div class="del-who">' + (w.casBadge ? w.casBadge(c, true) : '') + '<b>' + esc(lab) + '</b>' + chip(c.triageColor) + (c.tagId ? '<span class="del-tag">' + ico('tag', 22) + '<bdi dir="ltr">' + esc(c.tagId) + '</bdi></span>' : '') + '</div>'
+      + '<p class="sheet-p">' + L('The whole record is removed: treatments, timeline and tag link.','כל התיק יימחק: טיפולים, ציר זמן וקישור לתג.') + (veh ? ' ' + L('It also comes off ','הוא גם יורד מ') + esc(T(veh.name || veh.type || '')) + '.' : '') + ' ' + L('You can undo right after.','אפשר לבטל מיד אחרי.') + '</p>'
+      + '<div class="del-b"><button class="xbtn xbtn-primary" data-autofocus onclick="Demo.deleteClose()">' + ico('x', 24) + L('Keep','להשאיר') + '</button>'
+      + '<button class="xbtn del-go" onclick="Demo.deleteDo(\'' + esc(id) + '\')">' + ico('trash-2', 24) + L('Delete','מחיקה') + '</button></div></div>';
+    app.appendChild(s);
+    var k = s.querySelector('[data-autofocus]'); if (k) setTimeout(function(){ k.focus({ preventScroll:true }); }, 30);
+  },
+  // ── Casualty history: every casualty on this scene, including deleted ones (they can be restored) ──
+  history: function(){
+    var old = document.getElementById('hist-sheet'); if (old) old.remove();
+    var live = (w._incidentCasualties || []).map(function(c){ return { c:c, n:w.casNum ? w.casNum(c) : 0, del:null }; });
+    var gone = (w._casArchive || []).map(function(a){ return { c:a.rec, n:a.num, del:a }; });
+    var all = live.concat(gone).sort(function(a, b){ return (a.n || 0) - (b.n || 0); });
+    var hhmm = function(t){ var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); };
+    var s = document.createElement('div'); s.id = 'hist-sheet'; s.className = 'sheet-wrap no-polish';
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.historyClose()"></div><div class="sheet hist" role="dialog" aria-modal="true" aria-labelledby="hist-t"><div class="sheet-grab"></div>'
+      + '<div class="hist-top"><h3 id="hist-t">' + ico('layers', 26) + L('Casualty history','היסטוריית נפגעים') + '</h3><button class="xbtn" onclick="Demo.historyClose()">' + ico('x', 22) + L('Close','סגירה') + '</button></div>'
+      + '<p class="sheet-p">' + L(live.length + ' on scene · ' + gone.length + ' deleted', live.length + ' באירוע · ' + gone.length + ' נמחקו') + '</p><div class="hist-l">'
+      + all.map(function(r){
+          var lab = L('Casualty ','נפגע ') + (r.n || '?');
+          var st = r.del ? '<span class="hist-st del">' + ico('trash-2', 22) + L('Deleted ','נמחק ') + hhmm(r.del.at) + '</span>'
+                         : (r.c.evacStatus === 'evacuated' ? '<span class="hist-st">' + ico('hospital', 22) + L('Evacuated','פונה') + '</span>' : '<span class="hist-st">' + ico('map-pin', 22) + L('On scene','בזירה') + '</span>');
+          var act = r.del ? '<button class="xbtn" onclick="Demo.restore(' + (w._casArchive || []).indexOf(r.del) + ')">' + ico('undo-2', 22) + L('Restore','שחזור') + '</button>'
+                          : '<button class="xbtn" onclick="Demo.historyClose();Demo.openCasualty(\'' + esc(r.c._docId) + '\')">' + ico('file-text', 22) + L('Open','פתיחה') + '</button>';
+          return '<div class="hist-r' + (r.del ? ' is-del' : '') + '">' + (w.casBadge ? w.casBadge(r.n) : '') + '<span class="hist-m"><b>' + lab + '</b>' + chip(r.c.triageColor) + st + '</span>' + act + '</div>';
+        }).join('')
+      + '</div></div>';
+    document.getElementById('app').appendChild(s);
+  },
+  historyClose: function(){ var s = document.getElementById('hist-sheet'); if (s) s.remove(); },
+  restore: function(i){
+    var a = (w._casArchive || [])[i]; if (!a) return;
+    var now = w._readOfflineCasualties(); now.push(a.rec); w._writeOfflineCasualties(now);
+    w._casArchive.splice(i, 1); w._refreshMergedCasualties(); w.renderIncidentPage();
+    toast(L('Restored: Casualty ','שוחזר: נפגע ') + (a.num || '')); Demo.history();
+  },
+  // long press on a casualty row in the Patients list / board: Open or Delete
+  casActions: function(id){
+    var c = (w._incidentCasualties || []).filter(function(x){ return x._docId === id; })[0]; if (!c) return;
+    var old = document.getElementById('cas-act'); if (old) old.remove();
+    var s = document.createElement('div'); s.id = 'cas-act'; s.className = 'sheet-wrap no-polish';
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.casActClose()"></div><div class="sheet cas-act" role="dialog" aria-modal="true" aria-labelledby="ca-t"><div class="sheet-grab"></div>'
+      + '<div class="del-who" id="ca-t">' + (w.casBadge ? w.casBadge(c, true) : '') + '<b>' + esc(w.casLabel ? w.casLabel(c) : '') + '</b>' + chip(c.triageColor) + '</div>'
+      + '<div class="ca-b"><button class="xbtn xbtn-primary" onclick="Demo.casActClose();Demo.openCasualty(\'' + esc(id) + '\')">' + ico('file-text', 24) + L('Open Form 101','פתיחת טופס 101') + '</button>'
+      + '<button class="xbtn del-go" onclick="Demo.casActClose();Demo.deleteAsk(\'' + esc(id) + '\')">' + ico('trash-2', 24) + L('Delete…','מחיקה…') + '</button>'
+      + '<button class="xbtn" onclick="Demo.casActClose()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div></div>';
+    document.getElementById('app').appendChild(s);
+  },
+  casActClose: function(){ var s = document.getElementById('cas-act'); if (s) s.remove(); },
+  deleteClose: function(){ var s = document.getElementById('del-sheet'); if (s) s.remove(); },
+  deleteDo: function(id){
+    Demo.deleteClose();
+    var list = w._readOfflineCasualties(), idx = -1, rec = null;
+    list.forEach(function(x, i){ if (x._docId === id){ idx = i; rec = x; } });
+    if (!rec) return;
+    var cas = (w._incidentCasualties || []).filter(function(x){ return x._docId === id; })[0], lab = w.casLabel ? w.casLabel(cas || rec) : '';
+    var seats = (w._mciVehicles || []).map(function(v){ var p = (v.casualties || []).indexOf(id); return p >= 0 ? [v, p] : null; }).filter(Boolean);
+    var arch = { rec:JSON.parse(JSON.stringify(rec)), at:Date.now(), num:w.casNum ? w.casNum(cas || rec) : null };
+    var finish = function(){
+      w._casArchive = w._casArchive || []; w._casArchive.push(arch);
+      w._writeOfflineCasualties(list.filter(function(x){ return x._docId !== id; }));
+      seats.forEach(function(sp){ sp[0].casualties.splice(sp[0].casualties.indexOf(id), 1); });
+      if (w._mciExpandedCard === id) w._mciExpandedCard = null;
+      w._refreshMergedCasualties(); w.renderIncidentPage();
+      var old = document.getElementById('undo-toast'); if (old) old.remove();
+      var el = document.createElement('div'); el.id = 'undo-toast'; el.className = 'undo-toast no-polish'; el.setAttribute('role', 'status');
+      el.innerHTML = '<span>' + esc(L('Deleted: ','נמחק: ') + lab) + '</span><button>' + ico('undo-2', 24) + L('Undo','בטל') + '</button>';
+      el.querySelector('button').onclick = function(){
+        var now = w._readOfflineCasualties(); now.splice(Math.min(idx, now.length), 0, rec); w._writeOfflineCasualties(now);
+        w._casArchive = (w._casArchive || []).filter(function(a){ return a !== arch; });
+        seats.forEach(function(sp){ if (sp[0].casualties.indexOf(id) < 0) sp[0].casualties.splice(Math.min(sp[1], sp[0].casualties.length), 0, id); });
+        w._refreshMergedCasualties(); w.renderIncidentPage(); el.remove(); toast(L('Restored: ','שוחזר: ') + lab);
+      };
+      document.getElementById('app').appendChild(el); setTimeout(function(){ el.remove(); }, 8000);
+    };
+    // if this casualty's form is open, close it first, then delete
+    if (w._casualtyEditMode && w._casualtyEditId === id){ w._incidentTab = 'casualties'; return Promise.resolve(w.closeCasualtyForm()).then(finish); }
+    finish();
+  },
   menu: function(){
     var app = document.getElementById('app'); if (document.getElementById('menu-sheet')) return;
     var s = document.createElement('div'); s.id = 'menu-sheet'; s.className = 'sheet-wrap no-polish';
     var row = function(icon, title, sub, fn){ return '<button class="sheet-row" onclick="' + fn + '"><span class="gi">' + ico(icon, 28) + '</span><span><b>' + title + '</b><small>' + sub + '</small></span></button>'; };
-    s.innerHTML = '<div class="sheet-dim" onclick="Demo.closeMenu()"></div><div class="sheet" role="dialog" aria-label="' + L('Menu','תפריט') + '"><div class="sheet-grab"></div><h3>' + L('Menu','תפריט') + '</h3>'
+    s.innerHTML = '<div class="sheet-dim" onclick="Demo.closeMenu()"></div><div class="sheet" role="dialog" aria-label="' + L('Menu','תפריט') + '"><div class="sheet-grab"></div><div class="menu-head"><h3>' + L('Menu','תפריט') + '</h3><button class="xbtn menu-x" onclick="Demo.closeMenu()">' + ico('x', 24) + L('Close','סגירה') + '</button></div>'
       + '<div class="lang-pick"><button class="' + (lang() === 'en' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'en\');Demo.closeMenu()">' + ico('languages', 22) + 'English</button><button class="' + (lang() === 'he' ? 'on' : '') + '" onclick="ShowcaseI18n.setLang(\'he\');Demo.closeMenu()">' + ico('languages', 22) + 'עברית</button></div>'
       + row('circle-help', L('How to use','איך משתמשים'), L('Every screen explained, step by step','כל מסך מוסבר, שלב אחר שלב'), 'Demo.closeMenu();Help.open()')
+      + row('layers', L('Casualty history','היסטוריית נפגעים'), L('Everyone on this scene, deleted ones too','כל הנפגעים באירוע, גם שנמחקו'), 'Demo.closeMenu();Demo.history()')
       + row('play', L('Guided tour','סיור מודרך'), L('About 60 seconds, 11 steps','כ-60 שניות, 11 שלבים'), 'Demo.closeMenu();Tour.start()')
       + row('triangle-alert', L('Important notice','הודעה חשובה'), L('Early beta. Do not use on real patients.','בטא מוקדמת. אין להשתמש בנפגעים אמיתיים.'), 'Demo.closeMenu();Disclaimer.open()')
       + row('rotate-ccw', L('Reset demo','איפוס הדמו'), L('Restore the original six casualties','החזרת ששת הנפגעים המקוריים'), 'Demo.closeMenu();Demo.reset()')
@@ -454,7 +556,13 @@ var Demo = w.Demo = {
     app.appendChild(s);
   },
   closeMenu: function(){ var s = document.getElementById('menu-sheet'); if (s) s.remove(); },
-  reset: function(){ closeOverlays(); resetUndo(); seed(); if (w.Evac) w.Evac.reset(); w._incidentTab = 'status'; w._casView = 'list'; w._plFilter = null; w.renderIncidentPage(); toast(L('Demo reset','הדמו אופס')); },
+  reset: function(){
+    if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop(true);
+    closeOverlays(); resetUndo(); seed(); if (w.Evac) w.Evac.reset();
+    if (w.resetCasNum) w.resetCasNum();                                     // numbering starts again after the six demo casualties
+    if (w._clearRedoseTimers) try { w._clearRedoseTimers(); } catch (e) {}   // no repeat-dose alert for a drug that is gone
+    w._bdFilter = null; w._bdRows = undefined; w._bdQuery = '';
+    w._incidentTab = 'status'; w._casView = 'list'; w._plFilter = null; w.renderIncidentPage(); toast(L('Demo reset','הדמו אופס')); },
   boot: function(){
     seed(); w._incidentTab = 'status';
     renderSide(); w.ShowcaseI18n.setLang(w.ShowcaseI18n.lang);
@@ -526,18 +634,47 @@ document.addEventListener('input', function(e){
 });
 
 // ── Modal behaviour for every overlay/sheet: focus moves in, Tab stays inside (background is inert), Esc closes, focus returns ──
-var OVERLAY = '#help-sheet,#f-kp,#f-sheet,#fs-sheet,#tl-sheet,#tl-row-sheet,#tl-time,#dose-sheet,#bz-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn';
+var OVERLAY = '#help-sheet,#f-kp,#f-sheet,#fs-sheet,#tl-sheet,#tl-row-sheet,#tl-time,#dose-sheet,#bz-sheet,#menu-sheet,#ev-assign-sheet,#ev-rush-sheet,#ev-pre-sheet,#ev-arrive-sheet,#ev-busy-sheet,#pwa-sheet,#f-tap,#radio-overlay,#qt,.bo,.dn,#dz-sf,#dz-rb,#del-sheet,#cas-act,#hist-sheet';
 var _ret = null;
 function topOverlay(){ var l = document.querySelectorAll(OVERLAY); return l.length ? l[l.length - 1] : null; }
-function syncModal(){
+// a sheet removed and re-added in the same moment (re-rendered after a tap) is the same sheet: remember its identity and scroll
+function sheetKey(n){ return n && n.nodeType === 1 ? (n.id || '') + '|' + (n.className || '') : ''; }
+function scrollerOf(n){ var c = n.querySelector('.sheet,.f-proc,.f-gcs,[class*="-body"],.bo-body') || n; return c; }
+function syncModal(list){
   var top = topOverlay(), app = document.getElementById('app'); if (!app) return;
-  var bg = [].slice.call(app.children).filter(function(c){ return !c.matches(OVERLAY + ',.tr-dim,.tr-card,#tour-rec,.undo-toast,.tst,.skip-link'); });
+  var gone = {};
+  (list || []).forEach(function(m){ [].forEach.call(m.removedNodes || [], function(n){ if (n.nodeType === 1){ var sc = scrollerOf(n); gone[sheetKey(n)] = { y:sc.scrollTop || 0, cls:sc.className }; if (n.id) gone['#' + n.id] = gone[sheetKey(n)]; } }); });
+  if (top && !top.__fx){ var was = gone[sheetKey(top)] || (top.id && gone['#' + top.id]);
+    if (was){ top.classList.add('instant'); top.__swap = true; var sc2 = scrollerOf(top); if (sc2 && sc2.className === was.cls) sc2.scrollTop = was.y; } }
+  var bg = [].slice.call(app.children).filter(function(c){ return !c.matches(OVERLAY + ',.tr-dim,.tr-card,#tour-rec,#rec-alert,.undo-toast,.tst,.skip-link'); });   // an alert can always be tapped or closed
   bg.forEach(function(c){ if (top) c.setAttribute('inert', ''); else c.removeAttribute('inert'); });
   if (top){
     if (!_ret) _ret = document.activeElement;
-    if (!top.__fx){ top.__fx = true; top.setAttribute('role', top.getAttribute('role') || 'dialog'); top.setAttribute('aria-modal', 'true'); if (!top.getAttribute('aria-label')) top.setAttribute('aria-label', (top.querySelector('h3,.bo-title,h2') || {}).textContent || 'Dialog'); var f = top.querySelector('[data-autofocus]'); if (!f){ f = top.querySelector('[role=dialog]') || top; if (!f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1'); } setTimeout(function(){ try { f.focus({ preventScroll:true, focusVisible:false }); } catch(e){ f.focus(); } }, 20); }
-  } else if (_ret){ try { _ret.focus({ preventScroll:true }); } catch(e){} _ret = null; }
+    var sw = top.id === 'f-sheet' && w._fsSwap && Date.now() - w._fsSwap.t < 60 ? w._fsSwap : null;
+    if (sw && !top.__fx){   // the same form sheet rebuilt after a tap: no open animation, no tap guard, same scroll position
+      top.classList.add('instant'); var si = top.querySelector('.sheet'); if (si && si.className === sw.cls) si.scrollTop = sw.y; w._fsSwap = null;
+    }
+    if (!top.__fx){ if (!sw && !top.__swap) armTap(); top.__fx = true; top.setAttribute('role', top.getAttribute('role') || 'dialog'); top.setAttribute('aria-modal', 'true'); if (!top.getAttribute('aria-label')) top.setAttribute('aria-label', (top.querySelector('h3,.bo-title,h2') || {}).textContent || 'Dialog'); var f = top.querySelector('[data-autofocus]'); if (!f){ f = top.querySelector('[role=dialog]') || top; if (!f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1'); } setTimeout(function(){ try { f.focus({ preventScroll:true, focusVisible:false }); } catch(e){ f.focus(); } }, 20); }
+  } else {
+    // return focus only if it was lost with the overlay (not if the user already moved on, e.g. to a row on the desktop page)
+    var act = document.activeElement, lost = !act || act === document.body || (app.contains(act) && act.offsetParent === null);
+    if (_ret && lost && _ret.isConnected && _ret.offsetParent !== null && app.contains(_ret)){ try { _ret.focus({ preventScroll:true }); } catch(e){} }
+    else if (lost && _ret && !document.querySelector('.tr-card')){ var c = document.getElementById('incident-content'); if (c){ if (!c.hasAttribute('tabindex')) c.setAttribute('tabindex', '-1'); try { c.focus({ preventScroll:true, focusVisible:false }); } catch(e){ c.focus(); } } }
+    _ret = null;
+  }
 }
+// ── Double-tap guard: when a tap opens a sheet or a new step, a second tap at the same spot within 450 ms is ignored,
+// so a confirm button or the next question that appears under the finger is never pressed by accident. Keyboard clicks are not affected.
+var _tap = { x:-1e4, y:-1e4, t:0, armed:0 };
+function armTap(){ _tap.armed = Date.now(); }
+w.armTap = armTap;
+document.addEventListener('click', function(e){
+  if (!e.isTrusted || e.detail === 0) return;
+  var app = document.getElementById('app'); if (!app || !app.contains(e.target)) return;
+  var now = Date.now();
+  if (_tap.armed >= _tap.t && now - _tap.armed < 450 && Math.abs(e.clientX - _tap.x) < 72 && Math.abs(e.clientY - _tap.y) < 72){ e.stopPropagation(); e.preventDefault(); return; }
+  _tap.x = e.clientX; _tap.y = e.clientY; _tap.t = now;
+}, true);
 new MutationObserver(syncModal).observe(document.getElementById('app'), { childList:true });
 document.addEventListener('keydown', function(e){
   if (e.key !== 'Escape') return;
@@ -550,6 +687,8 @@ document.addEventListener('keydown', function(e){
   if (t.id === 'f-tap' && w.Field){ w.Field.tapClose(); return; }
   if (t.id === 'radio-overlay' && w.closeRadioReadout){ w.closeRadioReadout(); return; }
   if (t.id === 'bz-sheet' && w.BodyZoom){ w.BodyZoom.close(); return; }        // body zoom first, then (next Esc) its menu
+  if (t.id === 'dz-sf' && w.Field && w.Field.doseSafetyClose){ w.Field.doseSafetyClose(); return; }
+  if (t.id === 'dz-rb' && w.Field && w.Field.doseRbClose){ w.Field.doseRbClose(); return; }
   if (t.id === 'dose-sheet' && w.Field && w.Field.doseClose){ if (document.getElementById('dz-rb') && w.Field.doseRbClose) w.Field.doseRbClose(); else w.Field.doseClose(); return; }
   if (t.classList.contains('bo') && w.Bracelet){ w.Bracelet.close(); return; }
   var d = t.querySelector('.sheet-dim'), x = t.querySelector('.bo-x');
@@ -578,7 +717,7 @@ document.addEventListener('keydown', function(e){
 // to close something puts it back. On Home with nothing open the guard is left spent, so the next BACK leaves the page as usual.
 var _guard = false;
 function backStep(){
-  if (document.querySelector('.tour-card')){ w.Tour.stop(); return true; }
+  if (document.querySelector('.tr-card')){ w.Tour.stop(); return true; }
   if (document.querySelector('.dn[role=alertdialog]')) return true;               // the first-visit notice can only be acknowledged
   if (document.getElementById('body-tap-overlay') || topOverlay()){ document.dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true })); return true; }
   if (w._casualtyEditMode){ Demo.back(); return true; }
@@ -594,4 +733,21 @@ w.addEventListener('popstate', function(){
   if (!_guard) return;
   if (backStep()){ try { history.pushState({ sc:1 }, ''); } catch(e){} } else _guard = false;
 });
+})();
+
+// ── Long press (about 0.55 s) on a casualty row in the Patients list or board opens Open / Delete. Moving the finger cancels it, so scrolling still works. ──
+(function(){
+  var t = null, sx = 0, sy = 0, el = null, fired = false, SEL = '#incident-content .pl-card, #incident-content .bd-row, #incident-content .bd-card';
+  function idOf(n){ var m = /editCasualtyById\('([^']+)'\)/.exec(n.getAttribute('onclick') || ''); return m ? m[1] : null; }
+  function stop(){ clearTimeout(t); t = null; if (el) el.classList.remove('lp-hold'); el = null; }
+  document.addEventListener('pointerdown', function(e){
+    var b = e.target.closest && e.target.closest(SEL); if (!b || !idOf(b)) return;
+    fired = false; el = b; sx = e.clientX; sy = e.clientY; b.classList.add('lp-hold');
+    t = setTimeout(function(){ var id = idOf(b); fired = true; stop(); if (navigator.vibrate) navigator.vibrate(30); window.Demo.casActions(id); }, 550);
+  }, true);
+  document.addEventListener('pointermove', function(e){ if (t && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) stop(); }, true);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(n){ document.addEventListener(n, function(){ if (t) stop(); }, true); });
+  // the click that ends a long press must not also open the form
+  document.addEventListener('click', function(e){ if (fired){ fired = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  document.addEventListener('contextmenu', function(e){ if (e.target.closest && e.target.closest(SEL)) e.preventDefault(); }, true);
 })();

@@ -210,7 +210,7 @@ function drugs(P){
   D.push(ket);
   D.push({ id:'mor', g:'pain', en:L('Morphine','מורפין'), sub:L('If ketamine did not help after 5 min','אם קטמין לא עזר אחרי 5 דק׳'), eng:'מורפין', match:/מורפין|morphine/i, route:'IV',
     dose: function(){ return { v: P.child ? (P.profound ? r2(0.02 * kg) : r2(0.05 * kg)) : (P.profound ? 2 : 5), u:'mg' }; },
-    rule: (P.child ? L('0.05 mg/kg (0.02 in suspected shock)','0.05 מ״ג/ק״ג (0.02 בחשד להלם)') : L('5 mg (2 mg in suspected shock)','5 מ״ג (2 מ״ג בחשד להלם)')) + (P.profound ? (P.child ? L(' · REDUCED: low blood pressure for age',' · מופחת: לחץ דם נמוך לגיל') : L(' · REDUCED: suspected shock',' · מופחת: חשד להלם')) : ''),
+    rule: (P.child ? L('0.05 mg/kg (0.02 in suspected shock)','0.05 מ״ג/ק״ג (0.02 בחשד להלם)') : L('5 mg (2 mg in suspected shock)','5 מ״ג (2 מ״ג בחשד להלם)')) + (P.profound ? (P.child ? L(' · REDUCED: low blood pressure for age',' · מופחת: לחץ דם נמוך לגיל') : L(' · Reduced: suspected shock',' · מופחת: חשד להלם')) : ''),
     prep: L('Repeat every 15 min while pain stays 5 or more.','חזרה כל 15 דק׳ כל עוד הכאב 5 ומעלה.') + (P.child ? L(' No IV: 0.1 mg/kg IM once.',' אין וריד: 0.1 מ״ג/ק״ג לשריר פעם אחת.') : ''),
     every: 15, chg: function(){ return P.profound ? (P.child ? L('0.02 mg/kg instead of 0.05 · ','0.02 מ״ג/ק״ג במקום 0.05 · ') : L('2 mg instead of 5 mg · ','2 מ״ג במקום 5 מ״ג · ')) + (P.evid.length ? shockW(P) : L('suspected shock','חשד להלם')) + ' · ' + L('book ch. 15','ספר פרק 15') : null; },
     why: function(){ if (!(P.pain != null && P.pain >= 5)) return null; var k = givenOf(P, ket); if (!k.length) return null; return minsSince(k[k.length - 1].time) >= 5 ? L('Pain still ' + P.pain + ' after ketamine','כאב עדיין ' + P.pain + ' אחרי קטמין') : null; } });
@@ -620,7 +620,7 @@ function safetySheet(id){
     + '<button class="xbtn dz-sf-close" onclick="Field.doseSafetyClose()">' + ico('x', 24) + '<span>' + L('Close','סגירה') + '</span></button></div>';
   var el = document.createElement('div'); el.id = 'dz-sf'; el.className = 'dz-rb-wrap dz-sf-wrap'; el.innerHTML = h;
   el.addEventListener('click', function(ev){ if (ev.target === el) Field.doseSafetyClose(); });
-  document.getElementById('dose-sheet').appendChild(el);
+  (document.getElementById('app') || document.body).appendChild(el);   // not inside the scrolled calculator: it would open off-screen
   var b = el.querySelector('.dz-sf'); try { b.focus({ preventScroll:true }); } catch (e){}
 }
 Field.doseSafety = function(id){ S.sf = id; safetySheet(id); };
@@ -749,7 +749,7 @@ function readback(id){
     + '<div class="dz-rb-b"><button class="xbtn' + (s.wait > 0 ? ' xbtn-primary' : '') + '" onclick="Field.doseRbClose()">' + ico('x', 24) + '<span>' + L('Cancel','ביטול') + '</span></button>'
     + '<button class="xbtn ' + (s.wait > 0 ? 'dz-early' : 'xbtn-primary') + '" onclick="Field.doseGive(\'' + id + '\')">' + ico('check', 24) + '<span>' + (s.wait > 0 ? L('Give anyway','לתת בכל זאת') : L('Given: record it','ניתן: לתעד')) + '</span></button></div>'
     + '</div>';
-  document.getElementById('dose-sheet').appendChild(el);
+  (document.getElementById('app') || document.body).appendChild(el);   // not inside the scrolled calculator: it would open off-screen
 }
 Field.doseCheck = function(id){ S.rb = id; readback(id); var b = document.querySelector('#dz-rb .dz-rb'); if (b){ b.tabIndex = -1; try { b.focus({ preventScroll:true }); } catch (e){} } };
 Field.doseRbClose = function(){ S.rb = null; var r = document.getElementById('dz-rb'); if (r) r.remove(); };
@@ -800,7 +800,7 @@ Field.doseAccess = function(kind){
   draw();
 };
 Field.doseSyr = function(z){ S.syr = z; try { sessionStorage.setItem('dz-syr', String(z)); } catch (e){} draw(); };
-Field.doseClose = function(){ S.rb = null; S.sf = null; var s = document.getElementById('dose-sheet'); if (s) s.remove(); };
+Field.doseClose = function(){ S.rb = null; S.sf = null; ['dose-sheet','dz-sf','dz-rb'].forEach(function(id){ var s = document.getElementById(id); if (s) s.remove(); }); document.querySelectorAll('#app > .dz-rb-wrap').forEach(function(n){ n.remove(); }); };
 Field.doseEdit = function(k){ S.edit = S.edit === k ? null : k; draw(); };
 Field.doseTab = function(t){ S.tab = t; try { sessionStorage.setItem('dz-tab', t); } catch (e){} draw(); var el = document.getElementById('dose-sheet'), n = el && el.querySelector('.dz-tabs'); if (n && el.scrollTop > n.offsetTop) el.scrollTop = Math.max(0, n.offsetTop - 80); };
 Field.doseSet = function(k, v){

@@ -35,5 +35,5 @@
 .mist-warn{margin-top:10px;padding:10px;border:2px solid #f5b82e;border-radius:10px;color:#f5b82e;font-weight:700;font-size:15px;text-align:center}
 
 .dn-lang{display:flex;background:var(--c2);border:1px solid var(--sep);border-radius:12px;padding:3px}
-.dn-lang button{display:inline-flex;align-items:center;gap:6px;min-height:46px;padding:0 14px;border-radius:9px;border:0;background:transparent;color:var(--t2);font:700 16px var(--f)}
+.dn-lang button{display:inline-flex;align-items:center;gap:6px;min-height:48px;padding:0 14px;border-radius:9px;border:0;background:transparent;color:var(--t2);font:700 16px var(--f)}
 .dn-lang button.on{background:var(--c4);color:#fff}

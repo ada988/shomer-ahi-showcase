@@ -1304,6 +1304,7 @@ function medUndo(){
   if(!_medUndoStack.length){_toast('אין פעולה לביטול');return;}
   _medRedoStack.push(_snapshotMedState());
   _restoreMedState(_medUndoStack.pop());
+  try{_rehydrateRedoses();}catch(e){}
   if(navigator.vibrate)navigator.vibrate(20);
 }
 function medRedo(){
@@ -1572,7 +1573,7 @@ function renderClinicalPriorities(){
     items.push({k:'shock',ic:'🩸',cl:'#e74c3c',obs:`סימני הלם (${parts.join(' · ')||'לפי הערכה קלינית'})`,rec:'הלם — דם מלא / פלזמה, TXA, חימום'});
   }
   if(ctx.hypothermic&&ctx.deepShock){
-    items.push({k:'triad',ic:'☠',cl:'#c0392b',obs:`נמדדה טמפ׳ ${ctx.lastVitals.temp}°C + SBP ${ctx.sys}mmHg — Lethal Triad`,rec:'מומלץ: חימום דחוף (HPMK/פעיל) + דם מלא + TXA 1g IV'});
+    items.push({k:'triad',ic:'☠',cl:'#c0392b',obs:`חשד לשלישיית המוות: קור + ל״ד נמוך (${ctx.lastVitals.temp}°C, SBP ${ctx.sys})`,rec:'מומלץ: חימום דחוף (HPMK/פעיל) + דם מלא + TXA 1g IV'});
   }
   if(ctx.hasTBI){
     if(ctx.tbiBpLow)items.push({k:'tbi-bp',ic:'🧠',cl:'#e74c3c',obs:`חשד TBI + נמדד SBP ${ctx.sys}mmHg (מתחת ל-100)`,rec:'מומלץ: שמירה על SBP ≥100–110 (לפי נוהל TBI) — נוזלים/דם מיידי'});
@@ -1997,32 +1998,40 @@ function editMedication(idx){
   MedHost.triggerAutoSave();
   MedHost.renderIncidentPage();
 }
+// Redose reminders are derived from the medications actually on the record (drug + time), never from a stored list:
+// after Undo, a deleted entry, a reset or a reload there is nothing to remind about. Firing re-checks the record too.
+const _REDOSE_MIN={'קטמין':45,'פנטניל':15};
 function _redoseKey(){return 'sh_redose_'+(_casualtyEditId||'new');}
-function _readRedoses(){try{return JSON.parse(localStorage.getItem(_redoseKey())||'[]');}catch(e){return [];}}
-function _writeRedoses(list){try{localStorage.setItem(_redoseKey(),JSON.stringify(list));}catch(e){}}
-function _scheduleRedose(drug,mins){
-  const dueAt=Date.now()+mins*60000;
-  const list=_readRedoses();list.push({drug,mins,dueAt});_writeRedoses(list);
-  const id=setTimeout(()=>_fireRedose(drug,mins,dueAt),mins*60000);
-  _medRedoseTimers.push(id);
-}
-function _fireRedose(drug,mins,dueAt){
-  if(_casualtyEditMode)MedHost.toast(`⏰ ${drug} — מנה חוזרת אפשרית (${mins} דק')`,false);
-  if(navigator.vibrate)navigator.vibrate([50,30,50]);
-  // Remove from persisted list.
-  const list=_readRedoses().filter(r=>r.dueAt!==dueAt);_writeRedoses(list);
-}
-// Called from editCasualty to rehydrate pending redose alerts for this
-// casualty. Fires immediate alert if due time already passed while the
-// app was backgrounded.
-function _rehydrateRedoses(){
-  const list=_readRedoses();const now=Date.now();const keep=[];
-  list.forEach(r=>{
-    if(r.dueAt<=now){_fireRedose(r.drug,r.mins,r.dueAt);}
-    else{const id=setTimeout(()=>_fireRedose(r.drug,r.mins,r.dueAt),r.dueAt-now);_medRedoseTimers.push(id);keep.push(r);}
+function _readRedoses(){return [];}
+function _writeRedoses(list){try{localStorage.removeItem(_redoseKey());}catch(e){}}
+function _redoseDue(){
+  const now=Date.now(),out=[];
+  const meds=(_casualtyXABCDE&&_casualtyXABCDE.e&&_casualtyXABCDE.e.medications)||[];
+  Object.keys(_REDOSE_MIN).forEach(drug=>{
+    const last=meds.filter(m=>m.drug===drug&&!isNaN(Date.parse(m.time))).sort((a,b)=>Date.parse(a.time)-Date.parse(b.time)).pop();
+    if(last){const dueAt=Date.parse(last.time)+_REDOSE_MIN[drug]*60000;if(dueAt>now)out.push({drug,mins:_REDOSE_MIN[drug],dueAt,time:last.time});}
   });
-  _writeRedoses(keep);
+  return out;
 }
+function _scheduleRedose(drug,mins){ _rehydrateRedoses(); }
+function _fireRedose(drug,mins,dueAt,time,caseId){
+  // still the same casualty, and the dose is still on the record with that time?
+  if(!_casualtyEditMode||caseId!==(_casualtyEditId||_casualtyName))return;
+  const meds=(_casualtyXABCDE&&_casualtyXABCDE.e&&_casualtyXABCDE.e.medications)||[];
+  const newer=meds.filter(m=>m.drug===drug&&Date.parse(m.time)>Date.parse(time)).length;
+  if(!meds.some(m=>m.drug===drug&&m.time===time)||newer)return;
+  MedHost.toast(`⏰ ${drug} — מנה חוזרת אפשרית (${mins} דק')`,false);
+  if(navigator.vibrate)navigator.vibrate([50,30,50]);
+}
+// Called on open / add / undo / delete / time edit: one timer per drug, from the record as it is now.
+function _rehydrateRedoses(){
+  clearRedoseTimers(); _writeRedoses();
+  const caseId=_casualtyEditId||_casualtyName;
+  _redoseDue().forEach(r=>{const id=setTimeout(()=>_fireRedose(r.drug,r.mins,r.dueAt,r.time,caseId),r.dueAt-Date.now());_medRedoseTimers.push(id);});
+}
+// for Demo.reset and similar: drop every pending repeat-dose reminder, or rebuild them from the open record
+window._clearRedoseTimers=function(){clearRedoseTimers();};
+window._resyncRedoses=function(){try{_rehydrateRedoses();}catch(e){}};
 function clearRedoseTimers(){_medRedoseTimers.forEach(id=>clearTimeout(id));_medRedoseTimers=[];}
 
 // Tap-to-rate — no fixed countdown. Tap 1 starts the clock, every tap
@@ -2289,7 +2298,7 @@ function runClinicalAlerts(pulse,rr,spo2,bpSys,temp,etco2,radialPulse){
   }
   // --- IDF 2026 additions: temp, etco2, radial pulse ---
   if(temp!=null){
-    if(temp<35)alerts.push({level:'🔴',msg:`היפותרמיה (${temp}°C) — סיכון Lethal Triad — HPMK + חימום פעיל + פינוי דחוף`});
+    if(temp<35)alerts.push({level:'🔴',msg:`חום גוף ${temp}°C — חשד לשלישיית המוות (קור) — HPMK + חימום פעיל + פינוי דחוף`});
     else if(temp<36)alerts.push({level:'⚠️',msg:`היפותרמיה (${temp}°C) — HPMK עכשיו`});
     else if(temp>38.5)alerts.push({level:'⚠️',msg:`חום גבוה (${temp}°C) — בדוק סביבה, שקול פגיעת חום / פרכוס`});
   }

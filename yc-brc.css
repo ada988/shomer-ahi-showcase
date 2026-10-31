@@ -92,3 +92,8 @@
 .f-taglink.done>span{flex:1 1 0}
 .f-taglink.done .xbtn{flex:1 1 100%}
 .f-taglink.done bdi{white-space:nowrap}
+
+/* on-screen wristband preview: nothing under 16px (the printed band keeps its own sizes) */
+#incident-content .brc2 small,#incident-content .brc2 .b2-box span,#incident-content .brc2 .b2-box b,#incident-content .brc2 .b2-top span,#incident-content .brc2 .b2-top em,#incident-content .brc2 .b2-foot,#incident-content .brc2 .b2-qr small{font-size:16px!important;line-height:1.2}
+/* card section headings: sentence case, readable */
+.cc-sec h3{text-transform:none!important;letter-spacing:0!important;font-size:16px!important}

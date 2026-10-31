@@ -217,10 +217,14 @@
   var NUM = /(?:נפגע|Casualty)\s*#?(\d+)/, high = 0;
   window.casNum = function(c){ if (!c) return null; if (c.num) return +c.num; var m = NUM.exec(String(c.name || (c === window ? '' : ''))); return m ? +m[1] : null; };
   window.casLabel = function(c){ var n = window.casNum(c), he = window.ShowcaseI18n && window.ShowcaseI18n.lang === 'he'; return (he ? 'נפגע' : 'Casualty') + (n ? ' ' + n : ''); };
-  window.nextCasNum = function(){   // unique per incident and never reused (a high-water mark, not a count)
+  // Unique per incident and never reused: the high-water mark remembers every number that reached a saved record (even if that
+  // record was later removed). Asking for the next number does not use it up, so a new form closed empty leaves no gap.
+  window.nextCasNum = function(){
     (window._incidentCasualties || []).forEach(function(c){ var n = window.casNum(c); if (n > high) high = n; });
-    return ++high;
+    var open = window._casualtyEditMode ? window.casNum({ name: window._casualtyName }) || 0 : 0;   // the open form's number is taken too
+    return Math.max(high, open) + 1;
   };
+  window.resetCasNum = function(){ high = 0; };   // Reset demo: numbering continues after the demo casualties again
   window.casBadge = function(c, big){ var n = typeof c === 'number' ? c : window.casNum(c); return n ? '<span class="cnum' + (big ? ' lg' : '') + '" aria-hidden="true">' + n + '</span>' : ''; };
   window.casDesc = function(c){ var d = c && (c.desc || String(c.name || '').split(' — ').slice(1).join(' — ')); return d ? (window.ShowcaseI18n ? window.ShowcaseI18n.tr(d) : d) : ''; };
 })();

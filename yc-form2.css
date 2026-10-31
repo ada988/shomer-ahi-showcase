@@ -315,3 +315,19 @@ body.in-form #app-back{display:none!important}
 .tx-row{grid-template-columns:24px minmax(0,1fr) auto!important}
 .tx-row .tx-del{grid-column:2 / -1;justify-self:end}
 @media (min-width:420px){.tx-row{grid-template-columns:24px minmax(0,1fr) auto auto!important}.tx-row .tx-del{grid-column:auto}}
+/* casualty number: tap to change */
+#field .f-id-num{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:72px;min-height:56px;padding:4px;border:0;border-radius:14px;background:transparent;color:#cfd3da;font:inherit;cursor:pointer}
+#field .f-id-num small{display:flex;align-items:center;gap:4px;font-size:16px;font-weight:800}
+.f-num h3{display:flex;align-items:center;gap:8px}
+.f-num-v{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0}
+.f-num-v b{min-width:72px;font-size:44px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums}
+.f-num-msg{display:flex;gap:8px;align-items:flex-start;padding:10px;border-radius:12px;background:#6b4a00;font-size:17px;font-weight:800}
+.f-num .kp-keys button.ok,.f-num .kp-keys button.del{display:flex;align-items:center;justify-content:center;gap:6px}
+/* delete casualty: quiet at the end of the form, red only as an outline + word + icon */
+.f-del{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;margin:28px 0 8px;border-radius:14px;border:2px solid #b3141b;background:transparent;color:#ff9a9d;font:700 17px var(--f);cursor:pointer}
+.del-sheet h3{display:flex;align-items:center;gap:10px}
+.del-who{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0 12px;font-size:20px}
+.del-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:#2a2d35;font-size:16px;font-weight:700}
+.del-b{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.del-b .xbtn{min-height:60px;font-size:18px}
+.del-b .del-go{background:#b3141b!important;border-color:#b3141b!important;color:#fff!important}

@@ -25,7 +25,7 @@ function iosSheet(){
     + '<li><b>1</b><span>' + (ios ? L('Tap the Share button in Safari (square with an arrow).','לחצו על כפתור השיתוף ב-Safari (ריבוע עם חץ).') : L('Open the browser menu (three dots).','פתחו את תפריט הדפדפן (שלוש נקודות).')) + '</span></li>'
     + '<li><b>2</b><span>' + (ios ? L('Choose “Add to Home Screen”.','בחרו “הוסף למסך הבית”.') : L('Choose “Install app” or “Add to Home screen”.','בחרו “התקן אפליקציה” או “הוסף למסך הבית”.')) + '</span></li>'
     + '<li><b>3</b><span>' + L('Open it from the icon. It runs full screen, even without a network.','פתחו מהסמל. היא רצה במסך מלא, גם בלי רשת.') + '</span></li></ol>'
-    + '<button class="xbtn xbtn-primary pwa-ok" onclick="PWA.close()">' + L('GOT IT','הבנתי') + '</button></div>';
+    + '<button class="xbtn xbtn-primary pwa-ok" onclick="PWA.close()">' + ico('check', 26) + L('Got it','הבנתי') + '</button></div>';
   (document.getElementById('app') || document.body).appendChild(s);
 }
 function install(){
@@ -44,6 +44,11 @@ function schedule(){ clearTimeout(timer); timer = setTimeout(bar, 4000); }
 if (!standalone && mobile && ios) schedule();
 else if (!standalone && mobile) timer = setTimeout(function(){ if (!deferred) return; bar(); }, 8000);
 
+// a language switch redraws the instructions in place instead of leaving them in the old language
+document.addEventListener('DOMContentLoaded', function(){
+  var i = W.ShowcaseI18n; if (!i) return;
+  var prev = i.setLang; i.setLang = function(l){ prev(l); if (document.getElementById('pwa-sheet')) iosSheet(); var b = document.getElementById('pwa-bar'); if (b){ b.remove(); bar(); } };
+});
 W.PWA = {
   install: install,
   dismiss: function(){ set(KEY, '1'); remove(); },

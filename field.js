@@ -120,7 +120,7 @@ function idStrip(){
   var parts = String(name).split(' — '), sub = parts.slice(1).join(' — ') || who;
   // One compact row: who this is + their wristband. The triage selector right below carries the triage state.
   return '<div class="f-id' + (live ? '' : ' noname') + '">'
-    + (W.casBadge ? W.casBadge({ name: W._casualtyName }, true) : '') + '<span class="f-id-t"><b>' + parts[0] + '</b><button class="f-id-who" onclick="Field.editWho()" aria-label="' + L('Edit age, sex and weight','עריכת גיל, מין ומשקל') + '">' + (who || L('Age · sex · weight','גיל · מין · משקל'))
+    + (W.casBadge ? '<button class="f-id-num" onclick="Field.numSheet()" aria-label="' + L('Change the casualty number','שינוי מספר הנפגע') + '">' + W.casBadge({ name: W._casualtyName }, true) + '<small>' + ico('pencil', 18) + L('Change','שינוי') + '</small></button>' : '') + '<span class="f-id-t"><b>' + parts[0] + '</b><button class="f-id-who" onclick="Field.editWho()" aria-label="' + L('Edit age, sex and weight','עריכת גיל, מין ומשקל') + '">' + (who || L('Age · sex · weight','גיל · מין · משקל'))
     + (e.weightKg ? '' : '<u>' + L('Add weight','הוסיפו משקל') + '</u>') + ico('pencil', 20) + '</button></span>'
     + (c && c.tagId ? '<button class="f-id-b f-id-tag" onclick="Bracelet.open(\'' + esc(c._docId) + '\')" aria-label="' + L('Tag ','תג ') + esc(c.tagId) + '">' + ico('tag', 26) + '<b dir="ltr">' + esc(c.tagId) + '</b></button>'
        : '<button class="f-id-b f-id-link" onclick="Bracelet.linkForm()">' + ico('scan-line', 26) + '<b>' + L('Scan tag','סריקת תג') + '</b></button>')
@@ -181,6 +181,8 @@ function html(){
   h += me && me.tagId
     ? '<div class="f-taglink done">' + ico('tag', 30) + '<span><b>' + L('Linked to tag','מקושר לתג') + ' <bdi dir="ltr">' + esc(me.tagId) + '</bdi></b><small>' + L('Scanning this tag opens this record.','סריקת התג פותחת את התיק הזה.') + '</small></span><button class="xbtn" onclick="Bracelet.linkForm()">' + ico('scan-line', 24) + L('Change','החלפה') + '</button></div>'
     : '<button class="f-taglink" onclick="Bracelet.linkForm()">' + ico('scan-line', 34) + '<span><b>' + L('Link to tag','קישור לתג') + '</b><small>' + L('Done? Scan the tag on the casualty.','סיימתם? סרקו את התג שעל הנפגע.') + '</small></span></button>';
+  // 7 · delete this casualty (asks first, can be undone)
+  if (me) h += '<button class="f-del" onclick="Demo.deleteAsk(\'' + esc(me._docId) + '\')">' + ico('trash-2', 26) + '<span>' + L('Delete this casualty','מחיקת הנפגע') + '</span></button>';
   return '<section class="field" id="field" data-tour="field">' + top + '</section><section class="field fmon" id="fs-more"><div class="fs-h-wrap"><h2 class="fs-h">' + L('Monitor','ניטור') + '</h2></div>' + h + '</section>';
 }
 function vt(label, val, unit, idx, bad, word){
@@ -442,6 +444,58 @@ var Field = {
     W.MedHost.triggerAutoSave(); render(); Field.closeSheet();
     undoToast(L('Cricothyrotomy (' + (m === 'needle' ? 'needle' : 'surgical') + ') recorded, ' + hhmm(now), 'קוניוטומיה (' + (m === 'needle' ? 'מחט' : 'כירורגית') + ') תועדה, ' + hhmm(now)), doUndo);
   },
+  // ── Change the casualty number (numbers are often given physically on scene; the app must match). Never two casualties
+  // with one number: a clash offers a swap or another number. Logged on the timeline, with a named undo.
+  numSheet: function(){ Field._num = { v:'' }; Field._numDraw(); },
+  _numDraw: function(msg, clash){
+    Field.closeSheet();
+    var cur = W.casNum ? W.casNum({ name: W._casualtyName }) : null, N = Field._num || { v:'' };
+    var keys = ['1','2','3','4','5','6','7','8','9','⌫','0','OK'];
+    var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
+    el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet kp f-num" role="dialog" aria-modal="true" aria-labelledby="f-num-t"><div class="sheet-grab"></div>'
+      + '<h3 id="f-num-t">' + ico('pencil', 24) + L('Change number','שינוי מספר') + '</h3>'
+      + '<div class="f-num-v" dir="ltr">' + (W.casBadge ? W.casBadge(cur, true) : cur) + ico('arrow-right', 28) + '<b>' + (N.v || '—') + '</b></div>'
+      + (msg ? '<p class="f-num-msg" role="alert">' + ico('triangle-alert', 22) + '<span>' + msg + '</span></p>' : '<p class="kp-hint">' + L('1 to 999. Never reused.','1 עד 999. מספר לא חוזר.') + '</p>')
+      + (clash ? '<div class="f-acc-g"><button onclick="Field.numApply(' + clash + ', true)">' + ico('rotate-ccw', 24) + '<b>' + L('Swap numbers','החלפת מספרים') + '</b><small>' + L('This one gets ' + clash + ', the other gets ' + cur,'זה יקבל ' + clash + ', השני יקבל ' + cur) + '</small></button><button onclick="Field._num={v:\'\'};Field._numDraw()">' + ico('pencil', 24) + '<b>' + L('Pick another','מספר אחר') + '</b><small>' + L('Type a free number','הקלידו מספר פנוי') + '</small></button></div>'
+        : '<div class="kp-keys" dir="ltr">' + keys.map(function(k){ return '<button class="' + (k === 'OK' ? 'ok' : k === '⌫' ? 'del' : '') + '" onclick="Field.numKey(\'' + k + '\')">' + (k === 'OK' ? ico('check', 26) + L('Save','שמור') : k === '⌫' ? ico('arrow-left', 24) + L('Delete','מחק') : k) + '</button>'; }).join('') + '</div>')
+      + '<button class="xbtn f-cancel" onclick="Field.closeSheet()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div>';
+    app().appendChild(el);
+  },
+  numKey: function(k){
+    var N = Field._num || (Field._num = { v:'' });
+    if (k === '⌫') N.v = N.v.slice(0, -1);
+    else if (k === 'OK'){
+      var n = parseInt(N.v, 10), cur = W.casNum({ name: W._casualtyName });
+      if (!(n >= 1 && n <= 999)) return Field._numDraw(L('Type a number from 1 to 999.','הקלידו מספר בין 1 ל-999.'));
+      if (n === cur) return Field.closeSheet();
+      var other = (W._incidentCasualties || []).filter(function(c){ return c._docId !== W._casualtyEditId && W.casNum(c) === n; })[0];
+      if (other) return Field._numDraw(L('Number ' + n + ' is Casualty ' + n + ' already.','המספר ' + n + ' כבר שייך לנפגע ' + n + '.'), n);
+      return Field.numApply(n, false);
+    }
+    else if (N.v.length < 3) N.v = (N.v === '0' ? '' : N.v) + k;
+    Field._numDraw();
+  },
+  numApply: function(n, swap){
+    var list = W._incidentCasualties || [], cur = W.casNum({ name: W._casualtyName });
+    var me = list.filter(function(c){ return c._docId === W._casualtyEditId; })[0];
+    var other = swap ? list.filter(function(c){ return c._docId !== W._casualtyEditId && W.casNum(c) === n; })[0] : null;
+    var before = { name: W._casualtyName, me: me ? { id: me._docId, name: me.name, num: me.num } : null, other: other ? { id: other._docId, name: other.name, num: other.num } : null };
+    var put = function(id, name, num){ var c = list.filter(function(x){ return x._docId === id; })[0]; if (c){ c.name = name; c.num = num; } if (W._upsertOfflineCasualty) try { W._upsertOfflineCasualty({ _docId:id, name:name, num:num }); } catch (e) {} };
+    W._casualtyName = 'נפגע ' + n;
+    if (me) put(me._docId, W._casualtyName, n);
+    if (other) put(other._docId, 'נפגע ' + cur, cur);
+    var line = { time:new Date(), category:'note', action:'מספר שונה ' + cur + ' → ' + n + (other ? ' (הוחלף עם נפגע ' + n + ')' : ''), details:'' };
+    (W._casualtyTimeline || []).push(line);
+    Field._num = null; Field.closeSheet();
+    if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave(); render();
+    undoToast(L('Number changed ' + cur + ' → ' + n + (other ? ' (swapped)' : ''),'המספר שונה ' + cur + ' → ' + n + (other ? ' (הוחלף)' : '')), function(){
+      W._casualtyName = before.name;
+      if (before.me) put(before.me.id, before.me.name, before.me.num);
+      if (before.other) put(before.other.id, before.other.name, before.other.num);
+      var tl = W._casualtyTimeline || [], j = tl.indexOf(line); if (j >= 0) tl.splice(j, 1);
+      if (W.MedHost && W.MedHost.triggerAutoSave) W.MedHost.triggerAutoSave(); render();
+    });
+  },
   injEdit: function(on){ Field._injEdit = !!on; render(); if (on) setTimeout(function(){ var i = document.getElementById('pat-inj'); if (i) i.focus(); }, 60); },
   injStep: function(delta){
     var ii = injuryInfo(); if (!ii) return;
@@ -495,7 +549,8 @@ var Field = {
     var s = SITES.filter(function(x){ return x[0] === site; })[0];
     undoToast(L('Tourniquet ON — ' + (s ? s[1] : site) + ' — ' + hhmm(new Date().toISOString()), 'חוסם עורקים הונח — ' + (s ? s[2] : site) + ' — ' + hhmm(new Date().toISOString())), doUndo);
   },
-  closeSheet: function(){ var s = document.getElementById('f-sheet'); if (s) s.remove(); },
+  // remember what was open, so a sheet rebuilt right away (same kind) is treated as an update, not a new sheet
+  closeSheet: function(){ var s = document.getElementById('f-sheet'); if (s){ var in_ = s.querySelector('.sheet'); W._fsSwap = { t:Date.now(), cls:in_ ? in_.className : '', y:in_ ? in_.scrollTop : 0 }; s.remove(); } },
   march: function(tab){
     W._casualtyActiveTab = tab; render();
     setTimeout(function(){ if (W.FormUI) W.FormUI.jump('fs-care'); }, 60);
@@ -569,8 +624,7 @@ var Field = {
   // GCS and pupils, quick entry
   // GCS and pupils, quick entry. Best answer first; every option = colour (good → bad) + icon + number + word.
   gcsSheet: function(){
-    var prevS = document.querySelector('#f-sheet .f-gcs'), keepY = prevS ? prevS.scrollTop : 0;
-    Field.closeSheet();
+    var prevS = document.querySelector('#f-sheet .f-gcs');
     var d = ((W._casualtyXABCDE || {}).d) || {}, g = d.gcsDetail || {}, p = d.pupils || {};
     var tone = function(v, max){ var f = (v - 1) / (max - 1); return f >= 0.999 ? 'g-ok' : f >= 0.5 ? 'g-mid' : f > 0 ? 'g-low' : 'g-bad'; };
     var row = function(key, en, he, opts){
@@ -589,16 +643,22 @@ var Field = {
       return '<div class="f-gcs-r"><span>' + L(en, he) + '</span><div class="f-pup">' + opt.map(function(o){ var on = cur === o[0]; return '<button class="' + o[4] + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="Field.pupil(\'' + side + '\',\'' + o[0] + '\')">' + ico(o[1], 26) + '<span>' + L(o[2], o[3]) + '</span>' + (on ? ico('check', 22, 'g-chk') : '') + '</button>'; }).join('')
         + '<button class="warn' + (q.reactive === false ? ' on' : '') + '" aria-pressed="' + (q.reactive === false) + '" onclick="Field.pupil(\'' + side + '\',\'fixed\')">' + ico('eye-off', 26) + '<span>' + L('No light reaction','לא מגיב לאור') + '</span>' + (q.reactive === false ? ico('check', 22, 'g-chk') : '') + '</button></div></div>';
     };
-    var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
-    el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet f-gcs" role="dialog" aria-modal="true" aria-labelledby="f-gcs-t"><div class="sheet-grab"></div>'
-      + '<div class="g-top"><h3 id="f-gcs-t">GCS</h3><b class="g-tot" dir="ltr">' + (tot == null ? '—' : tot) + '<small>/15</small></b>' + band + '</div>'
+    var body = '<div class="sheet-grab"></div><div class="g-top"><h3 id="f-gcs-t">GCS</h3><b class="g-tot" dir="ltr">' + (tot == null ? '—' : tot) + '<small>/15</small></b>' + band + '</div>'
       + row('eye', 'Eyes', 'עיניים', [['eye','Open by themselves','פקוחות מעצמן'], ['ear','Open to voice','נפתחות לקול'], ['zap','Open to pain','נפתחות לכאב'], ['eye-off','None','אין']])
       + row('verbal', 'Voice', 'דיבור', [['message-circle','Talks, oriented','מדבר, מתמצא'], ['circle-help','Confused','מבולבל'], ['volume-2','Words only','מילים בלבד'], ['audio-lines','Sounds only','קולות בלבד'], ['mic-off','None','אין']])
       + row('motor', 'Movement', 'תנועה', [['thumbs-up','Obeys','מציית לפקודה'], ['target','Points to pain','ממקם כאב'], ['arrow-left','Pulls away','נסוג מכאב'], ['minimize-2','Bends (flexion)','כיפוף לא תקין'], ['maximize-2','Stretches (extension)','יישור לא תקין'], ['x','None','אין']])
       + '<h3>' + L('Pupils','אישונים') + '</h3>' + pup('right', 'Right eye', 'עין ימין') + pup('left', 'Left eye', 'עין שמאל')
-      + '<button class="xbtn xbtn-primary" onclick="Field.closeSheet()">' + ico('check', 26) + L('Done','סיום') + '</button></div>';
+      + '<button class="xbtn xbtn-primary" onclick="Field.closeSheet()">' + ico('check', 26) + L('Done','סיום') + '</button>';
+    // already open: update the contents in place, so the sheet doesn't close and reopen on every tap
+    if (prevS){
+      var y = prevS.scrollTop, fa = document.activeElement && prevS.contains(document.activeElement) ? document.activeElement.getAttribute('onclick') : null;
+      prevS.innerHTML = body; prevS.scrollTop = y;
+      if (fa){ var nb = prevS.querySelector('[onclick="' + fa.replace(/"/g, '\\"') + '"]'); if (nb) nb.focus({ preventScroll:true }); }
+      return;
+    }
+    var el = document.createElement('div'); el.id = 'f-sheet'; el.className = 'sheet-wrap no-polish';
+    el.innerHTML = '<div class="sheet-dim" onclick="Field.closeSheet()"></div><div class="sheet f-gcs" role="dialog" aria-modal="true" aria-labelledby="f-gcs-t">' + body + '</div>';
     app().appendChild(el);
-    var nS = el.querySelector('.f-gcs'); if (nS && keepY) nS.scrollTop = keepY;
   },
   gcs: function(key, v){ snapshot(); if (W.setGCSComponent) W.setGCSComponent(key, v); W.MedHost.triggerAutoSave(); Field.gcsSheet(); },
   pupil: function(side, k){

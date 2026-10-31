@@ -6,7 +6,7 @@ Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא �
 
 Object.assign(window.SHOWCASE_DICT, {'מוכן — שייך לרכב':'Ready: assign to an ambulance','נפגע דחוף ממתין':'URGENT casualty waiting','נפגעים דחופים ממתינים':'URGENT casualties waiting','לפינוי מעל 15 דק׳':'for evacuation over 15 min'});
 
-Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא נקבע':'Not set','Lethal Triad':'Lethal triad (cold, acidosis, bleeding)'});
+Object.assign(window.SHOWCASE_DICT, {'עדיפות שנייה':'DELAYED','לא נקבע':'Not set','Lethal Triad':'Suspected lethal-triad risk'});
 
 Object.assign(window.SHOWCASE_DICT, {'בזירה':'on scene','· מוכן — שייך לרכב':'· Ready: assign to an ambulance'});
 
@@ -31,3 +31,7 @@ Object.assign(window.SHOWCASE_DICT, {'שאיבת הפרשות':'Suction','אינ
 
 // Form 101 bug round: localised engine lines
 Object.assign(window.SHOWCASE_DICT, {'מקבע אגן (בגובה הטרוכנטרים)':'Pelvic binder (at the greater trochanters)','GCS עיניים':'GCS eyes','GCS דיבור':'GCS voice','GCS תנועה':'GCS movement','מחיקה':'Delete','(אחורי)':'(back)','גישה גרמית (IO)':'IO access'});
+
+Object.assign(window.SHOWCASE_DICT, {'מספר שונה':'Number changed','הוחלף עם נפגע':'swapped with Casualty'});
+
+Object.assign(window.SHOWCASE_DICT, {'חשד לשלישיית המוות: קור + ל״ד נמוך':'Suspected lethal-triad risk: cold + low BP','חשד לשלישיית המוות (קור)':'Suspected lethal-triad risk (cold)','חום גוף':'Body temperature'});

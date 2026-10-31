@@ -287,23 +287,23 @@ function braceletHtml(c, opts){
   return '<div class="brc2' + (opts.print ? ' brc-print' : '') + (opts.list ? ' brc-list' : '') + '" style="--tg:' + tg.c + ';--tgt:' + tg.tx + '">'
     + '<div class="b2-tri">' + (no ? '<strong class="b2-num" dir="ltr">' + no + '</strong>' : '') + sh + '<b>' + esc(L(tg.en, tg.he)) + '</b></div>'
     + '<div class="b2-main">'
-    +   '<div class="b2-top"><span>' + L('SHOMER AHI · CASUALTY ID','שומר אחי · זיהוי נפגע') + '</span><em>' + L('DEMO','דמו') + '</em></div>'
-    +   '<div class="b2-no"><small>' + L('NO.','מס׳') + '</small><b dir="ltr">' + esc(s.s) + '</b></div>'
+    +   '<div class="b2-top"><span>' + L('Shomer Ahi · casualty ID','שומר אחי · זיהוי נפגע') + '</span><em>' + L('Demo','דמו') + '</em></div>'
+    +   '<div class="b2-no"><small>' + L('No.','מס׳') + '</small><b dir="ltr">' + esc(s.s) + '</b></div>'
     +   '<div class="b2-who">' + esc(who) + '</div>'
     +   '<div class="b2-grid">'
     +     (tq ? '<div class="b2-box set"><small>' + L('TQ','חוסם') + '</small><b>' + hhmm(tq[1]) + '</b><span>' + esc(regionName(tq[0])) + '</span></div>' : '<div class="b2-box blank"><small>' + L('TQ','חוסם') + '</small><b>__ : __</b></div>')
-    +     (meds.length ? '<div class="b2-box set"><small>' + L('DRUGS','תרופות') + '</small>' + meds.map(function(m){ return '<span><b style="font-size:1em">' + hhmm(m[3]) + '</b> ' + esc(T(m[0])) + '</span>'; }).join('') + '</div>' : '<div class="b2-box blank"><small>' + L('DRUGS + TIME','תרופות + שעה') + '</small></div>')
-    +     (evacCat(s) ? '<div class="b2-box set"><small>' + L('EVAC','פינוי') + '</small><span>' + esc(evacCat(s)) + '</span></div>' : '<div class="b2-box blank"><small>' + L('EVAC ORDER','סדר פינוי') + '</small></div>')
+    +     (meds.length ? '<div class="b2-box set"><small>' + L('Drugs','תרופות') + '</small>' + meds.map(function(m){ return '<span><b style="font-size:1em">' + hhmm(m[3]) + '</b> ' + esc(T(m[0])) + '</span>'; }).join('') + '</div>' : '<div class="b2-box blank"><small>' + L('DRUGS + TIME','תרופות + שעה') + '</small></div>')
+    +     (evacCat(s) ? '<div class="b2-box set"><small>' + L('Evac','פינוי') + '</small><span>' + esc(evacCat(s)) + '</span></div>' : '<div class="b2-box blank"><small>' + L('Evac order','סדר פינוי') + '</small></div>')
     +   '</div>'
     +   '<div class="b2-grid">'
-    +     '<div class="b2-box ' + (s.np ? 'set' : 'blank') + '"><small>' + L('NIL BY MOUTH','צום') + '</small><b>' + (s.np ? L('YES','כן') : '☐') + '</b></div>'
-    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('ALLERGY','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 60)) + '</span>' : '') + '</div>'
-    +     '<div class="b2-box blank"><small>' + L('BLOOD TYPE','סוג דם') + '</small></div>'
+    +     '<div class="b2-box ' + (s.np ? 'set' : 'blank') + '"><small>' + L('Nil by mouth','צום') + '</small><b>' + (s.np ? L('Yes','כן') : '☐') + '</b></div>'
+    +     '<div class="b2-box ' + (s.al ? 'set' : 'blank') + '"><small>' + L('Allergy','אלרגיה') + '</small>' + (s.al ? '<span>' + esc(String(T(s.al)).slice(0, 60)) + '</span>' : '') + '</div>'
+    +     '<div class="b2-box blank"><small>' + L('Blood type','סוג דם') + '</small></div>'
     +   '</div>'
-    +   '<div class="b2-foot">' + L('DEMO. NOT FOR CLINICAL USE. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
+    +   '<div class="b2-foot">' + L('Demo. Not for clinical use. Fictional data.','דמו. לא לשימוש קליני. נתונים בדויים.') + '</div>'
     + '</div>'
-    + '<div class="b2-qr">' + qrSvg(url, opts.print ? 140 : 176) + '<small>' + L('SCAN WITH ANY PHONE CAMERA','סרקו בכל מצלמת טלפון') + '</small></div>'
-    + '<div class="b2-stub"><span>' + L('TEAR OFF · KEEP WITH STRETCHER','גזרו · הצמידו לאלונקה') + '</span><b dir="ltr">' + (no ? '#' + no + ' · ' : '') + esc(s.s) + '</b><span>' + esc(L(tg.en, tg.he)) + '</span></div>'
+    + '<div class="b2-qr">' + qrSvg(url, opts.print ? 140 : 176) + '<small>' + L('Scan with any phone camera','סרקו בכל מצלמת טלפון') + '</small></div>'
+    + '<div class="b2-stub"><span>' + L('Tear off · keep with the stretcher','גזרו · הצמידו לאלונקה') + '</span><b dir="ltr">' + (no ? '#' + no + ' · ' : '') + esc(s.s) + '</b><span>' + esc(L(tg.en, tg.he)) + '</span></div>'
     + '</div>';
 }
 
@@ -459,8 +459,8 @@ function close(silent){
   document.body.classList.remove('bo-open');
   if (!silent && /#b=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
 }
-function topbar(title, back){
-  return '<header class="bo-top"><button class="bo-x" onclick="Bracelet.close()" aria-label="' + L('Close','סגור') + '">' + ico(back ? (document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left') : 'x', 24) + '<span>' + (back ? L('Back','חזרה') : L('Close','סגור')) + '</span></button><div class="bo-title">' + title + '</div><button class="beta-pill" onclick="Disclaimer.open()" aria-label="' + L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים') + '">' + ico('triangle-alert', 20) + '<b>' + L('Beta','בטא') + '</b><span>· ' + L('demo','דמו') + '</span></button></header>';
+function topbar(title, back, backJs){
+  return '<header class="bo-top"><button class="bo-x" onclick="' + (backJs || 'Bracelet.close()') + '" aria-label="' + L('Close','סגור') + '">' + ico(back ? (document.documentElement.dir === 'rtl' ? 'arrow-right' : 'arrow-left') : 'x', 24) + '<span>' + (back ? L('Back','חזרה') : L('Close','סגור')) + '</span></button><div class="bo-title">' + title + '</div><button class="beta-pill" onclick="Disclaimer.open()" aria-label="' + L('Important notice: early beta demo, do not use on real patients','הודעה חשובה: דמו בטא מוקדמת, אין להשתמש בנפגעים אמיתיים') + '">' + ico('triangle-alert', 20) + '<b>' + L('Beta','בטא') + '</b><span>· ' + L('demo','דמו') + '</span></button></header>';
 }
 
 function showCard(s, src){
@@ -631,12 +631,13 @@ function renderTab(){
 function pick(docId){
   selId = docId;
   if (W.renderIncidentPage) W.renderIncidentPage();
-  setTimeout(function(){ var el = document.getElementById('bt-sel'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 30);
+  setTimeout(function(){ var el = document.getElementById('bt-sel'), sc = document.getElementById('incident-content'); if (!el || !sc) return; var d = el.getBoundingClientRect().top - sc.getBoundingClientRect().top, k = sc.offsetHeight ? sc.getBoundingClientRect().height / sc.offsetHeight || 1 : 1; sc.scrollTo({ top: sc.scrollTop + d / k - 8, behavior:'smooth' }); }, 30);
 }
 
 // ── Hash route: a scanned QR opens the card directly ───────────
 function route(){
   var tg = /#t=/.test(location.hash) ? parseTag(location.hash) : null;
+  if (!tg && /#t=/.test(location.hash)){ history.replaceState(null, '', location.pathname + location.search); (function t(){ if (document.querySelector('.dn')) return setTimeout(t, 400); W.toast(L('That tag link is not valid. Tags look like SA-0427. Scan the tag again, or type its ID in Scan.','קישור התג אינו תקין. תג נראה כך: SA-0427. סרקו שוב את התג, או הקלידו את המספר בסריקה.'), false); })(); return; }
   if (tg){ history.replaceState(null, '', location.pathname + location.search); (function t(){ if (document.querySelector('.dn')) return setTimeout(t, 400); openTag(tg); })(); return; }
   if (!/#b=/.test(location.hash)){ if (overlay && overlay.classList.contains('bo-card')) close(true); return; }
   var s = parseScan(location.hash);
@@ -671,9 +672,11 @@ function casList(){ return W._incidentCasualties || []; }
 function byId(id){ return casList().filter(function(c){ return c._docId === id; })[0]; }
 function byTag(t){ return casList().filter(function(c){ return c.tagId === t; })[0]; }
 function nm(c){ return W.casLabel ? W.casLabel(c) : esc(String(T(c.name)).split(' — ')[0]); }
-function freeTags(n){
+var printedTo = 0;   // highest tag number already printed this session
+function readPrinted(){ try { printedTo = Math.max(printedTo, +sessionStorage.getItem('sh_tags_printed') || 0); } catch (e) {} return printedTo; }
+function freeTags(n, fresh){
   var used = {}, out = []; casList().forEach(function(c){ if (c.tagId) used[c.tagId] = 1; });
-  for (var k = TAG_FIRST_BLANK; out.length < n && k < 9999; k++){ var id = 'SA-' + ('000' + k).slice(-4); if (!used[id]) out.push(id); }
+  for (var k = fresh ? Math.max(TAG_FIRST_BLANK, readPrinted() + 1) : TAG_FIRST_BLANK; out.length < n && k < 9999; k++){ var id = 'SA-' + ('000' + k).slice(-4); if (!used[id]) out.push(id); }
   return out;
 }
 function tagSamples(blankOnly){
@@ -720,15 +723,7 @@ function tlPop(c, action, where){
 function linkTag(t){
   var mode = scanMode, c = mode && byId(mode.docId); if (!c) return;
   var other = byTag(t);
-  if (other && other._docId !== c._docId){
-    mount(topbar(L('Tag already in use','התג כבר בשימוש'), true) + '<div class="bo-body"><div class="tg-warn">' + ico('triangle-alert', 30)
-      + '<div><b dir="auto">' + L('Tag ' + t + ' is already on ' + nm(other),'התג ' + t + ' כבר מקושר ל' + nm(other)) + '</b><p>' + L('One tag, one casualty. Check the tag on the casualty in front of you.','תג אחד, נפגע אחד. בדקו את התג על הנפגע שמולכם.') + '</p></div></div>'
-      + '<div class="bo-actions"><button class="xbtn xbtn-primary" onclick="Bracelet.close();Demo.openCasualty(\'' + esc(other._docId) + '\')">' + ico('file-text', 24) + L('Open ' + nm(other),'פתיחת ' + nm(other)) + '</button>'
-      + '<button class="xbtn" onclick="Bracelet.scanTag(\'' + esc(c._docId) + '\')">' + ico('scan-line', 24) + L('Scan another tag','סריקת תג אחר') + '</button>'
-      + '<button class="xbtn" onclick="Bracelet.close()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div></div>', 'bo-card bo-tagwarn', null);
-    scanMode = null;
-    return;
-  }
+  if (other && other._docId !== c._docId){ tagInUse(t, c, other); return; }
   scanMode = null; close(true);
   if (other){ W.toast(L(nm(c) + ' is already on tag ' + t, nm(c) + ' כבר מקושר לתג ' + t), false); if (mode.after) mode.after(); return; }
   var prev = c.tagId || '', action = 'קושר לתג ' + t;
@@ -740,6 +735,15 @@ function linkTag(t){
   if (W.Field && W.Field.toast) W.Field.toast(msg, undo); else W.toast(msg, false);
   if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
   if (mode.after) mode.after();
+}
+function tagInUse(t, c, other){
+  var back = 'Bracelet.scanTag(\'' + esc(c._docId) + '\')';
+  mount(topbar(L('Tag already in use','התג כבר בשימוש'), true, back) + '<div class="bo-body"><div class="tg-warn">' + ico('triangle-alert', 30)
+    + '<div><b dir="auto">' + L('Tag ' + t + ' is already on ' + nm(other),'התג ' + t + ' כבר מקושר ל' + nm(other)) + '</b><p>' + L('One tag, one casualty. Check the tag on the casualty in front of you.','תג אחד, נפגע אחד. בדקו את התג על הנפגע שמולכם.') + '</p></div></div>'
+    + '<div class="bo-actions"><button class="xbtn xbtn-primary" onclick="Bracelet.close();Demo.openCasualty(\'' + esc(other._docId) + '\')">' + ico('file-text', 24) + L('Open ' + nm(other),'פתיחת ' + nm(other)) + '</button>'
+    + '<button class="xbtn" onclick="' + back + '">' + ico('scan-line', 24) + L('Scan another tag','סריקת תג אחר') + '</button>'
+    + '<button class="xbtn" onclick="Bracelet.close()">' + ico('x', 24) + L('Cancel','ביטול') + '</button></div></div>', 'bo-card bo-tagwarn', function(){ tagInUse(t, c, other); });
+  scanMode = null;
 }
 // Link the casualty open in Form 101 (saving a brand-new one first so it has an id).
 function linkForm(){
@@ -776,7 +780,8 @@ function tagHtml(id, print){
 }
 function printTags(n){
   n = n || 12;
-  var he = lang() === 'he', ids = freeTags(n);
+  var he = lang() === 'he', ids = freeTags(n, true);
+  printedTo = +ids[ids.length - 1].slice(3); try { sessionStorage.setItem('sh_tags_printed', String(printedTo)); } catch (e) {}
   var css = '*{box-sizing:border-box;margin:0}body{font-family:Inter,Heebo,Arial,sans-serif;background:#eceff3;color:#111;padding:20px}'
     + '.bar{max-width:210mm;margin:0 auto 14px;background:#fff;border-radius:10px;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between}.bar b{display:block;font-size:15px}.bar span{font-size:12px;color:#555}.bar button{background:#111;color:#fff;border:0;border-radius:8px;padding:11px 18px;font:600 14px inherit;cursor:pointer}'
     + '.sheet{max-width:210mm;margin:0 auto;background:#fff;padding:10mm;display:grid;grid-template-columns:repeat(2,1fr);gap:6mm}'

@@ -14,19 +14,37 @@ var STEPS = [
   { k:'hand',   t:['Hand off','העברה'],  d:['The full record on a QR wristband any phone can read.','התיק המלא על צמיד QR שכל טלפון קורא.'] }
 ];
 
-var active = null;
+var active = null, doseTimer = 0;
+// close anything layered over the phone (sheets, help, wristband, scanner) so the row's screen is what you see.
+// The first-visit medical notice is never dismissed this way: it must be acknowledged.
+function clearPhone(){
+  clearTimeout(doseTimer);
+  if (w.Help && w.Help.close) try { w.Help.close(); } catch (e) {}
+  if (w.Field && w.Field.doseClose) try { w.Field.doseClose(); } catch (e) {}
+  if (w.Demo && w.Demo.closeOverlays) w.Demo.closeOverlays(true);
+  ['#help-sheet', '.bo', '#dose-sheet', '#qt'].forEach(function(sel){ document.querySelectorAll('#app ' + sel).forEach(function(n){ n.remove(); }); });
+}
 function show(k){
+  var gate = document.querySelector('#app .dn[role=alertdialog]');
+  if (gate){ var b = gate.querySelector('.dn-ok'); if (b) b.focus(); return; }
   active = k;
+  if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop();
+  clearPhone();
   var run = {
     triage: function(){ return w.Quick && w.Quick.open(); },
     treat:  function(){ return w.Demo.go('casualty'); },
-    dose:   function(){ return Promise.resolve(w.Demo.go('casualty')).then(function(){ setTimeout(function(){ if (w.Field && w.Field.doseOpen) w.Field.doseOpen('now'); }, 350); }); },
+    dose:   function(){ return Promise.resolve(w.Demo.go('casualty')).then(function(){
+              doseTimer = setTimeout(function(){
+                // only if the Dose row is still the one chosen and the casualty card is really open
+                if (active === 'dose' && w._casualtyEditMode && w.Field && w.Field.doseOpen) w.Field.doseOpen('now');
+              }, 350); }); },
     evac:   function(){ return w.Demo.tab('evac'); },
     hand:   function(){ return w.Demo.tab('bracelets'); }
   }[k];
-  if (w.Tour && w.Tour.active && w.Tour.active()) w.Tour.stop();
   try { if (run) run(); } catch (e) { console.error(e); }
   mark();
+  // keep keyboard focus on the row that was used, after the app has re-rendered
+  setTimeout(function(){ var r = document.querySelector('.lp-row[data-k="' + k + '"]'); if (r && document.activeElement !== r && !document.querySelector('#app .dn')) r.focus({ preventScroll:true }); }, 60);
 }
 function mark(){
   document.querySelectorAll('.lp-row').forEach(function(el){
@@ -140,10 +158,12 @@ function render(){
 
   h += '<footer class="lp-foot"><span>' + L('Shomer Ahi — “my brother’s keeper”. By medics, for medics.','שומר אחי — ממטפלים, עבור מטפלים.') + '</span><span>' + L('Works offline · installs as an app','עובד בלי רשת · מותקן כאפליקציה') + '</span></footer>';
 
+  var fl = document.activeElement && document.activeElement.closest && document.activeElement.closest('.lp-lang') ? document.activeElement.getAttribute('data-lang') : null;
   root.innerHTML = h;
   if (w.Demo && w.Demo.renderSide) w.Demo.renderSide();
   appQr();
   mark();
+  if (fl){ var lb = root.querySelector('.lp-lang button[data-lang="' + fl + '"]'); if (lb) lb.focus(); }
 }
 
 // keep real phone proportions: the phone is laid out at 410×880 and scaled as one object to fit the window
@@ -151,7 +171,7 @@ function fit(){
   var r = document.documentElement.style;
   if (w.innerWidth < 901){ r.removeProperty('--ph-s'); return; }
   var s = Math.min(1, (w.innerHeight - 48) / 880, (w.innerWidth * 0.45) / 410);
-  r.setProperty('--ph-s', Math.max(0.55, s).toFixed(3));
+  r.setProperty('--ph-s', Math.max(0.4, s).toFixed(3));   // the whole phone always fits the window height
 }
 w.addEventListener('resize', fit);
 w.Landing = { render: render, show: show };
@@ -159,5 +179,8 @@ document.addEventListener('DOMContentLoaded', function(){
   var s = w.ShowcaseI18n;
   if (s){ var prev = s.setLang; s.setLang = function(l){ prev(l); render(); }; }
   fit(); render(); clock(); setInterval(clock, 15000);
+  // a tap inside the phone means the visitor has moved on: the row highlight is no longer true
+  var app = document.getElementById('app');
+  if (app) app.addEventListener('click', function(e){ if (e.isTrusted && active){ active = null; mark(); } }, true);
 });
 })(window);

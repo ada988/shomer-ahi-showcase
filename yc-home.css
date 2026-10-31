@@ -115,3 +115,38 @@
 #incident-content .sec-label{margin:0 0 10px!important}
 .seg-tabs button{display:inline-flex!important;align-items:center;justify-content:center;gap:8px}
 .beta-pill svg{flex:none}
+
+/* Due now: one row per task. Triage colour + number identify the casualty; the task leads; minutes sit in their own column. */
+.due-h{display:flex;align-items:center;gap:10px;margin:24px 0 10px}
+.due-h .sec-label{margin:0!important}
+.due-n{min-width:28px;height:28px;padding:0 8px;border-radius:14px;display:grid;place-items:center;background:#2a2d35;color:#fff;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.due{display:grid;gap:8px}
+#incident-content .due-r{display:grid;grid-template-columns:56px minmax(0,1fr) auto 22px;align-items:center;gap:12px;width:100%;min-height:72px;padding:8px 12px 8px 8px;border:0!important;border-radius:16px!important;background:#15171c!important;color:#fff;text-align:start;font:inherit;cursor:pointer}
+[dir=rtl] #incident-content .due-r{padding:8px 8px 8px 12px}
+#incident-content .due-r.hi{background:#2a1214!important}
+.due-id{width:56px;height:56px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.due-id b{font-size:24px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.due-id.t-red{background:#d6242b;color:#fff}.due-id.t-yellow{background:#ffd23f;color:#111}.due-id.t-green{background:#1fb26b;color:#062b17}
+.due-id.t-black,.due-id.t-gray{background:#000;color:#fff;box-shadow:inset 0 0 0 2px #5a606c}.due-id.t-none{background:#2a2d35;color:#fff}
+.due-id svg{width:16px!important;height:16px!important;min-width:16px!important;min-height:16px!important}
+.due-t{min-width:0}
+.due-t b{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:800;line-height:1.2}
+.due-t b .ui-i{flex:none;color:#ffd23f}
+.due-r.hi .due-t b .ui-i{color:#ff9a9d}
+.due-t small{display:block;margin-top:3px;font-size:16px;font-weight:600;color:#b9bec8}
+.due-m{display:flex;flex-direction:column;align-items:center;min-width:52px;padding:6px 8px;border-radius:10px;background:#23262e;line-height:1}
+.due-m b{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+.due-m small{font-size:16px;font-weight:600;color:#b9bec8;margin-top:2px}
+.due-r>.ui-i:last-child{color:#8e939d}
+
+/* long press feedback on casualty rows, the row action sheet, and casualty history */
+#incident-content .lp-hold{transform:scale(.98);transition:transform .5s ease;box-shadow:inset 0 0 0 3px #fff!important}
+.ca-b{display:grid;gap:10px;margin-top:14px}.ca-b .xbtn{min-height:60px;font-size:18px;justify-content:center}
+.ca-b .del-go{background:#b3141b!important;border-color:#b3141b!important;color:#fff!important}
+.hist-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.hist-top h3{display:flex;align-items:center;gap:10px;margin:0}
+.hist-l{display:grid;gap:8px;margin-top:10px;max-height:60vh;overflow-y:auto}
+.hist-r{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#15171c}
+.hist-r.is-del{background:#1a1214}
+.hist-m{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}.hist-m b{font-size:18px}
+.hist-st{display:inline-flex;align-items:center;gap:6px;font-size:16px;font-weight:700;color:#b9bec8}.hist-st.del{color:#ff9a9d}
+.hist-r .xbtn{min-height:52px}

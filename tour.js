@@ -42,7 +42,7 @@ var STEPS = [
   { icon:'syringe', pre: function(){ return form().then(function(){ W.Field.doseOpen('now'); }); }, target:'.dz-dec', off:96,
     en:['Dose calculator','Reads the findings, then: give now, changed dose, do not give. Every syringe is drawn.'],
     he:['מחשבון מינונים','קורא את הממצאים, ואז: לתת עכשיו, מינון משתנה, לא לתת. כל מזרק מצויר.'] },
-  { icon:'triangle-alert', pre: function(){ return form().then(function(){ return later(demoAlert, 60); }); }, target:'#tour-rec', leave: dropDemo,
+  { icon:'triangle-alert', pre: function(my){ return form().then(function(){ return later(function(){ if (my === tok && root) demoAlert(); }, 60); }); }, target:'#tour-rec', leave: dropDemo,
     en:['Alerts after each action','New findings pop up as “Suspected…”, never a diagnosis. Tap for the full advice.'],
     he:['התראה אחרי כל פעולה','ממצא חדש קופץ כ״חשד ל…״, אף פעם לא אבחנה. לחיצה להמלצה המלאה.'] },
   { icon:'ambulance', pre: function(){ if (W.Evac) W.Evac.close(); return W.Demo.tab('evac'); }, target:'.next-out, .ev-road',
@@ -115,7 +115,7 @@ function show(n){
   var s = STEPS[i], my = ++tok;
   card.classList.add('busy');
   clean();
-  Promise.resolve(s.pre ? s.pre() : null).then(function(){
+  Promise.resolve(s.pre ? s.pre(my) : null).then(function(){
     var tries = 0;
     return (function look(){
       if (my !== tok) return null;
@@ -178,8 +178,17 @@ function draw(t, s){
   try { nx.focus({ preventScroll:true, focusVisible:false }); } catch (e) { nx.focus({ preventScroll:true }); }
 }
 
+var waitGate = null;
 function start(at){
+  var gate = document.querySelector('#app .dn[role=alertdialog]');
+  if (gate){
+    if (waitGate) waitGate.disconnect();
+    waitGate = new MutationObserver(function(){ if (!document.querySelector('#app .dn[role=alertdialog]')){ waitGate.disconnect(); waitGate = null; setTimeout(function(){ start(at); }, 120); } });
+    waitGate.observe(app(), { childList:true });
+    return;
+  }
   stop(true);
+  if (W.Demo && W.Demo.closeOverlays) W.Demo.closeOverlays();   // Install sheet, menu, help: nothing stays under the tour
   if (W.Help && W.Help.close) W.Help.close();
   root = document.createElement('div'); root.className = 'tr-dim no-polish no-tr'; root.setAttribute('aria-hidden', 'true');
   spot = document.createElement('div'); spot.className = 'tr-spot'; root.appendChild(spot);
@@ -192,9 +201,15 @@ function start(at){
 function stop(silent){
   document.removeEventListener('keydown', onKey, true);
   tok++;
+  var was = !!root;
+  dropDemo();
   if (root){ root.remove(); root = null; }
   if (card){ card.remove(); card = null; }
   if (!silent) clean();
+  if (was && !silent){
+    var f = document.getElementById('menu-btn'); if (!f || f.hidden || f.offsetParent === null) f = document.getElementById('incident-content');
+    if (f){ if (f.id === 'incident-content' && !f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1'); setTimeout(function(){ try { f.focus({ preventScroll:true }); } catch (e) {} }, 30); }
+  }
 }
 function finish(){ stop(); home(); }
 function onKey(e){

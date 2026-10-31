@@ -95,12 +95,17 @@ function body(){
 }
 function draw(){
   var el = document.getElementById('qt'); if (!el) return;
+  if (W.armTap) W.armTap();
+  var had = el.contains(document.activeElement);
   el.querySelector('.qt-inner').innerHTML = head() + '<div class="qt-body">' + body() + '</div>';
+  var h = el.querySelector('.qt-step h2, .qt-res b');
+  if (h && (had || document.activeElement === document.body)){ h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll:true, focusVisible:false }); } catch (e) { h.focus(); } }
 }
 function finish(color, reason){ if (color === 'gray') color = 'black'; S.result = { color:color, reason:reason }; draw(); if (navigator.vibrate) navigator.vibrate(30); }
 
 var Quick = {
   open: function(){
+    if (W.Demo && W.Demo.closeOverlays) W.Demo.closeOverlays();
     Quick.close(); S = { step:'bleed', history:[], result:null, flags:{}, tq:null, desc:{} };
     var el = document.createElement('div'); el.id = 'qt'; el.className = 'qt no-polish'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', L('Quick triage','מיון מהיר'));
     el.innerHTML = '<div class="qt-inner"></div>'; app().appendChild(el); draw();
@@ -131,7 +136,10 @@ var Quick = {
     var el = document.getElementById('qt'); var old = el.querySelector('.qt-pick'); if (old) { old.remove(); return; }
     var d = document.createElement('div'); d.className = 'qt-pick';
     d.innerHTML = ['red','yellow','green','black'].map(function(k){ var t = W.TriageUI.tg(k); return '<button class="t-' + k + '" onclick="Quick.set(\'' + k + '\')">' + W.TriageUI.shapeSvg(t.shape, 26) + '<b>' + W.TriageUI.word(k) + '</b></button>'; }).join('');
-    el.querySelector('.qt-body').appendChild(d); d.scrollIntoView({ block:'center' });
+    el.querySelector('.qt-body').appendChild(d);
+    if (W.armTap) W.armTap();
+    var k = el.offsetHeight ? el.getBoundingClientRect().height / el.offsetHeight || 1 : 1;
+    el.scrollTo({ top: el.scrollTop + (d.getBoundingClientRect().top - el.getBoundingClientRect().top) / k - 80 });
   },
   set: function(k){ S.result = { color:k, reason:['Set by the medic','נקבע על ידי המטפל'] }; draw(); },
   save: function(openFull){
