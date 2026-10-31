@@ -2733,7 +2733,7 @@ body.in-form .appbar .ttl b{-webkit-line-clamp:1!important;font-size:19px!import
 /* ═══ Dose calculator ═══
    Built for gloves and a moving ambulance: targets ≥56px, text ≥16px, every state has a word as well as a colour.
    Status lives in one filled band per card. No side stripes, no glows, no gradients. */
-.dz-wrap,.f-dose{--dz-bg:#0b0c0e;--dz-s1:#15171c;--dz-s2:#1d2028;--dz-s3:#262a33;--dz-hair:rgba(255,255,255,.14);--dz-cyan:#6fd3ff;--dz-amber:#ffb020;--dz-red:#d01a20;--dz-t2:#cfd3da}
+.dz-wrap,.f-dose,.dz-rb-wrap,#dz-sf,#dz-rb{--dz-bg:#0b0c0e;--dz-s1:#15171c;--dz-s2:#1d2028;--dz-s3:#262a33;--dz-hair:rgba(255,255,255,.14);--dz-cyan:#6fd3ff;--dz-amber:#ffb020;--dz-red:#d01a20;--dz-t2:#cfd3da}
 
 /* entry button in Form 101 */
 .f-dose{position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:76px;margin:4px 0 14px;padding:12px 16px;border-radius:16px;border:0;background:var(--dz-s2);color:#fff;text-align:start;font:inherit;cursor:pointer}

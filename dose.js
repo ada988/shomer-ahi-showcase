@@ -800,6 +800,7 @@ Field.doseAccess = function(kind){
   draw();
 };
 Field.doseSyr = function(z){ S.syr = z; try { sessionStorage.setItem('dz-syr', String(z)); } catch (e){} draw(); };
+document.addEventListener('DOMContentLoaded', function(){ var I = window.ShowcaseI18n; if (!I) return; var prev = I.setLang; I.setLang = function(l){ ['dz-rb','dz-sf'].forEach(function(id){ var n = document.getElementById(id); if (n) n.remove(); }); S.rb = null; S.sf = null; return prev.apply(this, arguments); }; });
 Field.doseClose = function(){ S.rb = null; S.sf = null; ['dose-sheet','dz-sf','dz-rb'].forEach(function(id){ var s = document.getElementById(id); if (s) s.remove(); }); document.querySelectorAll('#app > .dz-rb-wrap').forEach(function(n){ n.remove(); }); };
 Field.doseEdit = function(k){ S.edit = S.edit === k ? null : k; draw(); };
 Field.doseTab = function(t){ S.tab = t; try { sessionStorage.setItem('dz-tab', t); } catch (e){} draw(); var el = document.getElementById('dose-sheet'), n = el && el.querySelector('.dz-tabs'); if (n && el.scrollTop > n.offsetTop) el.scrollTop = Math.max(0, n.offsetTop - 80); };
