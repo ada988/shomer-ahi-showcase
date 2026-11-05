@@ -1,0 +1,205 @@
+/* X-CARE protocol panel. Each letter has its own solid colour; the letter itself is always shown too. */
+.xc-x{--xc:#c9171e}.xc-c{--xc:#b8420a}.xc-a{--xc:#1558b8}.xc-r{--xc:#0b7a5a}.xc-e{--xc:#6d3fc0}.xc-p{--xc:#566420}
+.xc-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.xc-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:68px;padding:6px 8px;border-radius:14px;border:3px solid var(--line);background:var(--c2);color:#fff}
+.xc-tabs b{font-size:18px;font-weight:900;line-height:1.1;text-align:center}
+.xc-tabs small{font-size:16px;font-weight:800;color:var(--t2);letter-spacing:.08em}
+.xc-tabs button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+.xc-tabs button.on small{color:#333}
+.xc-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.xc-g{border-radius:16px;border:4px solid var(--xc);background:var(--c2);overflow:hidden}
+.xc-gh{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:12px;width:100%;min-height:76px;padding:0;padding-inline-end:14px;border:0;background:transparent;color:#fff;text-align:start}
+.xc-let{display:grid;place-items:center;align-self:stretch;background:var(--xc);color:#fff;font-size:34px;font-weight:900;line-height:1}
+.xc-p .xc-let{font-size:22px}
+.xc-gt{display:flex;flex-direction:column;gap:2px;padding:8px 0;min-width:0}
+.xc-gt b{font-size:20px;font-weight:900;line-height:1.15}
+.xc-gt small{font-size:16px;color:var(--t2);line-height:1.25}
+.xc-pr{display:flex;align-items:center;gap:6px;font-size:22px;font-weight:900;white-space:nowrap}
+.xc-g.all .xc-pr{color:#5ee08e}
+.xc-g.open .xc-gh{background:var(--xc)}
+.xc-g.open .xc-gt small,.xc-g.open .xc-pr{color:#fff}
+.xc-items{display:flex;flex-direction:column;gap:0}
+.xc-i{display:grid;grid-template-columns:1fr;border-top:2px solid var(--line)}
+.xc-row{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;width:100%;min-height:68px;padding:12px 14px;border:0;background:transparent;color:#fff;text-align:start}
+.xc-box{display:grid;place-items:center;width:44px;height:44px;border-radius:10px;border:4px solid var(--xc);background:#000}
+.xc-i.done .xc-box{background:#1fa35a;border-color:#fff}
+.xc-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.xc-t b{font-size:19px;font-weight:900;line-height:1.2}
+.xc-t small{font-size:16px;color:var(--t2);line-height:1.3}
+.xc-t em{font-style:normal;font-size:16px;font-weight:800;color:#5ee08e}
+.xc-i.done .xc-t b{color:#bfeccf}
+.xc-act{margin:0 14px 12px;min-height:60px;border-radius:12px;border:3px solid #fff;background:var(--xc);color:#fff;font-size:19px;font-weight:900;letter-spacing:.02em}
+.xc-act:active,.xc-row:active,.xc-gh:active{filter:brightness(1.25)}
+
+#tst,.undo-toast,.eta-toast{touch-action:pan-y;cursor:grab}
+.undo-toast span{flex:1}
+
+/* Bottom action bar: three equal-ish stacked buttons, labels never clipped */
+.fs-bar{display:grid!important;grid-template-columns:1fr 1fr 1.4fr;gap:8px!important}
+.fs-bar .xbtn{min-width:0!important;flex-direction:column;gap:0;padding:4px 6px!important;white-space:nowrap}
+.fs-bar .xbtn span{font-size:17px!important;line-height:1.1;overflow:hidden;text-overflow:clip}
+
+/* Engine primary-survey groups in the Care section get the same letter colours */
+.eg{border:4px solid var(--xc)!important;border-radius:16px!important;background:var(--c2)!important;margin-bottom:10px!important}
+.eg>div:first-child{background:var(--xc);min-height:64px;padding:0 14px!important;gap:12px!important}
+.eg>div:first-child span{color:#fff!important;font-weight:900!important}
+.eg>div:first-child span:first-child{font-size:30px!important}
+.eg>div:first-child span:nth-child(2){font-size:19px!important}
+.eg>div:first-child span:last-child{display:none}
+.xc-sec{margin-top:22px}
+.xc-sech{display:flex;flex-direction:column;gap:2px;font-size:24px;font-weight:900;margin-bottom:10px;padding-top:14px;border-top:4px solid #fff}
+.xc-sech small{font-size:16px;color:var(--t2);letter-spacing:.08em}
+
+#fs-care .cas-section[data-tour=care]>.cas-section-title{display:none}
+
+.del-btn{display:inline-flex!important;align-items:center;gap:6px;min-width:56px!important;min-height:48px!important;padding:0 10px!important;border:2px solid #ff6b6b!important;border-radius:10px!important;background:transparent!important;color:#ff9a9a!important;font-size:16px!important;font-weight:900!important}
+
+/* ═══ FORM REDESIGN ═══ */
+.f-id{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin:0 0 14px;padding:14px;border-radius:18px;border:4px solid #fff;background:var(--tg);color:#fff}
+.f-id.dark{color:#111}
+.f-id-i{display:grid;place-items:center}.f-id-i svg{width:44px;height:44px}
+.f-id-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.f-id-t b{font-size:27px;font-weight:900;line-height:1.05;letter-spacing:.01em}
+.f-id-t em{font-style:normal;font-size:19px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f-id-t small{font-size:16px;font-weight:700;opacity:.95}
+.f-id-b{display:flex;flex-direction:column;align-items:center;gap:0;min-height:72px;padding:6px 10px;border-radius:12px;border:3px solid currentColor;background:rgba(0,0,0,.28);color:#fff}
+.f-id.dark .f-id-b{background:rgba(255,255,255,.55);color:#111}
+.f-id-b small{font-size:14px;font-weight:900;letter-spacing:.08em}
+.f-id-b b{font:900 22px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em}
+.f-id-b span{display:flex;align-items:center;gap:4px;font-size:15px;font-weight:900}
+.f-tri{grid-template-columns:repeat(6,1fr)!important;gap:8px!important}
+.f-tri .f-tbtn{grid-column:span 2;min-height:96px!important;padding:6px 4px}
+.f-tri .f-tbtn:nth-child(n+4){grid-column:span 3;min-height:68px!important;flex-direction:row;gap:10px}
+.f-tri .f-tbtn b{font-size:17px!important;text-align:center;line-height:1.1}
+.f-tri .f-tbtn i{display:none}
+.f-tri .f-tbtn.on{outline:5px solid #fff;outline-offset:2px}
+.fs-fold{background:var(--c2);border:3px solid var(--line);border-radius:16px;padding:0;margin:0 0 12px}
+.fs-fold>summary{min-height:64px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;font-size:19px;font-weight:900;color:#fff}
+.fs-fold>summary::-webkit-details-marker{display:none}
+.fs-fold>summary small{display:block;font-size:16px;font-weight:600;color:var(--t2)}
+.fs-fold>summary::after{content:'+';font-size:30px;width:48px;text-align:center;color:var(--t2)}
+.fs-fold[open]>summary::after{content:'–'}
+.fs-fold[open]>summary{border-bottom:2px solid var(--line)}
+.fs-fold-b{padding:12px 12px 14px}
+.fs-sug{border-color:#c68a00}
+.fs h2.fs-h{font-size:26px!important;margin-top:6px}
+.fs{margin:0 0 20px}
+
+.fs-fold-b>.cas-section>.cas-section-title:first-child,.fs-fold-b>.cas-section>div:first-child:not([class]):not([style*=border]){display:none}
+.fs-fold .cas-section{margin:0!important;border:0!important;background:transparent!important;padding:0!important}
+.f-id{grid-template-columns:auto 1fr!important;row-gap:10px}
+.f-id-t em{white-space:normal;overflow:visible}
+.f-id-b{grid-column:1 / -1;flex-direction:row!important;justify-content:space-between;align-items:center;min-height:60px;padding:6px 14px!important}
+.f-id-b small{font-size:15px}
+.f-id-b b{font-size:26px}
+
+/* Jump bar: 101 form / body map / vitals + more */
+.jb{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 12px;padding:8px 0;background:var(--bg)}
+.jb button{min-height:56px;border-radius:12px;border:3px solid var(--line);background:var(--c2);color:#fff;font-size:17px;font-weight:900;line-height:1.1;padding:0 4px}
+.jb button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+.fs-more-b{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.fs-h-wrap{margin:6px 0 10px}
+.fs{scroll-margin-top:84px}
+#field,#fs-body,#fs-more{scroll-margin-top:84px}
+
+/* Compact top: identity in one row, triage tighter, no section labels */
+.f-id{grid-template-columns:auto 1fr auto!important;padding:10px 12px!important;margin-bottom:10px!important;row-gap:0!important}
+.f-id-i svg{width:36px;height:36px}
+.f-id-t b{font-size:23px}.f-id-t em{font-size:17px}.f-id-t small{display:none}
+.f-id-b{grid-column:auto!important;flex-direction:column!important;align-items:center!important;min-height:60px!important;padding:4px 10px!important;gap:0}
+.f-id-b small{display:none}.f-id-b b{font-size:19px}.f-id-b span{font-size:14px}
+#field>.f-h{display:none}
+.f-tri .f-tbtn{min-height:72px!important}
+.f-tri .f-tbtn:nth-child(n+4){min-height:56px!important}
+.f-tri .f-tbtn svg{width:24px!important;height:24px!important;min-width:24px}
+#field{margin-bottom:12px}
+.xc-tabs{margin-top:14px!important}
+
+/* Body-map popup (engine markup, Hebrew-first): direction follows the language, glove-sized targets, readable text */
+html[dir=ltr] .body-tap-menu{direction:ltr;text-align:left}
+html[dir=rtl] .body-tap-menu{direction:rtl}
+#body-tap-overlay{padding:12px!important}
+#body-tap-overlay .body-tap-menu{max-width:min(420px,100%)!important;min-width:min(300px,100%)!important;max-height:calc(100% - 24px);overflow:auto;padding:14px!important;border:3px solid var(--line)!important}
+.body-tap-menu .btm-label{font-size:22px!important;font-weight:900;color:#fff!important}
+.body-tap-menu [role=button][onclick]{min-height:52px;display:flex!important;align-items:center;justify-content:center;font-size:17px!important;font-weight:800!important;line-height:1.1;padding:4px 6px!important}
+.body-tap-menu>div[style*="gap:12px"]{gap:8px!important}
+.body-tap-menu>div[style*="margin-bottom:6px"]{font-size:19px!important;font-weight:900!important;color:#fff!important;margin:2px 0 10px!important}
+.body-tap-menu .btm-row{gap:8px!important}
+.body-tap-menu .btm-btn{min-height:68px!important;min-width:88px!important;padding:8px 8px!important;border:3px solid var(--line)!important;gap:4px!important}
+.body-tap-menu .btm-btn .btm-txt{font-size:17px!important;font-weight:800;line-height:1.1;text-align:center}
+.body-tap-menu .btm-btn .btm-emo{font-size:20px;display:flex;justify-content:center}
+.body-tap-menu .btm-btn svg,.body-tap-menu .btm-emo svg,.body-tap-menu .ei-i{width:28px!important;height:28px!important}
+.body-tap-menu .btm-on{border-color:#fff!important}
+.body-tap-menu>button{min-height:64px!important;font-size:19px!important;font-weight:900!important;border:3px solid var(--line)!important;margin-top:12px!important;color:#fff!important}
+.body-tap-menu textarea,.body-tap-menu input{font-size:18px!important;min-height:56px}
+
+/* ── Form 101 layout ────────────────────────────────────────────── */
+/* patient: age / weight / sex */
+.fs-patient{display:flex;flex-direction:column;gap:12px}
+.fs-patient>div:first-child{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;margin:0!important}
+.fs-patient>div:first-child input{min-height:60px!important;font-size:20px!important;font-weight:800;width:100%;box-sizing:border-box;border:3px solid var(--line)!important;border-radius:12px!important}
+.f-pat{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f-pat-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f-pat-f label{font-size:16px;font-weight:800;color:var(--t2)}
+.f-pat-f input{min-height:60px;font-size:24px;font-weight:900;text-align:center;border:3px solid var(--line);border-radius:12px;width:100%;box-sizing:border-box}
+.f-pat-sex{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f-pat-sex button{min-height:60px;border-radius:12px;border:3px solid var(--line);background:var(--c2);color:#fff;font-size:19px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px}
+.f-pat-sex button.on{background:#fff;color:#0b0c0e;border-color:#fff}
+.f-id-t small{display:block!important;font-size:16px;font-weight:800;color:inherit;opacity:.95}
+/* mechanism chips and pediatric toggle: glove size */
+.fs-patient .cas-section button{min-height:56px!important;font-size:18px!important;font-weight:800;padding:6px 14px!important;border-width:3px!important;border-color:var(--line)!important;color:#fff!important}
+.fs-patient .cas-section button[style*="background:rgba"]{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+#fs-record .fs-b>button[onclick*=togglePeds]{display:block;width:100%;min-height:56px!important;margin:0 0 12px!important;border:3px solid var(--line)!important;border-radius:12px!important;font-size:18px!important;font-weight:800;color:#fff!important}
+#incident-content #cas-case-story{min-height:140px!important;font-size:18px!important}
+/* all-vitals fold: two columns, never wider than the screen */
+.fs-fold[data-k=vit] .fs-fold-b div[style*="grid-template-columns"]{grid-template-columns:1fr 1fr!important;gap:12px!important}
+.fs-fold[data-k=vit] .fs-fold-b div[style*="grid-template-columns"]>div:last-child{grid-column:1 / -1}
+.fs-fold[data-k=vit] input{min-height:60px!important;font-size:22px!important;font-weight:800;border:3px solid var(--line)!important;width:100%;box-sizing:border-box}
+.fs-fold[data-k=vit] .fs-fold-b button.xabcde-btn{min-height:56px!important;font-size:18px!important;font-weight:800;border-width:3px!important}
+.fs-fold[data-k=vit] .fs-fold-b div[style*="display:flex;gap"]{flex-wrap:wrap}
+.fs-fold[data-k=vit] label,.fs-fold[data-k=vit] div[style*="margin-bottom:3px"]{font-size:17px!important;font-weight:800;color:var(--t2)!important}
+/* evacuation urgency: 2 x 2, readable, selected = filled + tick */
+.fs-more-b .cas-section>div[style*="display:flex"]{display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important}
+.fs-more-b .cas-section>div button[onclick*=_casualtyEvacPriority]{min-height:64px!important;font-size:18px!important;font-weight:900!important;border-width:3px!important;color:#fff!important;line-height:1.15;display:flex;align-items:center;justify-content:center;gap:6px}
+.fs-more-b .cas-section>div button.sel{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+.fs-more-b .cas-section>.cas-section-title{font-size:20px!important;font-weight:900;color:#fff!important;margin-bottom:10px}
+/* software suggestions: one title only (fold summary) */
+.fs-sug .b-recs>div:first-child{display:none!important}
+.fs-sug .fs-fold-b{padding-top:6px}
+/* record folds from the engine (timeline, casualty details) look like our folds */
+#fs-record details.cas-section,#fs-record .cas-section:has(>div[role=button]){border:3px solid var(--line)!important;border-radius:14px!important;background:var(--c2)!important;padding:0!important;margin:0 0 10px!important}
+#fs-record details.cas-section>summary{min-height:64px!important;padding:0 16px;font-size:20px!important;font-weight:900!important;list-style:none;display:flex!important;align-items:center;justify-content:space-between;cursor:pointer}
+#fs-record details.cas-section>summary::-webkit-details-marker{display:none}
+#fs-record details.cas-section>summary::after{content:"+";font-size:32px;font-weight:900;line-height:1}
+#fs-record details.cas-section[open]>summary::after{content:"\2212"}
+#fs-record details.cas-section>div{padding:0 16px 16px}
+#fs-record .cas-section:has(>div[role=button])>div[role=button]{min-height:64px;padding:0 16px!important;gap:10px!important}
+#fs-record .cas-section:has(>div[role=button])>div[role=button]>span{font-size:19px!important;font-weight:900!important}
+#fs-record .cas-section:has(>div[role=button])>div[role=button]>span:last-child{font-size:28px!important;color:#fff!important}
+#fs-record details.cas-section input,#fs-record details.cas-section select{min-height:56px!important;font-size:18px!important;border:3px solid var(--line)!important;width:100%;box-sizing:border-box}
+
+#fs-record .cas-section:has(>div[role=button])>div[role=button]>span:nth-child(2){white-space:nowrap;flex:0 0 auto!important;font-size:17px!important;color:var(--t2)!important}
+#fs-record .cas-section:has(>div[role=button])>div[role=button]>span:first-child{flex:1;min-width:0}
+.fs-fold[data-k=vit] button.sel{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+#fs-record .cas-section>.cas-section-title{font-size:19px!important;font-weight:900;color:#fff!important;margin-bottom:10px}
+.fs-fold[data-k=tr] .fs-fold-b button:not(.del-btn),.fs-fold[data-k=inj] .fs-fold-b button:not(.del-btn){min-height:56px!important;font-size:18px!important;font-weight:800!important;border:3px solid var(--line)!important;color:#fff!important;padding:6px 14px!important}
+#fs-record .cas-section:has(>div[role=button])>div[role=button]>span:first-child{font-size:18px!important}
+#fs-record .cas-section:has(>div[role=button])>div[role=button]>span:nth-child(2){font-size:16px!important}
+html[dir=rtl] .f-v span{display:block;direction:ltr;unicode-bidi:isolate;text-align:right}
+html[dir=rtl] .f-v b{direction:ltr;unicode-bidi:isolate;text-align:right;display:block}
+.f-id-t b{font-size:21px!important;letter-spacing:-.01em;line-height:1.1}
+.f-id-t em{font-size:16px!important;line-height:1.2}
+.f-id-t small{font-size:16px!important;line-height:1.2}
+.f-id{column-gap:8px!important}
+.f-id-i{width:30px!important;height:30px!important;min-width:0!important}
+.f-id-i svg{width:30px!important;height:30px!important}
+.f-id-b{padding:4px 8px!important;min-width:0!important}
+.f-id-b b{font-size:17px!important;letter-spacing:.02em}
+@container app (max-width:360px){
+  .f-id-b{grid-column:1 / -1!important;flex-direction:row!important;justify-content:space-between;min-height:56px!important}
+  .f-id{grid-template-columns:30px 1fr!important}
+  .appbar .ttl b{-webkit-line-clamp:1!important}
+  .appbar .ttl small{white-space:normal!important;line-height:1.05;font-size:15px!important}
+  .beta-pill{min-width:72px!important;padding:0 6px!important}
+  .beta-pill b{font-size:17px!important}
+}

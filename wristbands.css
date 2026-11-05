@@ -1,0 +1,108 @@
+/* wristbands and tags */
+
+/* Wristbands tab: one band up top, a list that swaps it */
+.bt-hero h2{margin:0 0 6px}
+.bt-cta{display:grid!important;grid-template-columns:1.3fr 1fr;gap:10px!important;margin:16px 0 0!important}
+.bt-cta .xbtn{min-height:64px!important;font-size:19px!important;font-weight:800!important;display:flex;align-items:center;justify-content:center;gap:10px;text-transform:none!important;white-space:normal;line-height:1.15}
+@container app (max-width:360px){.bt-cta{grid-template-columns:1fr}}
+.bt-steps2{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
+.bt-steps2 li{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:12px 8px;border-radius:14px;background:var(--c2,#15171c);border:2px solid rgba(255,255,255,.12);text-align:center;color:#fff}
+.bt-steps2 li svg{flex:none;color:#6fd3ff}
+.bt-steps2 b{font-size:16px;font-weight:800;line-height:1.25;overflow-wrap:break-word;hyphens:auto}
+.bt-card{margin:20px 0 28px;padding:14px;border-radius:18px;background:var(--c2,#15171c);border:2px solid rgba(255,255,255,.14)}
+.bt-card-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.bt-card-h>div{min-width:0}
+.bt-card-h .tchip{flex:none}
+.bt-card .bt-name{font-size:21px!important;font-weight:900}
+.bt-card .bt-sub{display:block!important;margin-top:2px;font-size:16px!important;color:var(--t2,#cfd3da)}
+.bt-sub code,.bt-pn code{font:800 16px/1 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border-radius:6px;background:#0b0c0e;color:#fff;letter-spacing:.04em}
+.bt-band{border-radius:14px;overflow:hidden}
+.bt-band .brc2{border-width:2px}
+.bt-btns2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.bt-btns2 .xbtn{min-height:60px;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;text-transform:none;white-space:normal;line-height:1.15}
+.bt-lh{margin:0 0 10px;font-size:18px;font-weight:900;letter-spacing:.02em;color:#fff}
+.bt-lh span{color:var(--t2,#cfd3da);font-weight:700}
+.bt-picks{display:grid;gap:8px}
+.bt-pick{display:flex;align-items:center;gap:12px;width:100%;min-height:72px;padding:10px 14px;border-radius:14px;background:var(--c2,#15171c);border:2px solid rgba(255,255,255,.12);color:#fff;font:inherit;text-align:start;cursor:pointer}
+.bt-pick .tchip{flex:none}
+.bt-pick>svg{flex:none;color:var(--t2,#cfd3da);margin-inline-start:auto}
+.bt-pick.on{border-color:#6fd3ff;background:#102632}
+.bt-pick em{display:inline-flex;align-items:center;gap:6px;margin-inline-start:auto;font-style:normal;font-size:16px;font-weight:900;color:#6fd3ff;flex:none}
+.bt-pn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.bt-pn b{font-size:18px;font-weight:900;overflow-wrap:anywhere}
+.bt-empty{margin:20px 0;font-size:18px;font-weight:700;color:var(--t2,#cfd3da)}
+/* names never truncated: chip on its own line, name and code below */
+.bt-card-h{flex-direction:column;align-items:flex-start;gap:8px}
+.bt-card .bt-name,.bt-pn b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+.bt-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"chip end" "name end";gap:8px 12px;align-items:center}
+.bt-pick .tchip{grid-area:chip;justify-self:start}
+.bt-pick .bt-pn{grid-area:name}
+.bt-pick>svg,.bt-pick em{grid-area:end;margin:0}
+@container app (max-width:360px){.bt-card{padding:12px}.bt-band .b2-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.bt-band .b2-main>*{grid-column:1 / -1}.bt-band .b2-grid{display:contents}.bt-band .b2-box{grid-column:auto}.bt-band .b2-top{flex-wrap:wrap}}
+
+/* the three steps as one compact numbered strip */
+.bt-steps2{display:flex!important;gap:6px!important;align-items:stretch}
+.bt-steps2 li{flex:1 1 0;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:8px!important;min-height:56px;padding:8px!important;border:0!important;border-radius:12px!important;background:var(--s1,#15171c)!important}
+.bt-steps2 li i{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#6fd3ff;color:#0b0c0e;font-style:normal;font-size:16px;font-weight:900}
+.bt-steps2 li svg{display:none}
+.bt-steps2 b{text-align:start}
+.bt-card,.bt-pick{border:0!important;background:var(--s1,#15171c)!important}
+.bt-pick.on{background:#102632!important;box-shadow:inset 0 0 0 2px #6fd3ff}
+
+/* scan screen: triage and code on the first line, the full name below — nothing cut off */
+.bs-samples{gap:8px!important}
+.bs-sample{display:grid!important;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chip code" "name name";align-items:center;gap:8px 12px!important;padding:12px 14px!important;border:0!important;border-radius:14px!important;background:var(--s1,#15171c)!important}
+.bs-sample .tchip{grid-area:chip}
+.bs-sample .tchip span{font-size:16px!important}
+.bs-sample code{grid-area:code;justify-self:end;font:800 17px ui-monospace,Menlo,Consolas,monospace!important;letter-spacing:.04em;color:#fff!important}
+.bs-sample .bs-nm{grid-area:name;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:18px!important;font-weight:800}
+.bs-manual input::placeholder{text-transform:none}
+@container app (max-width:400px){.bt-steps2 li{flex-direction:column!important;gap:4px!important;padding:8px 4px!important}.bt-steps2 b{text-align:center;word-break:keep-all;overflow-wrap:normal;hyphens:none}}
+
+/* scanned card: one notice line + how old the copy is */
+.ccard .cc-demo{display:flex;align-items:center;gap:8px;font-size:16px!important;font-weight:800;line-height:1.3;text-transform:none!important;letter-spacing:0!important}
+.ccard .cc-demo svg{flex:none}
+.cc-asof{display:flex;align-items:center;gap:8px;margin:8px 0 10px;padding:10px 12px;border-radius:12px;background:#1d2028;color:#e8eaee;font-size:16px;font-weight:700;line-height:1.3}
+.cc-asof svg{flex:none;color:#ffd23f}
+.bo-actions .bo-take{background:#2a2e37!important;border:0!important}
+
+/* ── casualty tags ── */
+.ctag{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;padding:2px 10px;min-height:34px;border-radius:8px;background:#262a33;color:#e8eaee;font:700 16px/1 var(--f,inherit);font-variant-numeric:tabular-nums;letter-spacing:.02em;vertical-align:middle;white-space:nowrap}
+.ctag svg{width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;color:#aab0bb}
+.f-id-b.f-id-tag b,.f-id-b.f-id-link b{font-size:17px}
+.f-id-b.f-id-link{background:var(--accent,#1f6bff)!important;color:#fff!important;border:0!important}
+.f-taglink{display:flex;align-items:center;gap:14px;width:100%;min-height:76px;margin:18px 0 6px;padding:12px 16px;border:0;border-radius:16px;background:var(--accent,#1f6bff);color:#fff;text-align:start;font:inherit;cursor:pointer}
+.f-taglink>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.f-taglink b{font-size:20px;font-weight:800}.f-taglink small{font-size:16px;font-weight:600;opacity:.92}
+.f-taglink.done{background:#15171c;box-shadow:inset 0 0 0 2px #2c313b;cursor:default}
+.f-taglink.done>svg{color:#7ee2a8}.f-taglink.done small{color:#b6bcc6;opacity:1}
+.f-taglink.done .xbtn{flex:none;min-height:52px}
+.tg-who{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:20px}
+.tg-note{display:flex;gap:10px;align-items:flex-start;margin:12px 0;padding:12px 14px;border-radius:12px;background:#15171c;color:#c9ced8;font-size:16px;line-height:1.45}
+.tg-note svg{flex:none;color:#6fb3ff;margin-top:1px}
+.tg-big{display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 4px;padding:22px;border-radius:16px;background:#fff;color:#0b0c0e;font:900 40px/1 var(--f,inherit);letter-spacing:.03em}
+.tg-warn{display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:14px;background:#2a1d08;color:#ffe2a8}
+.tg-warn svg{flex:none;color:#ffb020}.tg-warn b{display:block;font-size:19px;margin-bottom:4px}.tg-warn p{font-size:16px;line-height:1.45;margin:0}
+.bs-tags .bs-tag code{font-size:18px;font-weight:800}
+.bt-link{min-height:48px!important;padding:0 12px!important;margin-inline-end:6px}
+.bt-pn .ctag{margin-inline-start:0}
+.bo-tagnew .bo-actions,.bo-tagwarn .bo-actions{display:flex!important;flex-direction:column;gap:10px}
+.bo-tagnew .bo-actions .xbtn,.bo-tagwarn .bo-actions .xbtn{width:100%;min-height:60px;justify-content:flex-start;padding:0 18px;font-size:18px}
+.f-taglink.done{flex-wrap:wrap}
+.f-taglink.done>span{flex:1 1 0}
+.f-taglink.done .xbtn{flex:1 1 100%}
+.f-taglink.done bdi{white-space:nowrap}
+
+/* on-screen wristband preview: nothing under 16px (the printed band keeps its own sizes) */
+#incident-content .brc2 small,#incident-content .brc2 .b2-box span,#incident-content .brc2 .b2-box b,#incident-content .brc2 .b2-top span,#incident-content .brc2 .b2-top em,#incident-content .brc2 .b2-foot,#incident-content .brc2 .b2-qr small{font-size:16px!important;line-height:1.2}
+/* card section headings: sentence case, readable */
+.cc-sec h3{text-transform:none!important;letter-spacing:0!important;font-size:16px!important}
+/* in-app wristband preview: nothing under 16px, words never broken in the middle */
+#app .brc2 .b2-top span,#app .brc2 .b2-top em,#app .brc2 .b2-no small,#app .brc2 .b2-box small,#app .brc2 .b2-box span,#app .brc2 .b2-box span b,#app .brc2 .b2-foot,#app .brc2 .b2-qr small,#app .brc2 .b2-stub span{font-size:16px!important;line-height:1.25}
+#app .brc2 *{word-break:normal!important;overflow-wrap:break-word;hyphens:manual}
+/* overlay titles wrap instead of being cut on narrow phones */
+.bo-top .bo-title{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.15}
+/* link-to-tag: the casualty row wraps instead of running off a 320 px screen */
+.tg-who{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-width:0}
+.tg-who b{min-width:0;overflow-wrap:anywhere}
+.cc-serial small{font-size:16px!important;font-weight:600;opacity:.85}

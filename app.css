@@ -1,0 +1,542 @@
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0c;--c1:#17171a;--c2:#222226;--c3:#2e2e33;--c4:#383840;
+  /* WCAG AA contrast tokens: t2/t3 raised so body text on --c1/--c2
+     passes 4.5:1 minimum. t4 is reserved for decorative borders only. */
+  --tx:#f4f4f8;--t2:rgba(244,244,248,.82);--t3:rgba(244,244,248,.66);--t4:rgba(244,244,248,.38);--t5:rgba(244,244,248,.16);
+  --sep:#2a2a30;--gr:#2ecc71;--ye:#f1c40f;--or:#e67e22;--re:#e74c3c;--re-hi:#ff6b5e;--bl:#3498db;--pu:#9b59b6;--cy:#1abc9c;
+  --f:'Heebo',sans-serif;
+  /* Triage palette — single source of truth. Gray bumped from #888 to
+     #c0c4ca so it actually contrasts against --bg on dark theme in
+     sunlight (prior 3.8:1 failed WCAG AA). Black becomes #9aa0a6 for
+     similar reasons — a pure-black swatch on #0a0a0c is invisible. */
+  --triage-red:#e74c3c;
+  --triage-yellow:#f1c40f;
+  --triage-green:#2ecc71;
+  --triage-gray:#c0c4ca;
+  --triage-black:#9aa0a6;
+  /* spacing/radius/shadow/motion scales */
+  --s-1:.25rem; --s-2:.5rem; --s-3:.75rem; --s-4:1rem;
+  --s-5:1.25rem; --s-6:1.5rem; --s-8:2rem; --s-10:2.5rem; --s-12:3rem;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:20px; --r-pill:999px;
+  --sh-1:0 1px 2px rgba(0,0,0,.4);
+  --sh-2:0 4px 12px rgba(0,0,0,.5);
+  --sh-3:0 12px 32px rgba(0,0,0,.6);
+  --t-fast:120ms ease; --t-med:200ms ease; --t-slow:320ms cubic-bezier(.2,.8,.2,1);
+  --safe-t:env(safe-area-inset-top,0); --safe-b:env(safe-area-inset-bottom,0);
+  --safe-s:env(safe-area-inset-inline-start,0); --safe-e:env(safe-area-inset-inline-end,0);
+  /* Card / component sizing */
+  --card-radius:12px;
+  /* Z-index scale — overlays (radio readout, 9-Line) must sit ABOVE
+     the incident sheet (99999) or they appear to do nothing. */
+  --z-nav:50;
+  --z-sheet:200;
+  --z-incident-sheet:99999;
+  --z-medical-overlay:100500;
+  --z-toast:100600;
+  --z-emergency:999999;
+}
+/* Visually-hidden utility for screen-reader-only text */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Focus ring for keyboard users */
+:focus-visible{outline:2px solid var(--bl);outline-offset:2px;border-radius:4px}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#0a0a0c;overscroll-behavior:none;}
+/* Desktop: center phone shell */
+@media(min-width:500px){
+  body{background:#050508;display:flex;align-items:center;justify-content:center;}
+}
+.phone{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  /* 100dvh = dynamic viewport height — correctly shrinks when iOS Safari
+     URL bar collapses, preventing the bottom nav from jumping 44px.
+     Falls back to 100% on browsers without dvh support.                 */
+  height:100%;
+  height:100dvh;
+  background:var(--bg);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  font-family:var(--f);
+  overscroll-behavior:none;
+}
+@media(min-width:500px){
+  .phone{
+    position:relative;
+    width:390px;height:844px;
+    border-radius:50px;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08),0 40px 120px rgba(0,0,0,.95);
+  }
+}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:15px 26px 0;flex-shrink:0}
+
+/* Hide fake status bar on real mobile */
+@media(max-width:499px){.sb{display:none}}
+
+.pg{display:none;padding:0 16px}.pg.on{display:block}
+/* Mobile notch spacer — shown only on mobile */
+
+.bn{position:absolute;bottom:0;left:0;right:0;background:rgba(8,8,12,.97);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1px solid rgba(255,255,255,.06);
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+  display:flex;justify-content:space-around;z-index:50}
+/* Scroll area accounts for nav + safe area */
+@media(max-width:499px){
+  
+  .pg{padding:0 14px}
+}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;padding:10px 0}
+.pt{font-size:28px;font-weight:800;color:var(--tx);letter-spacing:-1.5px}
+
+ 
+
+  .nil{font-size:9px;font-weight:600}
+.ov{position:absolute;inset:0;background:rgba(0,0,0,.75);display:none;align-items:flex-end;z-index:200;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.ov.on{display:flex}
+.sh{background:#15151a;border-radius:24px 24px 0 0;width:100%;padding:10px 18px calc(24px + env(safe-area-inset-bottom));max-height:92%;overflow-y:auto;position:relative}
+.sh::-webkit-scrollbar{display:none}
+
+.fl{font-size:10px;color:var(--t3);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.5px}
+.fi{width:100%;background:var(--c2);border:1px solid var(--sep);border-radius:11px;color:var(--tx);
+  padding:10px 12px;font-size:14px;font-family:var(--f);outline:none;-webkit-appearance:none;transition:border-color .15s}
+.fi:focus{border-color:rgba(255,255,255,.2);background:var(--c3)}
+
+.btn{width:100%;padding:13px;border-radius:13px;border:none;cursor:pointer;font-family:var(--f);font-size:14px;font-weight:700;margin-top:8px;display:block;transition:all .12s}
+.btn:active{opacity:.75} .bp{background:var(--tx);color:#000} .bs{background:var(--c2);color:var(--t2)} .bd{background:rgba(231,76,60,.15);color:var(--re)} .bg{background:rgba(46,204,113,.15);color:var(--gr)}
+.seg{display:flex;background:var(--c2);border-radius:11px;padding:3px;gap:2px;margin-bottom:10px}
+.so{flex:1;padding:7px 3px;border-radius:9px;border:none;font-family:var(--f);font-size:11px;font-weight:600;
+  cursor:pointer;color:var(--t3);background:none;-webkit-user-select:none;white-space:nowrap;transition:all .15s}
+.so.on{background:var(--c3);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+
+.dc{padding:5px 11px;background:var(--c2);border-radius:16px;font-size:12px;font-weight:600;
+  cursor:pointer;color:var(--t3);border:1.5px solid transparent;-webkit-user-select:none;transition:all .13s}
+.dc.on{background:rgba(255,255,255,.08);color:var(--tx);border-color:rgba(255,255,255,.2)}
+
+.cc{width:30px;height:30px;border-radius:50%;cursor:pointer;position:relative;transition:transform .15s;flex-shrink:0}
+.cc.on{transform:scale(1.18)}
+.cc.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#000}
+.cc.on::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:2.5px solid rgba(255,255,255,.85)}
+
+.ic{width:38px;height:38px;background:var(--c2);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;border:1.5px solid transparent;color:var(--t3);transition:all .13s}
+.ic svg{width:17px;height:17px} .ic.on{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:var(--tx)}
+/* DAY TABS — minimal pill style; sticky so the commander keeps day context while scrolling */
+
+.dt{flex:1;min-width:0;min-height:44px;padding:8px 2px 7px;border-radius:12px;font-size:10px;font-weight:600;color:var(--t3);cursor:pointer;border:none;-webkit-user-select:none;transition:all .15s;text-align:center;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;touch-action:manipulation}
+.dt.on{background:rgba(255,255,255,.08);color:var(--tx)}
+.dt.today{color:var(--gr)}
+.dt.today.on{background:rgba(46,204,113,.12);color:var(--gr)}
+/* VIEWS */
+.vs{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;margin-bottom:10px}
+.vs::-webkit-scrollbar{display:none}
+.vb{padding:6px 12px;background:var(--c2);border-radius:18px;font-size:11px;font-weight:600;
+  color:var(--t3);cursor:pointer;white-space:nowrap;border:1px solid transparent;
+  -webkit-user-select:none;display:flex;align-items:center;gap:4px;transition:all .13s;flex-shrink:0}
+.vb svg{width:11px;height:11px;flex-shrink:0}
+.vb.on{background:rgba(255,255,255,.1);color:var(--tx);border-color:rgba(255,255,255,.14)}
+/* CHIPS */
+
+ 
+/* SLOTS */
+
+.ss{background:var(--c1);border-radius:11px;padding:8px 10px;display:flex;align-items:center;gap:8px;
+  border:1px solid var(--sep);min-height:50px;margin-bottom:4px;position:relative;user-select:none;
+  touch-action:pan-y;transition:all .13s;overflow:hidden}
+.ss::before{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;border-radius:0 12px 12px 0}
+
+.ss.hp{border-color:rgba(255,255,255,.08)}
+
+.ss.emergency{border-color:rgba(231,76,60,.35)!important;background:rgba(231,76,60,.05)}
+
+.li{position:absolute;top:5px;left:5px;opacity:.35;pointer-events:none}
+.li svg{width:9px;height:9px;color:var(--tx)}
+
+.sp{flex:1;min-width:0}
+.sn{font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:var(--tx);line-height:1.2}
+.sn svg{width:12px;height:12px;flex-shrink:0}
+
+ 
+/* TAGS */
+
+/* ALERTS */
+.al{background:rgba(231,76,60,.07);border:1px solid rgba(231,76,60,.18);border-radius:11px;padding:9px 12px;margin-bottom:7px;font-size:11px;color:var(--re);line-height:1.5;display:flex;gap:7px;align-items:flex-start;cursor:pointer;transition:background .13s}
+.al:active{background:rgba(231,76,60,.12)}
+.al svg{width:13px;height:13px;flex-shrink:0;margin-top:1px}
+/* TOAST */
+.tst{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--c3);
+  border-radius:20px;padding:8px 16px;font-size:12px;color:var(--tx);display:none;align-items:center;
+  gap:9px;z-index:999999;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.08)}
+.tst.on{display:flex}
+.ul{color:var(--bl);font-weight:700;cursor:pointer;background:none;border:none;font-family:var(--f);font-size:12px}
+/* PEOPLE */
+
+.av svg{width:17px;height:17px}
+
+   
+/* SECTION */
+
+/* COMMANDER */
+.ccard{background:var(--c1);border-radius:13px;padding:13px 15px;margin-bottom:8px;border:1px solid var(--sep)}
+
+ 
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pulse{animation:pulse 2s infinite}
+/* global press feedback for all medical buttons. Any
+   <button> gets a subtle scale-down on press so the medic sees the tap
+   landed, even when the action is async. touch-action:manipulation
+   kills the 300ms tap delay. */
+button{transition:transform .09s ease, opacity .12s ease;touch-action:manipulation}
+button:active:not(:disabled){transform:scale(.95);opacity:.88}
+button:disabled{opacity:.45;cursor:not-allowed}
+/* Respect prefers-reduced-motion system-wide. Eight infinite pulses on
+   critical alerts were destabilizing for vestibular-sensitive users and
+   medics with adrenaline tunnel vision. We kill animations and stop
+   transitions entirely when the user has asked for it. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ANALYTICS */
+
+ 
+.fit{font-size:14px;font-weight:700;color:var(--tx)} 
+
+.bc{display:flex;flex-direction:column;gap:7px}
+.br{display:flex;align-items:center;gap:8px}
+
+.svc{flex-shrink:0;width:26px;text-align:center;padding:3px 1px;border-radius:5px}
+ 
+/* AUTOGEN */
+
+ 
+
+/* NI2 */
+
+.nb{width:30px;height:30px;background:var(--c3);border:none;border-radius:9px;cursor:pointer;color:var(--tx);font-size:18px;display:flex;align-items:center;justify-content:center;font-weight:700}
+/* MISC */
+
+/* Splash screen */
+
+@keyframes pfly{0%{opacity:.9;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}}
+
+/* SCORE HOURS EDITOR */
+
+/* POST MODES */
+
+/* 24H LIST */
+
+/* PROFILE SHEET */
+
+/* SLIDER */
+
+/* ROTATION EDITOR */
+
+/* ── MICRO-ANIMATIONS & UX POLISH ─────────────────────────────── */
+.btn{transition:transform .12s cubic-bezier(.34,1.56,.64,1),opacity .1s,background .15s}
+.btn:active{transform:scale(.94)!important}
+.nb{transition:transform .1s,background .1s}
+.nb:active{transform:scale(.88)}
+.so{transition:background .15s,color .15s,border-color .15s,transform .1s}
+.so:active{transform:scale(.93)}
+
+.ss{transition:border-color .15s,background .12s}
+
+/* Slot hover */
+.ss.hp:hover{border-color:rgba(255,255,255,.15)!important}
+/* Button tap ripple */
+@keyframes ripple{0%{transform:scale(0);opacity:.35}100%{transform:scale(3);opacity:0}}
+/* Slide-in for sheets */
+.sh{animation:slide-up .28s cubic-bezier(.22,1,.36,1)}
+@keyframes slide-up{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+/* Fade in for pages */
+.pg.on{animation:pg-in .2s ease}
+@keyframes pg-in{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* Checkbox */
+input[type=checkbox]{cursor:pointer}
+/* Toast animation */
+.tst.on{animation:toast-in .22s cubic-bezier(.22,1,.36,1)}
+@keyframes toast-in{from{transform:translateX(120%)}to{transform:translateX(0)}}
+
+/* ══════════════════════════════════════════════
+   GLASS 1 — FROSTED iOS STYLE (applied globally)
+   ══════════════════════════════════════════════ */
+
+/* ── Slot cards (guard roster rows) ── */
+.ss{
+  background:linear-gradient(135deg,rgba(255,255,255,.065),rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  padding:10px 12px;
+  display:flex;align-items:center;gap:9px;
+  min-height:54px;margin-bottom:4px;
+  position:relative;user-select:none;
+  transition:all .13s;overflow:hidden;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.08) inset,
+    0 -1px 0 rgba(0,0,0,.2) inset,
+    0 4px 16px rgba(0,0,0,.22);
+}
+.ss::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.13),transparent);
+  pointer-events:none;
+}
+.ss.hp{
+  border-color:rgba(255,255,255,.1);
+}
+
+/* ── Sheet panels (bottom sheets) ── */
+.sh{
+  background:linear-gradient(170deg,rgba(30,30,36,.98),rgba(18,18,22,.99));
+  border-radius:24px 24px 0 0;
+  border-top:1px solid rgba(255,255,255,.1);
+  border-left:1px solid rgba(255,255,255,.06);
+  border-right:1px solid rgba(255,255,255,.06);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.08) inset,
+    0 -30px 60px rgba(0,0,0,.5);
+  width:100%;padding:10px 18px calc(24px + env(safe-area-inset-bottom));
+  max-height:92%;overflow-y:auto;
+}
+
+/* ── Icon buttons (header) ── */
+
+/* ── Day tabs ── (flex:1 + min-width:0 so 9 items fit any phone
+   width without triggering horizontal scroll of the sheet) */
+.dt{
+  flex:1;min-width:0;padding:5px 4px;border-radius:12px;font-size:10px;font-weight:600;
+  color:var(--t3);cursor:pointer;border:1px solid transparent;
+  -webkit-user-select:none;transition:all .15s;
+  text-align:center;background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  overflow:hidden;
+}
+.dt.on{
+  background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border-color:rgba(255,255,255,.12);
+  box-shadow:0 1px 0 rgba(255,255,255,.08) inset, 0 2px 8px rgba(0,0,0,.25);
+}
+
+/* ── View strip buttons ── */
+.vb{
+  display:flex;align-items:center;gap:5px;
+  padding:6px 12px;
+  background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border-radius:20px;font-size:10px;font-weight:600;
+  color:var(--t3);
+  border:1px solid rgba(255,255,255,.07);
+  white-space:nowrap;cursor:pointer;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 2px 6px rgba(0,0,0,.2);
+  transition:all .13s;
+}
+.vb.on{
+  background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.04));
+  color:var(--tx);
+  border-color:rgba(255,255,255,.14);
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 2px 8px rgba(0,0,0,.25);
+}
+
+/* ── Person chips (drag) ── */
+
+/* ── Slot action buttons (lock, clear, emergency) ── */
+
+/* ── Segment controls (post type etc.) ── */
+.seg{
+  display:flex;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;padding:3px;gap:2px;margin-bottom:10px;
+}
+.so{
+  flex:1;padding:7px 3px;border-radius:9px;border:none;
+  font-family:var(--f);font-size:11px;font-weight:600;
+  cursor:pointer;color:var(--t3);background:transparent;transition:all .15s;
+}
+.so.on{
+  background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.04));
+  color:var(--tx);
+  box-shadow:0 1px 0 rgba(255,255,255,.09) inset, 0 2px 6px rgba(0,0,0,.25);
+}
+
+/* ── Form inputs ── */
+.fi{
+  width:100%;
+  background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:11px;color:var(--tx);
+  padding:10px 12px;font-size:13px;font-family:var(--f);
+  box-shadow:0 -1px 0 rgba(0,0,0,.15) inset;
+  transition:border-color .15s;
+}
+.fi:focus{
+  outline:none;
+  border-color:rgba(46,204,113,.35);
+  box-shadow:0 0 0 3px rgba(46,204,113,.08), 0 -1px 0 rgba(0,0,0,.15) inset;
+}
+
+/* ── Spinner buttons (nb) ── */
+.nb{
+  width:30px;height:30px;
+  background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:9px;cursor:pointer;color:var(--tx);font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 2px 6px rgba(0,0,0,.25);
+  transition:all .1s;font-family:var(--f);
+}
+.nb:active{transform:scale(.88)}
+
+/* ── Primary buttons ── */
+.btn{
+  width:100%;padding:13px;border-radius:13px;border:none;cursor:pointer;
+  font-family:var(--f);font-size:14px;font-weight:700;
+  background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.12);
+  color:var(--tx);
+  box-shadow:0 1px 0 rgba(255,255,255,.09) inset, 0 3px 10px rgba(0,0,0,.3);
+  transition:all .13s;
+}
+.btn:active{transform:scale(.97)}
+.btn.bp{
+  background:linear-gradient(135deg,rgba(46,204,113,.2),rgba(46,204,113,.08));
+  border-color:rgba(46,204,113,.25);color:var(--gr);
+}
+
+/* ── Settings list rows ── */
+
+/* ── Analytics card / fairness card ── */
+
+/* ── Post block wrapper ── */
+
+/* ── Nav bar ── */
+.bn{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(180deg,rgba(10,10,12,.85),rgba(10,10,12,.97));
+  backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  border-top:1px solid rgba(255,255,255,.08);
+  box-shadow:0 -1px 0 rgba(255,255,255,.05) inset;
+  display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+}
+
+/* ── Nav items ── (6 slots — flex:1 keeps them equal width on all phones) */
+
+.nil{font-size:9px;font-weight:600;line-height:1.1}
+
+/* ── Section headers in settings/analytics ── unified chip
+   style with a thin accent bar on the start edge so the eye can scan
+   the settings page top-to-bottom. */
+
+/* unified card wrapper for settings sections. */
+
+/* collapsible settings groups. Each top-level sh2 header
+   becomes a tappable summary that hides its content until opened,
+   letting the medic scan the settings page without wall-of-cards. */
+
+/* ── Profile shift rows ── */
+
+/* Auto-gen redesign */
+
+/* People screen redesign */
+
+/* bulk-selected card + avatar role pill */
+
+/* Member read-only mode: hide edit affordances */
+
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.pn{font-size:13px;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.pm{font-size:10px;color:var(--t3);margin-top:2px}
+
+.pb{flex:1;height:2px;background:var(--sep);border-radius:2px;overflow:hidden}
+.pf{height:100%;border-radius:2px;transition:width .5s}
+
+.tag{padding:2px 6px;border-radius:7px;font-size:9px;font-weight:700;border:1px solid}
+@keyframes emergPulse{0%,100%{box-shadow:0 4px 16px rgba(231,76,60,.4)}50%{box-shadow:0 4px 24px rgba(231,76,60,.7)}}
+
+@keyframes emergBtnPulse{0%,100%{box-shadow:0 4px 18px rgba(231,76,60,.4)}50%{box-shadow:0 4px 28px rgba(231,76,60,.65)}}
+
+/* Body Map + X-CARE form + MCI dashboard styles moved to shared/medical-forms.css */
+/* ============== ACHWAZI multi-touch picker ============== */
+
+@keyframes achPulse{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.4);opacity:0}}
+@keyframes achElim{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.4)}}
+@keyframes achWinPulse{0%{transform:scale(.85);opacity:.95}100%{transform:scale(2.1);opacity:0}}
+@keyframes achCdPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+@keyframes achPop{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes achFade{from{opacity:0}to{opacity:1}}
+
+@keyframes achFall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* ═══ Settings — tabs on top + per-section collapsible cards + SVG icons ═══ */
+.st-tabs{display:flex;gap:3px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:3px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.st-tabs::-webkit-scrollbar{display:none}
+.st-tab{flex:1 0 auto;min-width:fit-content;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:9px;border:none;font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer;color:var(--t3);background:transparent;white-space:nowrap;transition:color .12s,background .12s}
+.st-tab svg{flex-shrink:0;opacity:.85}
+.st-tab.on{color:var(--tx);background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.04))}
+.st-tab.on svg{opacity:1;color:var(--bl)}
+.st-tab:hover:not(.on){color:var(--t2)}
+.st-search-wrap{position:relative;margin-bottom:10px}
+.st-search-ico{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);color:var(--t4);pointer-events:none}
+.st-search{width:100%;padding:11px 14px 11px 40px;border-radius:11px;border:1px solid var(--sep);background:var(--c2);color:var(--tx);font-family:var(--f);font-size:13px;box-sizing:border-box}
+[dir="rtl"] .st-search{padding:11px 40px 11px 14px}
+.st-search:focus{outline:none;border-color:var(--bl)}
+#st-search-meta{font-size:11px;color:var(--t3);margin-bottom:10px;display:none}
+#st-search-meta.on{display:block}
+/* .st-sec becomes a collapsible card. Header prepended by JS. */
+.st-sec{background:linear-gradient(135deg,rgba(255,255,255,.035),rgba(255,255,255,.008));border:1px solid rgba(255,255,255,.08);border-radius:13px;margin-bottom:8px;overflow:hidden;transition:border-color .12s}
+.st-sec.st-open{border-color:rgba(52,152,219,.25)}
+.st-sec.st-hit{border-color:rgba(52,152,219,.55);box-shadow:0 0 0 2px rgba(52,152,219,.15)}
+.st-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;cursor:pointer;user-select:none;color:var(--tx);font-family:var(--f)}
+.st-card-h:hover{background:rgba(255,255,255,.025)}
+.st-card-t{font-size:13.5px;font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:10px}
+.st-card-ico{color:var(--bl);flex-shrink:0;opacity:.9}
+.st-card-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.st-card-chev{color:var(--t3);transition:transform .22s,color .12s;flex-shrink:0}
+.st-sec.st-open .st-card-chev{transform:rotate(180deg);color:var(--bl)}
+.st-sec.st-open .st-card-h{border-bottom:1px solid var(--sep)}
+/* Hide inner content when closed */
+.st-sec:not(.st-open) > *:not(.st-card-h){display:none !important}
+.st-sec.st-open > *:not(.st-card-h){padding:4px 10px 2px}
+/* Hide original .sh2 title since we promoted its text to the card header. Keep any action button. */
+
+/* ═══ Readiness ═══ */
+
+/* Template cards */
+
+/* Run-check sheet */
+
+/* Resume banner */
+
+/* Simple chart */
+
+/* Fail reasons in history detail */
+
+/* Pagination */
+
+/* run-check section groups */
+
+/* run-check rework — sticky actions, expiry stripes, styled checkboxes, no-signature-main */
+
+/* Item card with expiry stripe */
+
+/* Finish-check summary block */
+
+/* Template editor — better checkboxes + toggles */
+
+/* Checkbox label rows — critical/expiry inside template editor */
+
+/* ═══════════════════════════════════════════════════════════════════
+   ONBOARDING
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes onbspin{to{transform:rotate(360deg)}}
+

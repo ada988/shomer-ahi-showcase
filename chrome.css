@@ -1,0 +1,257 @@
+/* COMPACT CHROME — big targets must not eat the screen.
+   One slim top bar (title, BETA DEMO badge, menu) that slides away while reading down the page;
+   a 64px tab bar; the form's section list is ordinary content, not a sticky strip. */
+
+.beta-ribbon{display:none!important}
+
+.appbar{height:72px!important;min-height:72px;gap:8px!important;padding:0 10px!important;margin-top:0;transition:none}
+.appbar.hide{margin-top:-72px}
+.appbar .mark{width:40px!important;height:40px!important;flex:none}
+.appbar .ttl{flex:1;min-width:0}
+.appbar .ttl b{font-size:20px!important;line-height:1.15;font-weight:900;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.appbar .ttl small{font-size:16px!important;font-weight:800;color:var(--t2)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .ttl small:empty{display:none}
+
+/* Early-beta badge lives in the bar: always yellow, always readable, tap for the full notice */
+.beta-pill{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:88px;height:58px;padding:0 10px;border-radius:12px;border:3px solid #000;background:#ffd400;color:#000;line-height:1.05}
+.beta-pill b{font-size:19px;font-weight:900;letter-spacing:.04em}
+.beta-pill span{font-size:14px;font-weight:900;letter-spacing:.02em}
+
+/* Back / Menu: icon over word, compact but still a big target */
+.back-btn,.menu-btn{flex:none;width:68px!important;min-width:68px!important;height:58px!important;min-height:58px!important;padding:0 4px!important;flex-direction:column!important;gap:0!important;justify-content:center;border-radius:12px!important;font-size:14px!important;font-weight:900!important;line-height:1.1}
+.back-btn .ui-i,.menu-btn .ui-i{width:26px!important;height:26px!important}
+.back-btn span,.menu-btn span{font-size:16px;font-weight:900}
+
+.tabbar{padding:6px 8px calc(6px + env(safe-area-inset-bottom))!important;gap:6px!important}
+.tabbar button{min-height:64px!important;gap:2px!important}
+.tabbar .ui-i{width:28px!important;height:28px!important}
+
+/* Form: section list is a plain 3-column block, not sticky */
+.fnav{position:static!important;top:auto!important;margin:0 0 18px!important;padding:0!important;border:0!important;background:transparent!important;backdrop-filter:none!important}
+.fnav button{height:56px!important}
+
+/* Scroll content starts right under the bar, with less dead air */
+#incident-content{padding:12px 14px 24px!important}
+.ov-hero h2{font-size:26px!important}
+.f-h{margin-top:18px!important}
+
+/* Overlays keep the notice visible even when the bar is hidden */
+.bo-top{height:64px!important}
+
+/* The device needs the whole phone width; desktop frame unchanged */
+@media (max-width:639px), (max-width:900px) and (pointer:coarse), (max-width:900px) and (pointer:none){.appbar{padding-top:env(safe-area-inset-top)}}
+
+.f-m{grid-template-columns:34px 1fr!important;column-gap:8px!important;padding:8px 8px!important}
+.f-m em{width:34px!important;font-size:30px!important}
+.f-m b{letter-spacing:-.01em}
+
+.fs-bar .bar-back{flex:0 0 auto!important;min-width:88px;padding:0 10px;flex-direction:column;gap:0;font-size:15px}
+.fs-bar .xbtn span{font-size:18px}
+.fs-bar .bar-back span{font-size:15px}
+
+/* ═══ ONE PATIENT (full Form 101) vs MANY CASUALTIES (quick triage) — two clearly different choices ═══ */
+.ov-choose{display:grid;grid-template-columns:1fr;gap:12px}
+.ch{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start;border-radius:16px;border:4px solid #fff;color:#fff}
+.ch.full{background:#1450c8}
+.ch.quick{background:#a34a00}
+.ov-choose .ch{padding:14px 16px;min-height:132px}
+.ch .ch-i{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.2);margin-bottom:4px}
+.ch .ch-i .ui-i{width:34px!important;height:34px!important}
+.ch b{font-size:16px;font-weight:900;letter-spacing:.06em;opacity:.95}
+.ch strong{font-size:27px;font-weight:900;line-height:1.1}
+.ch small{font-size:17px;color:#fff;opacity:.95;margin-top:2px}
+.add-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 14px}
+.add-split .ch{padding:12px;min-height:104px;justify-content:center}
+.add-split .ch b{font-size:17px;letter-spacing:.02em;line-height:1.1}
+.add-split .ch small{font-size:17px;font-weight:800}
+.lvl{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;margin:4px 0 2px;padding:3px 10px;border-radius:8px;border:2px solid #fff;font-size:16px;font-weight:900;line-height:1.2}
+.lvl.full{background:#1450c8;color:#fff}
+.lvl.quick{background:#a34a00;color:#fff}
+.lvl .ui-i{width:24px!important;height:24px!important;min-width:24px;min-height:24px}
+.f-quick{display:grid;grid-template-columns:44px 1fr;grid-template-areas:'i t' 'b b';gap:8px 12px;align-items:center;margin:0 0 16px;padding:14px;border-radius:16px;border:4px solid #fff;background:#a34a00}
+.f-qi{grid-area:i;display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.2)}
+.f-quick>span:nth-child(2){grid-area:t;display:flex;flex-direction:column;gap:2px}
+.f-quick b{font-size:21px;font-weight:900}.f-quick small{font-size:17px;color:#fff}
+.f-quick button{grid-area:b;min-height:64px;border-radius:12px;border:3px solid #fff;background:#1450c8;color:#fff;font-size:20px;font-weight:900}
+
+/* QUICK TRIAGE screen */
+.qt{position:absolute;inset:0;z-index:100030;background:var(--bg);overflow-y:auto}
+.qt-inner{display:flex;flex-direction:column;min-height:100%;padding:12px 14px calc(16px + env(safe-area-inset-bottom))}
+.qt-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.qt-top .xbtn{display:flex;align-items:center;gap:8px;min-height:60px;padding:0 14px;font-size:17px;font-weight:900}
+.qt-title b{display:block;font-size:24px;font-weight:900;color:#ffb066}.qt-title small{font-size:16px;color:var(--t2)}
+.qt-count{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.qt-count span{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:12px;border:3px solid #fff;font-size:26px;font-weight:900}
+.qt-count .t-red{background:var(--t-red)}.qt-count .t-yellow{background:var(--t-yellow);color:#111}.qt-count .t-green{background:var(--t-green);color:#06140d}.qt-count .t-black{background:#000}
+.qt-body{display:flex;flex-direction:column;gap:14px;flex:1}
+.qt-step small{font-size:16px;font-weight:900;color:var(--t3);letter-spacing:.06em}
+.qt-step h2{font-size:30px;line-height:1.2;font-weight:900;margin-top:4px}
+.qt-yn{display:grid;grid-template-columns:1fr;gap:14px}
+.qt-yn button{min-height:104px;border-radius:18px;border:5px solid #fff;font-size:26px;font-weight:900;color:#fff;line-height:1.15;padding:8px 12px}
+.qt-yn .yes{background:#0f6b3a}.qt-yn .no{background:#8f1219}
+.qt-back{width:100%;display:flex;align-items:center;justify-content:center;gap:10px}
+.qt-note{font-size:16px;color:var(--t3);margin:auto 0 0}
+.qt-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:22px 14px;border-radius:20px;border:5px solid #fff}
+.qt-res b{font-size:44px;font-weight:900;letter-spacing:.02em}.qt-res span{font-size:19px;font-weight:700}
+.qt-res.t-red{background:var(--t-red);color:#fff}.qt-res.t-yellow{background:var(--t-yellow);color:#111}.qt-res.t-green{background:var(--t-green);color:#06140d}.qt-res.t-gray{background:var(--t-gray);color:#111}.qt-res.t-black{background:#000;color:#fff}
+.qt-next{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;min-height:76px;font-size:21px}
+.qt-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qt-pick button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;border-radius:14px;border:4px solid #fff;font-size:18px;font-weight:900}
+.qt-pick .t-red{background:var(--t-red);color:#fff}.qt-pick .t-yellow{background:var(--t-yellow);color:#111}.qt-pick .t-green{background:var(--t-green);color:#06140d}.qt-pick .t-gray{background:var(--t-gray);color:#111}.qt-pick .t-black{background:#000;color:#fff}
+@container app (min-width:420px){.ov-choose{grid-template-columns:1fr 1fr}}
+
+#incident-content svg.ui-i,.bo svg.ui-i,.sheet svg.ui-i{min-width:24px;min-height:24px}
+
+
+.qt-rep{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:3px solid #fff;font-size:18px;font-weight:800}
+.qt-rep b{font-size:16px;letter-spacing:.06em;color:var(--t2)}
+
+/* ── Layout details ───────────────────────────────────────────── */
+/* Quick triage: BETA pill stays in the header, count chips carry a word, result screen scrolls fully */
+.qt-top .beta-pill{margin-inline-start:auto}
+.qt-title{min-width:0}
+.qt-count{grid-template-columns:repeat(3,1fr)}
+.qt-count span{flex-direction:column;gap:0;min-height:76px;padding:4px 2px;font-size:28px;line-height:1}
+.qt-count span svg{width:24px;height:24px}
+.qt-count span b{font-size:28px}
+.qt-count span em{font-style:normal;font-size:15px;font-weight:900;letter-spacing:.02em;line-height:1.1;text-align:center}
+.qt-count .t-gray{background:var(--t-gray);color:#111}
+.qt-inner{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+.qt-res{padding:16px 12px;gap:4px}
+.qt-res svg{width:48px;height:48px}
+.qt-res b{font-size:38px}
+.qt-res span{font-size:18px}
+.qt-next{min-height:72px;white-space:normal;text-align:center;line-height:1.15}
+.qt-body .btn-row{display:flex;flex-direction:column;gap:12px}
+.qt-body .btn-row>.xbtn,.qt-body .qt-back{width:100%;min-height:64px;display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;line-height:1.15;white-space:normal;flex:none}
+
+/* Record section: one consistent control language (chips, pediatric switch, narrative) */
+#fs-record div:has(>button[onclick*="_toggleMOI"]){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px!important}
+#fs-record button[onclick*="_toggleMOI"]{min-height:56px!important;padding:6px 10px!important;border:3px solid var(--line)!important;border-radius:12px!important;background:var(--c2)!important;color:#fff!important;font-size:18px!important;font-weight:800!important;width:100%}
+#fs-record button[onclick*="_toggleMOI"][style*="solid var(--or)"]{background:#fff!important;color:#0b0c0e!important;border-color:#fff!important}
+button[onclick*="togglePedsOverride"]{display:block!important;width:100%;min-height:56px!important;margin:0 0 12px!important;padding:8px 14px!important;border:3px solid var(--line)!important;border-radius:14px!important;background:var(--c2)!important;color:#fff!important;font-size:18px!important;font-weight:800!important;text-align:center}
+#cas-case-story{min-height:128px!important;font-size:18px!important;line-height:1.35;border:3px solid var(--line)!important;border-radius:12px;resize:vertical}
+.qt-top{flex-wrap:wrap}
+.qt-title{order:3;flex:1 1 100%}
+.qt-title small{display:block}
+.qt-count span{display:grid;grid-template-columns:auto auto;justify-content:center;align-content:center;align-items:center;column-gap:8px;row-gap:2px;min-height:64px}
+.qt-count span em{grid-column:1 / -1}
+@media (max-height:720px){.qt-title small{display:none}.qt-top{margin-bottom:6px}.qt-count{margin-bottom:8px}.qt-yn button{min-height:88px}.qt-step h2{font-size:26px}.qt-body{gap:10px}}
+/* Transport header: BACK and DRIVER VIEW share row one, the vehicle name gets its own full-width row (never clipped) */
+.tp-top{grid-template-columns:1fr 1fr!important}
+.tp-top b{grid-column:1 / -1;grid-row:2;text-align:start!important;font-size:24px!important}
+.tp-top .xbtn{justify-content:center}
+.ev-pt svg{width:24px;height:24px;flex:none}
+/* The round red "+" (no word, red = triage colour, covers board content) duplicated the Casualties tab entry buttons */
+.mci-fab{display:none!important}
+/* Command board cards: name on its own full row, vitals + clock below (was a 6-line word-per-line wrap) */
+.mci-card-row{display:flex!important;flex-wrap:wrap!important;align-items:center;gap:6px 14px!important}
+.mci-card-row>span:first-child{flex:1 1 100%!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:19px!important;font-weight:900!important}
+/* Casualty list card: triage word on its own row (shape + word), details get the full card width */
+.pl-card{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"chip chev" "main main";align-items:center!important;row-gap:8px!important}
+.pl-card>.tchip{grid-area:chip;justify-self:start;flex-direction:row!important;align-items:center;gap:8px!important;min-width:0!important;padding:6px 14px!important;font-size:17px!important;white-space:nowrap}
+.pl-card>.pl-main{grid-area:main}
+.pl-card>.chev{grid-area:chev;align-self:start}
+.lvl{white-space:normal}
+/* Wristband list row: name on its own line, two labelled buttons below */
+.bt-row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px}
+.bt-row .bt-name{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+.bt-btns{display:grid!important;grid-template-columns:1fr 1fr;gap:10px}
+.bt-btns .xbtn{display:flex;align-items:center;justify-content:center;gap:8px;white-space:normal;line-height:1.1}
+/* Bracelet / scan-card header: visible word on the back/close control, BETA pill stays in the top bar */
+.bo-top{gap:10px!important;padding:0 10px!important}
+.bo-x{width:auto!important;min-width:56px;padding:0 14px!important;display:flex!important;align-items:center;gap:8px;font-size:17px;font-weight:900;flex:none}
+.bo-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bo-top .beta-pill{height:52px;min-width:72px}
+.bo-top .beta-pill b{font-size:17px}
+/* Treatment picker: equal full-width buttons */
+div:has(>button[onclick*="startTreatmentPlacement"]){display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important}
+div:has(>button[onclick*="startTreatmentPlacement"])>button{width:100%;justify-content:flex-start;text-align:start;display:flex;align-items:center;gap:10px}
+@container app (max-width:380px){div:has(>button[onclick*="startTreatmentPlacement"]){grid-template-columns:1fr}}
+.ev-pt .tchip svg,.ev-pt svg{width:24px!important;height:24px!important;flex:none}
+.bo-title{white-space:normal!important;line-height:1.1;font-size:19px!important}
+@container app (max-width:340px){#app-mark{display:none!important}.appbar .ttl b{font-size:19px}}
+@container app (max-width:340px){.appbar .ttl b{font-size:17px!important;letter-spacing:-.01em}.appbar{gap:6px}}
+/* Contrast (AA): no half-transparent text, dark text on the light-blue action button */
+.b-kpis>*,.b-kpis>* *,.cc-sub,.cc-banner *{opacity:1!important}
+.b-next button,.b-next button *{color:#0b0c0e!important}
+#incident-content button[style*="background:var(--bl)"],#incident-content button[style*="background:var(--bl)"] *{color:#0b0c0e!important}
+/* Platform behaviour: dark-only app (native controls + scrollbars follow), no text inflation, no double-tap zoom, no selecting controls */
+html{color-scheme:dark;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{touch-action:manipulation}
+button,summary,[role=button],.tabbar *,.sheet-row,.xbtn{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* Landscape phone (short viewport): full width, compact bars so the form keeps usable height */
+@media (max-height:500px) and (orientation:landscape) and (pointer:coarse){
+  .device,.is-app .device.device{zoom:1!important;width:100%!important;max-width:none!important;height:100dvh!important;border-radius:0!important;border:0!important;box-shadow:none!important}
+  .stage{width:100%!important}
+  .jb{position:static!important}
+  #incident-content .fs-bar,.fs-bar{grid-template-columns:1fr 1fr 1.6fr!important;padding-top:6px!important;padding-bottom:calc(6px + env(safe-area-inset-bottom))!important}
+  body #incident-content .fs-bar .xbtn,body #incident-content .fs-bar button{flex-direction:row!important;min-height:56px!important;gap:8px!important}
+  body #incident-content .fs-bar{padding-top:6px!important;padding-bottom:calc(6px + env(safe-area-inset-bottom))!important}
+  .appbar .ttl small{display:none}
+  .tabbar{padding-top:4px!important;padding-bottom:calc(4px + env(safe-area-inset-bottom))!important}
+}
+
+/* ── quick triage: one icon and colour per step, YES and NO always in the same place, same colour, same icon ── */
+#qt .qt-title b{color:#fff!important;font-size:22px}
+#qt .qt-count span{border:0!important;min-height:60px}
+.qt-path{display:flex;gap:6px;list-style:none;margin:0;padding:0}
+.qt-path li{flex:1;display:grid;place-items:center;height:40px;border-radius:10px;background:var(--s1,#15171c);color:#6b7180}
+.qt-path li.done{background:var(--s2,#1d2028);color:var(--sc)}
+.qt-path li.now{background:var(--sc);color:#0b0c0e}
+.qt-step{padding:16px;border-radius:18px;background:var(--s1,#15171c)}
+.qt-kind{display:flex;align-items:center;gap:10px;color:var(--sc);font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.qt-kind svg{flex:none}
+#qt .qt-step h2{margin:8px 0 4px;font-size:32px;line-height:1.15;font-weight:900;color:#fff}
+.qt-step p{margin:0;font-size:17px;font-weight:700;line-height:1.35;color:#cfd3da}
+#qt .qt-yn{grid-template-columns:1fr 1fr;gap:12px}
+#qt .qt-yn button{flex-direction:column;gap:4px;min-height:156px;padding:12px 8px;border:0!important;border-radius:20px;color:#fff!important;text-align:center}
+#qt .qt-yn .yes{background:#1f6bff!important}
+#qt .qt-yn .no{background:#4a505d!important}
+#qt .qt-yn .yes:active{background:#1554d6!important}#qt .qt-yn .no:active{background:#3a3f4b!important}
+#qt .qt-yn b{font-size:34px;font-weight:900;line-height:1}
+#qt .qt-yn small{font-size:16px;font-weight:800;line-height:1.2;opacity:.92}
+#qt .qt-res{gap:8px;padding:28px 14px;border-radius:22px;box-shadow:none!important}
+#qt .qt-res svg{width:88px!important;height:88px!important}
+#qt .qt-res b{font-size:48px;line-height:1}
+#qt .qt-res span{font-size:18px;font-weight:800;line-height:1.35}
+#qt .qt-back,#qt .btn-row .xbtn{border:0!important;background:var(--s2,#1d2028)}
+#qt .qt-next{border:0!important}
+@media (max-height:720px){#qt .qt-yn button{min-height:128px}#qt .qt-step h2{font-size:28px}.qt-step{padding:12px 14px}}
+#qt .qt-count{gap:6px;margin-bottom:10px}
+#qt .qt-count span{min-height:52px!important;padding:2px!important}
+#qt .qt-count span b{font-size:24px}
+#qt .qt-top .xbtn{border:0!important;background:var(--s2,#1d2028)}
+
+/* ── App shell ── */
+/* tab bar: 16px words; columns follow word length; the longest word gets a short form only on the narrowest phones */
+.tabbar{grid-template-columns:.85fr 1fr 1.05fr 1.2fr!important}
+.tabbar button span{white-space:nowrap}
+.tabbar .ts{display:none}
+@container app (max-width:360px){.tabbar{gap:4px!important;padding-left:6px!important;padding-right:6px!important}.tabbar button{padding-left:0!important;padding-right:0!important}}
+@container app (max-width:380px){.tabbar .tl{display:none}.tabbar .ts{display:inline}.tabbar button span{letter-spacing:-.01em}}
+
+/* toast: docked full width just above the tab bar (or the form's action bar), never floating over the middle of the screen */
+#tst.tst{left:12px!important;right:12px!important;transform:none!important;max-width:none!important;width:auto!important;justify-content:center;min-height:56px;bottom:calc(100px + env(safe-area-inset-bottom))!important;border-radius:14px!important;font-size:18px!important;font-weight:700}
+body.in-form #tst.tst{bottom:calc(104px + env(safe-area-inset-bottom))!important}
+/* long messages wrap inside the docked toast instead of running off the screen */
+#tst.tst{white-space:normal!important;text-align:center;line-height:1.3;padding:12px 16px!important;height:auto!important;max-height:40vh;overflow:auto;box-sizing:border-box}
+#tst.tst #tst-m{white-space:normal!important;overflow-wrap:anywhere;min-width:0;flex:1 1 auto}
+
+/* menu sheet: title with its own Close button */
+#menu-sheet .menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+#menu-sheet .menu-head h3{margin:0}
+#menu-sheet .menu-x{min-height:52px;padding:0 16px;display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:700}
+/* busy-hospital confirm */
+.ev-busy-p{font-size:18px;margin:4px 0 14px;color:var(--t2)}
+#ev-busy-sheet .xbtn{width:100%;min-height:60px;margin-top:10px;font-size:18px}
+#menu-sheet .lang-pick button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+/* app subtitle never below 16px; beta pill keeps a 48px target */
+.appbar .ttl small,#app-sub{font-size:16px!important}
+.beta-pill{min-height:48px!important}
+/* tab labels: full width of their column and a touch tighter, so "Wristbands" / "Casualties" fit without clipping at 16px */
+#incident-tabs button span:not(.badge){max-width:none!important;padding:0!important;font-weight:700!important;letter-spacing:-.02em;text-align:center}
+#incident-tabs button{padding-left:1px!important;padding-right:1px!important}
+@container app (max-width:400px){#incident-tabs button span:not(.badge){letter-spacing:-.03em;font-weight:600!important}}
+@container app (max-width:340px){#incident-tabs button span:not(.badge){letter-spacing:-.05em}}
+@container app (max-width:340px){#incident-tabs{padding-left:1px!important;padding-right:1px!important;column-gap:0!important}#incident-tabs button{padding-left:0!important;padding-right:0!important}}

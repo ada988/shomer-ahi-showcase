@@ -1,0 +1,75 @@
+/* Casualty form structure, sheets and triage-board restyle (loaded after ui.css). */
+
+/* ── Casualty form ─────────────────────────────────────────── */
+.fnav{position:sticky;top:-14px;z-index:30;display:flex;gap:6px;overflow-x:auto;margin:-14px -14px 12px;padding:10px 14px;background:rgba(11,12,14,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--sep);scrollbar-width:none}
+.fnav::-webkit-scrollbar{display:none}
+.fnav button{flex:none;height:34px;min-height:34px!important;padding:0 13px;border-radius:99px;border:1px solid var(--line);background:var(--c2);color:var(--t2);font-weight:550;font-size:13px}
+.fnav button.on{background:var(--tx);border-color:var(--tx);color:#0b0c0e}
+.fs{margin:0 0 22px;scroll-margin-top:60px}
+.fs-h{display:flex;flex-direction:column;gap:1px;font-size:19px;font-weight:650;letter-spacing:-.015em;margin:0 2px 10px}
+.fs-h small{font-size:12.5px;color:var(--t3);font-weight:450;letter-spacing:0}
+.fs-b>*+*{margin-top:8px}
+.fs-patient{margin-bottom:18px}
+.fs-patient>*{margin-bottom:8px}
+.fs-tools,.fs-fold{background:var(--c2);border:1px solid var(--sep);border-radius:var(--r2);padding:0 12px}
+.fs-tools>summary,.fs-fold>summary{padding:12px 0;font-size:13px;font-weight:550;color:var(--t2);list-style:none;display:flex;justify-content:space-between}
+.fs-tools>summary::after,.fs-fold>summary::after{content:'+';color:var(--t3)}
+.fs-tools[open]>summary::after,.fs-fold[open]>summary::after{content:'–'}
+.fs-tools>div{padding-bottom:12px}
+.fs-handoff{display:none}
+.fs-foot{margin:6px 0 90px;display:grid;gap:8px}
+.fs-bar{position:sticky;bottom:-28px;z-index:30;display:flex;gap:8px;margin:0 -14px -28px;padding:10px 14px 14px;background:rgba(11,12,14,.94);backdrop-filter:blur(12px);border-top:1px solid var(--sep)}
+.fs-bar .xbtn{flex:1;min-height:46px}
+.sheet-wrap{position:absolute;inset:0;z-index:100040}
+.sheet-dim{position:absolute;inset:0;background:rgba(5,6,8,.6)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--c1);border-top:1px solid var(--line);border-radius:20px 20px 0 0;padding:8px 14px 18px;max-height:82%;overflow:auto}
+.sheet-grab{width:36px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 12px}
+.sheet h3{font-size:16px;font-weight:650;margin:0 2px 10px}
+.sheet-row{display:flex;align-items:center;gap:12px;width:100%;text-align:start;background:var(--c2);border:1px solid var(--sep);border-radius:var(--r2);padding:12px 13px;margin-bottom:8px;color:var(--tx)}
+.sheet-row .gi{width:36px;height:36px;border-radius:9px;background:var(--c4);display:grid;place-items:center;color:var(--t2);flex:none}
+.sheet-row b{display:block;font-size:14.5px;font-weight:600}.sheet-row small{display:block;color:var(--t3);font-size:12.5px}
+.mist{white-space:pre-wrap;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--sep);border-radius:var(--r2);padding:12px;color:var(--t2);max-height:46vh;overflow:auto}
+
+/* ── Triage board ──────────────────────────────────────────── */
+.b-modes{position:sticky!important;top:-14px!important;z-index:30!important;margin:-14px -14px 12px!important;padding:8px 14px!important;gap:4px!important;background:rgba(11,12,14,.94)!important;backdrop-filter:blur(12px);border:0!important;border-bottom:1px solid var(--sep)!important;border-radius:0!important}
+.b-modes>*{flex:1;background:transparent!important;border:0!important;border-radius:9px!important;color:var(--t3)!important;font-weight:600!important;font-size:13px!important;min-height:38px;box-shadow:none!important}
+.b-modes>*[style*="var(--bg)"],.b-modes>*[style*="#000"],.b-modes>*[style*="var(--c4)"],.b-modes>*[style*="var(--c1)"]{background:var(--c4)!important;color:var(--tx)!important}
+.b-next{background:var(--c2)!important;border:1px solid var(--line)!important;border-radius:var(--r2)!important;color:var(--tx)!important}
+.b-next *{color:var(--tx)!important}
+.b-next button{background:var(--accent)!important;color:#fff!important;border:0!important;border-radius:9px!important;min-height:38px;font-weight:600!important}
+.b-kpis>*{background:var(--c2)!important;border:1px solid var(--sep)!important;border-radius:var(--r2)!important;box-shadow:none!important}
+.b-kpis>* *{color:var(--t3)!important;font-weight:550!important}
+.b-kpis>*>*:first-child{color:var(--tx)!important;font-size:24px!important;font-weight:650!important}
+.b-search{background:var(--c2)!important;border:1px solid var(--line)!important;color:var(--t2)!important;border-radius:var(--r2)!important;font-weight:550!important;min-height:44px}
+.mci-banner{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:6px!important}
+.mci-banner>*{background:var(--c2)!important;border:1px solid var(--sep)!important;border-radius:var(--r2)!important;box-shadow:none!important;padding:9px 4px 8px!important;position:relative;color:var(--tx)!important}
+.mci-banner>* *{color:var(--tx)!important;opacity:1!important}
+.mci-banner>*>*:last-child{color:var(--t3)!important;font-size:11.5px!important;font-weight:550!important;margin-top:3px}
+.mci-banner>*>*:first-child{font-size:22px!important;font-weight:650!important;line-height:1.1}
+.mci-banner>*::before{content:'';position:absolute;top:8px;inset-inline-end:8px;width:8px;height:8px;border-radius:50%;background:var(--t4)}
+.mci-banner>*:nth-child(1)::before{background:#e5484d}
+.mci-banner>*:nth-child(2)::before{background:#f5b82e}
+.mci-banner>*:nth-child(3)::before{background:#30a46c}
+.mci-banner>*:nth-child(4)::before{background:#9aa0a6}
+.mci-banner>*:nth-child(5)::before{background:#4b4f56;outline:1px solid var(--t4)}
+.b-alert{background:rgba(229,72,77,.1)!important;border:1px solid rgba(229,72,77,.4)!important;color:var(--re-hi)!important;border-radius:var(--r2)!important;font-size:13px!important;text-align:start!important}
+.b-stats{color:var(--t3)!important;font-size:12.5px!important}.b-stats *{color:inherit!important}
+.mci-section-header{background:var(--c2)!important;border:1px solid var(--sep)!important;border-radius:var(--r2)!important}
+
+/* ── Engine form chrome ────────────────────────────────────── */
+.cas-section{background:var(--c2)!important;border:1px solid var(--sep)!important;border-radius:var(--r2)!important;box-shadow:none!important}
+#incident-content button,#incident-content summary,#incident-content [role=button]{min-height:40px}
+#incident-content .tchip,#incident-content .dot,#incident-content .fnav button{min-height:0}
+#incident-content input,#incident-content select{min-height:44px;font-size:16px!important}
+#incident-content input[type=number]{min-width:0;padding:0 6px!important;text-align:center}
+.body-map-wrap svg{filter:none!important}
+
+.b-recs{background:var(--c2)!important;border:1px solid var(--line)!important;border-radius:var(--r2)!important}
+.b-recs>:first-child,.b-recs>:first-child *{color:var(--t2)!important;font-weight:600!important}
+.b-recs>:nth-child(2){background:transparent!important;color:var(--t3)!important}
+.b-recs>div>div{background:var(--c1)!important;border:1px solid var(--sep)!important;border-radius:10px!important}
+.b-recs>div>div *{font-weight:500}
+.b-recs b,.b-recs strong{color:var(--tx)!important}
+.mci-card [style*="text-overflow"]{white-space:normal!important;overflow:visible!important;max-width:none!important}
+#incident-content[data-view=mci]{padding-bottom:96px}
+#incident-content button[style*="position:fixed"]{box-shadow:0 6px 18px rgba(0,0,0,.45)!important;width:52px!important;height:52px!important;background:var(--accent)!important;border:0!important}

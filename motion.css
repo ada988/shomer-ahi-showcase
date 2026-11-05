@@ -1,0 +1,77 @@
+/* motion
+   Dialogs take focus themselves, so no ring lands on a button nobody pressed.
+   Motion is short and only for people who have not asked the system for less. */
+[tabindex="-1"]:focus,[tabindex="-1"]:focus-visible{outline:none!important}
+
+@media (prefers-reduced-motion:no-preference){
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes riseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes tileBump{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+  /* bottom sheets slide up, their dim fades in */
+  .sheet-wrap .sheet,#menu-sheet .sheet,.dz-rb{animation:sheetUp 220ms cubic-bezier(.2,.8,.2,1) both}
+  .sheet-wrap .sheet-dim,.dz-rb-wrap{animation:fadeIn 180ms ease both}
+  /* full-screen panels and the tour card rise in */
+  .dz-wrap,#qt,.bo,.tour-card{animation:riseIn 200ms cubic-bezier(.2,.8,.2,1) both}
+  /* a new screen fades in (only the top-level blocks, so live timers never flicker) */
+  #incident-content>*{animation:fadeIn 140ms ease both}
+  /* a triage count that changed pulses once */
+  .ov-tile.bump{animation:tileBump 320ms cubic-bezier(.2,.8,.2,1)}
+  /* toasts slide up from the bottom */
+  .undo-toast{animation:riseIn 180ms ease both}
+}
+/* a sheet rebuilt in place after a tap shows instantly (no slide-up, no fade) */
+.sheet-wrap.instant .sheet,.sheet-wrap.instant .sheet-dim{animation:none!important;transition:none!important}
+.instant,.instant *{animation:none!important;transition:none!important}
+
+/* ═══ Design tokens: ONE definition per shared component (overrides older per-screen variants) ═══
+   type 16/18/22/28/32/40 · weights 500/800/900 · radius 10/14/20 · buttons 48/56/64 · icons 24 in buttons · gutter 14 */
+
+/* sheet close button: same size, colour and place (top-end) on every sheet */
+.menu-head>.menu-x,.hist-top>.xbtn,.hp-bar>.hp-btn[onclick*="Help.close"],.dn-bar>.dn-x,.qt-top>.xbtn[onclick*="Quick.close"],
+.dz-top>.xbtn[onclick*="doseClose"],.ho-top>.xbtn[onclick*="closeSheet"],.f-proc-top>.xbtn,.bo-top>.bo-x,.tap-head>.xbtn,.g-top>.g-x{
+  display:inline-flex!important;align-items:center!important;justify-content:center;gap:8px!important;flex:none!important;
+  min-height:56px!important;height:56px!important;min-width:56px!important;width:auto!important;padding:0 16px!important;
+  border:0!important;border-radius:14px!important;background:#20242c!important;color:#fff!important;
+  font:800 18px/1 var(--f,inherit)!important;letter-spacing:0!important;text-transform:none!important;box-shadow:none!important}
+.menu-head>.menu-x svg,.hist-top>.xbtn svg,.hp-bar>.hp-btn svg,.dn-bar>.dn-x svg,.qt-top>.xbtn svg,.dz-top>.xbtn svg,.ho-top>.xbtn svg,.f-proc-top>.xbtn svg,.bo-top>.bo-x svg,.tap-head>.xbtn svg,.g-top>.g-x svg{
+  width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important}
+
+/* triage chip: one size everywhere */
+#app .tchip,#app .tchip.lg{min-height:44px!important;height:auto!important;padding:6px 12px!important;border-radius:10px!important;font-size:18px!important;font-weight:900!important;letter-spacing:.02em!important;gap:8px!important;line-height:1.1!important}
+#app .tchip svg{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important}
+#app .tchip span{font-size:18px!important}
+@container app (max-width:360px){#app .bd-row .tchip{padding:6px 8px!important}}
+
+/* primary and secondary buttons */
+#app .xbtn-primary,#app .dn-ok{min-height:64px!important;font-size:18px!important;font-weight:800!important}
+#app .xbtn-primary svg,#app .dn-ok svg{width:24px!important;height:24px!important}
+#app .xbtn:not(.xbtn-primary){min-height:56px}
+
+/* page titles */
+#incident-content h2,#incident-content .ev-title{font-size:28px!important;line-height:1.15!important;letter-spacing:-.02em!important;font-weight:900!important;text-wrap:balance}
+
+/* one side gutter */
+.hp-scroll{padding-inline:14px!important}.hp-foot{padding-inline:14px!important}
+.dz{padding-inline:14px!important}.dz-top{margin-inline:-14px!important}
+.tr-card{inset-inline:14px!important}
+.undo-toast,.eta-toast,.upd-toast{left:14px!important;right:14px!important}
+
+/* wrapping: no single orphan words in titles and short lines */
+#app h2,#app h3,.sheet h3,.hp h2,.hp h3{text-wrap:balance}
+#app p,#app small,.sheet-row small,.hp-tt small,.b2-foot,.sheet-p{text-wrap:pretty}
+
+/* text inputs share one style: 18 px, radius 14, 2 px border, one blue focus ring */
+#app textarea,#app input[type=text],#app input[type=search],#app input[type=time],#app input:not([type]){font-size:18px!important;font-weight:600!important;border-radius:14px!important;border-width:2px!important}
+#app textarea:focus-visible,#app input:focus-visible{outline:3px solid #4f8cff!important;outline-offset:2px!important;border-color:#4f8cff!important}
+
+/* one language switch style (menu = notice): a segmented control, selected segment filled */
+#menu-sheet .lang-pick,.dn-lang{display:grid!important;grid-template-columns:1fr 1fr;gap:0!important;padding:3px!important;border-radius:14px!important;background:#15171c!important;border:2px solid #2a2d35!important}
+#menu-sheet .lang-pick button,.dn-lang button{min-height:56px!important;height:auto!important;border:0!important;border-radius:11px!important;background:transparent!important;color:#c9ced6!important;font:800 18px/1 var(--f,inherit)!important;display:inline-flex!important;align-items:center;justify-content:center;gap:8px}
+#menu-sheet .lang-pick button.on,.dn-lang button.on{background:#2b303a!important;color:#fff!important}
+
+/* the notice bar holds the language switch and Close on one row */
+.dn-bar .dn-lang button{min-height:48px!important;font-size:16px!important;padding:0 12px!important}
+.dn-bar{flex-wrap:nowrap!important;gap:8px!important}
+@container app (max-width:360px){.dn-bar .dn-lang button svg{display:none!important}.dn-bar .dn-lang button{padding:0 10px!important}.dn-bar>.dn-x{padding:0 12px!important}}
